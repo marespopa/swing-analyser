@@ -220,13 +220,18 @@ export const analyzeCoinForSwing = async (
   const qualityScore = trendScore + rsiScore + volumeScore + momentumScore + marketCapScore;
   const swingTradingScore = Math.min(100, qualityScore + (isVolumeIncreasing ? 10 : 0));
   
-  // Determine signal
+  // Determine signal - Balanced approach
   let signal: 'BUY' | 'HOLD' | 'SELL' = 'HOLD';
-  if (swingTradingScore >= 70 && isBullish && isRSIHealthy) {
+  
+  // BUY signal: Strong technical setup with positive momentum
+  if (swingTradingScore >= 70 && isBullish && isRSIHealthy && recentMomentum > -2) {
     signal = 'BUY';
-  } else if (swingTradingScore < 30 || !isBullish) {
+  } 
+  // SELL signal: Clear bearish indicators
+  else if (swingTradingScore < 30 || !isBullish || recentMomentum < -8) {
     signal = 'SELL';
   }
+  // HOLD: Mixed signals or neutral conditions
   
   // Calculate risk metrics
   const riskMetrics = calculateRiskMetrics(coin.current_price);
@@ -272,7 +277,7 @@ export const analyzeCoinForSwing = async (
       takeProfit: riskMetrics.takeProfit,
       riskRewardRatio: riskMetrics.riskRewardRatio,
       isGoodRiskReward: riskMetrics.isGoodRiskReward,
-      recommendedShares: riskMetrics.suggestedShares
+      recommendedUnits: riskMetrics.suggestedShares
     },
     shortTermPrediction: null,
     isRealData: isRealData,

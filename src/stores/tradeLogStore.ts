@@ -14,7 +14,7 @@ export interface TradeEntry {
   timestamp: Date;
   stopLoss?: number;
   takeProfit?: number;
-  status: 'OPEN' | 'CLOSED' | 'CANCELLED';
+  status: 'OPEN' | 'CLOSED';
   closePrice?: number;
   closeTimestamp?: Date;
   profitLoss?: number;
@@ -22,7 +22,7 @@ export interface TradeEntry {
 }
 
 export interface TradeFilters {
-  status: 'ALL' | 'OPEN' | 'CLOSED' | 'CANCELLED';
+  status: 'ALL' | 'OPEN' | 'CLOSED';
   action: 'ALL' | 'BUY' | 'SELL' | 'HOLD';
   dateRange: 'ALL' | 'TODAY' | 'WEEK' | 'MONTH' | 'CUSTOM';
   customStartDate?: Date;
@@ -186,22 +186,7 @@ export const closeTradeAtom = atom(
   }
 );
 
-export const cancelTradeAtom = atom(
-  null,
-  (get, set, tradeId: string) => {
-    const trades = get(tradeLogAtom);
-    const updatedTrades = trades.map(trade => {
-      if (trade.id === tradeId && trade.status === 'OPEN') {
-        return {
-          ...trade,
-          status: 'CANCELLED' as const
-        };
-      }
-      return trade;
-    });
-    set(tradeLogAtom, updatedTrades);
-  }
-);
+
 
 export const deleteTradeAtom = atom(
   null,

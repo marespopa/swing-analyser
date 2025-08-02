@@ -119,7 +119,7 @@ export interface RiskMetricsData {
   takeProfit: number;
   riskRewardRatio: number;
   isGoodRiskReward: boolean;
-  recommendedShares: number;
+  recommendedUnits: number;
 }
 
 export interface ShortTermPrediction {

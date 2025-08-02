@@ -24,9 +24,12 @@ interface CoinCardProps {
   coin: Coin;
   index: number;
   timeframe: string;
+  onClick?: (coin: Coin) => void;
+  onRefreshData?: (coin: Coin) => void;
+  isRefreshing?: boolean;
 }
 
-const CoinCard: React.FC<CoinCardProps> = ({ coin, index, timeframe }) => {
+const CoinCard: React.FC<CoinCardProps> = ({ coin, index, timeframe, onClick, onRefreshData, isRefreshing }) => {
   const priceChange = getPriceChange(coin, timeframe);
   const isPositive = priceChange !== null && priceChange >= 0;
   const isPositive1h = coin.price_change_percentage_1h_in_currency !== null && coin.price_change_percentage_1h_in_currency >= 0;
@@ -35,16 +38,36 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, index, timeframe }) => {
   const priceRange = coin.high_24h - coin.low_24h;
   const currentPosition = ((coin.current_price - coin.low_24h) / priceRange) * 100;
 
+  const handleClick = () => {
+    if (onClick) {
+      onClick(coin);
+    }
+  };
+
+  const handleRefreshClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the main card click
+    if (onRefreshData) {
+      onRefreshData(coin);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group relative">
-      {/* Gradient overlay for visual appeal */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/30 to-blue-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+    <div 
+      className={`bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group relative ${
+        onClick ? 'cursor-pointer hover:scale-[1.02]' : ''
+      }`}
+      onClick={handleClick}
+    >
+      {/* Dark overlay on hover - covers entire card */}
+      {onClick && (
+        <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-80 transition-opacity duration-300 rounded-2xl z-10"></div>
+      )}
       
       <div className="relative p-6">
         {/* Header Section */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-sm font-bold px-3 py-1.5 rounded-full min-w-[2.5rem] text-center shadow-sm">
+            <div className="bg-gray-100 text-gray-700 text-xs font-semibold px-2 py-1 rounded-lg">
               #{index + 1}
             </div>
             <div className="relative">
@@ -57,13 +80,39 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, index, timeframe }) => {
                   target.style.display = 'none';
                 }}
               />
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white"></div>
             </div>
           </div>
           
-          {/* Market cap rank badge */}
-          <div className="bg-gray-100 text-gray-700 text-xs font-semibold px-2 py-1 rounded-lg">
-            #{coin.market_cap_rank}
+          <div className="flex items-center gap-2">
+            {/* Market cap rank badge */}
+            <div className="bg-gray-100 text-gray-700 text-xs font-semibold px-2 py-1 rounded-lg">
+              #{coin.market_cap_rank}
+            </div>
+            
+            {/* Refresh button */}
+            {onRefreshData && (
+              <button
+                onClick={handleRefreshClick}
+                disabled={isRefreshing}
+                className={`p-1.5 rounded-lg transition-all duration-200 ${
+                  isRefreshing 
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                    : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-600 hover:text-emerald-700 cursor-pointer'
+                }`}
+                title="Refresh data for analysis"
+              >
+                {isRefreshing ? (
+                  <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                )}
+              </button>
+            )}
           </div>
         </div>
 
@@ -114,19 +163,30 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, index, timeframe }) => {
         <div className="mb-6">
           <div className="flex justify-between text-xs text-gray-500 mb-2">
             <span>24h Range</span>
-            <span className="font-medium">{currentPosition.toFixed(1)}%</span>
+            <span className="font-medium">{formatPrice(coin.low_24h)} - {formatPrice(coin.high_24h)}</span>
           </div>
-          <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="relative h-3 bg-gray-100 rounded-full overflow-hidden border border-gray-200">
+            {/* Background track */}
+            <div className="absolute inset-0 bg-gradient-to-r from-red-100 via-yellow-100 to-green-100"></div>
+            
+            {/* Current price indicator */}
             <div 
-              className={`absolute top-0 left-0 h-full rounded-full transition-all duration-300 ${
-                isPositive ? 'bg-emerald-500' : 'bg-red-500'
-              }`}
-              style={{ width: `${currentPosition}%` }}
+              className="absolute top-0 h-full w-1 bg-gray-800 rounded-full shadow-sm transition-all duration-300"
+              style={{ left: `${Math.max(0, Math.min(100, currentPosition))}%` }}
             ></div>
-            <div className="absolute top-0 left-0 w-full h-full flex justify-between px-1">
-              <span className="text-xs text-gray-400">${coin.low_24h.toFixed(2)}</span>
-              <span className="text-xs text-gray-400">${coin.high_24h.toFixed(2)}</span>
+            
+            {/* Price labels */}
+            <div className="absolute -top-6 left-0 text-xs text-gray-500 font-medium">
+              {formatPrice(coin.low_24h)}
             </div>
+            <div className="absolute -top-6 right-0 text-xs text-gray-500 font-medium">
+              {formatPrice(coin.high_24h)}
+            </div>
+          </div>
+          <div className="text-center mt-2">
+            <span className="text-xs text-gray-600 font-medium">
+              Current: {formatPrice(coin.current_price)}
+            </span>
           </div>
         </div>
 
@@ -162,8 +222,15 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, index, timeframe }) => {
           </div>
         </div>
 
-        {/* Hover effect indicator */}
-        <div className="absolute top-4 right-4 w-2 h-2 bg-emerald-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        {/* Analysis indicator */}
+        {onClick && (
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20">
+            <div className="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 border border-emerald-700 hover:border-emerald-800 rounded-lg px-4 py-2 flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer">
+              <span className="text-white text-sm font-medium">📊</span>
+              <span className="text-white text-sm font-medium">Analyze</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

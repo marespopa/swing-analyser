@@ -17,6 +17,10 @@ export const useSwingAnalysis = (coins: Coin[]) => {
   const [progress, setProgress] = useState({ current: 0, total: 0, currentCoin: '' });
   const [historicalData, setHistoricalData] = useAtom(historicalDataAtom);
 
+  // Individual coin analysis state
+  const [individualAnalysisLoading, setIndividualAnalysisLoading] = useState(false);
+  const [individualAnalysisResult, setIndividualAnalysisResult] = useState<AnalyzedCoin | null>(null);
+
   // Calculate swing signals when coins are available
   useEffect(() => {
     if (coins.length > 0 && swingSignals.length === 0) {
@@ -84,6 +88,52 @@ export const useSwingAnalysis = (coins: Coin[]) => {
     }
   };
 
+  // New function for individual coin analysis
+  const analyzeIndividualCoin = async (coin: Coin): Promise<AnalyzedCoin | null> => {
+    setIndividualAnalysisLoading(true);
+    setIndividualAnalysisResult(null);
+    
+    try {
+      // Always fetch fresh historical data for individual analysis
+      const historicalDataMap = await fetchBatchHistoricalData(
+        [coin.id],
+        200,
+        (_atom) => historicalData,
+        (_atom, value) => setHistoricalData(value),
+        (current, total, coinId) => {
+          // Update progress for individual analysis
+          setProgress({ current, total, currentCoin: coinId });
+        }
+      );
+      
+      if (!historicalDataMap[coin.id]) {
+        throw new Error(`Failed to fetch historical data for ${coin.name}`);
+      }
+      
+      // Analyze the single coin
+      const analyzedCoins = await analyzeCoinsForSwing(
+        [coin],
+        { [coin.id]: historicalData[coin.id]?.data || [] },
+        (_atom) => historicalData,
+        (_atom, value) => setHistoricalData(value)
+      );
+      
+      if (analyzedCoins.length > 0) {
+        const result = analyzedCoins[0];
+        setIndividualAnalysisResult(result);
+        return result;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error analyzing individual coin:', error);
+      return null;
+    } finally {
+      setIndividualAnalysisLoading(false);
+      setProgress({ current: 0, total: 0, currentCoin: '' });
+    }
+  };
+
   const clearSwingSignals = () => {
     setSwingSignals([]);
     setAllAnalyzedCoins([]);
@@ -107,6 +157,11 @@ export const useSwingAnalysis = (coins: Coin[]) => {
     setAllAnalyzedCoins,
     clearSwingSignals,
     recalculateSignals,
-    progress
+    progress,
+    // Individual analysis functions
+    analyzeIndividualCoin,
+    individualAnalysisLoading,
+    individualAnalysisResult,
+    setIndividualAnalysisResult
   };
 }; 

@@ -5,7 +5,6 @@ import {
   tradeStatsAtom, 
   tradeFiltersAtom,
   closeTradeAtom,
-  cancelTradeAtom,
   deleteTradeAtom,
   clearAllTradesAtom,
   addTradeAtom,
@@ -35,7 +34,6 @@ const TradeLog: React.FC = () => {
   
   const [, addTrade] = useAtom(addTradeAtom);
   const [, closeTrade] = useAtom(closeTradeAtom);
-  const [, cancelTrade] = useAtom(cancelTradeAtom);
   const [, deleteTrade] = useAtom(deleteTradeAtom);
   const [, clearAllTrades] = useAtom(clearAllTradesAtom);
 
@@ -83,17 +81,17 @@ const TradeLog: React.FC = () => {
 
   const handleCloseTrade = (tradeId: string) => {
     const price = parseFloat(closePrice);
-    if (isNaN(price) || price <= 0) return;
+    if (isNaN(price) || price <= 0) {
+      alert('Please enter a valid close price');
+      return;
+    }
     
     closeTrade(tradeId, price);
     setClosePrice('');
     setSelectedTrade(null);
   };
 
-  const handleCancelTrade = (tradeId: string) => {
-    cancelTrade(tradeId);
-    setSelectedTrade(null);
-  };
+
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -551,24 +549,14 @@ const TradeLog: React.FC = () => {
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-1">
                         {trade.status === 'OPEN' && (
-                          <>
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              onClick={() => setSelectedTrade(trade)}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded text-xs w-full"
-                            >
-                              Close
-                            </Button>
-                            <Button
-                              variant="warning"
-                              size="sm"
-                              onClick={() => setSelectedTrade(trade)}
-                              className="bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded text-xs w-full"
-                            >
-                              Cancel
-                            </Button>
-                          </>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => setSelectedTrade(trade)}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded text-xs w-full"
+                          >
+                            Close
+                          </Button>
                         )}
                         <Button
                           variant="danger"
@@ -618,23 +606,14 @@ const TradeLog: React.FC = () => {
             
             <div className="flex gap-3 mt-6">
               {selectedTrade.status === 'OPEN' && (
-                <>
-                  <Button
-                    variant="success"
-                    onClick={() => handleCloseTrade(selectedTrade.id)}
-                    disabled={!closePrice || parseFloat(closePrice) <= 0}
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium"
-                  >
-                    Close Trade
-                  </Button>
-                  <Button
-                    variant="danger"
-                    onClick={() => handleCancelTrade(selectedTrade.id)}
-                    className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium"
-                  >
-                    Cancel Trade
-                  </Button>
-                </>
+                <Button
+                  variant="success"
+                  onClick={() => handleCloseTrade(selectedTrade.id)}
+                  disabled={!closePrice || parseFloat(closePrice) <= 0}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium"
+                >
+                  Close Trade
+                </Button>
               )}
 
               <Button
@@ -642,7 +621,7 @@ const TradeLog: React.FC = () => {
                 onClick={() => setSelectedTrade(null)}
                 className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium"
               >
-                Cancel
+                Close
               </Button>
             </div>
           </div>

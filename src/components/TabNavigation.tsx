@@ -20,17 +20,7 @@ const TabNavigation: React.FC = () => {
             <span className="text-lg">📊</span>
             Market Overview
           </Link>
-          <Link
-            to="/swing"
-            className={`py-4 px-6 rounded-t-lg font-medium text-sm transition-all duration-200 cursor-pointer flex items-center gap-2 ${
-              activeTab === 'swing'
-                ? 'bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500 shadow-sm'
-                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-            }`}
-          >
-            <span className="text-lg">📈</span>
-            Swing Strategy
-          </Link>
+
           <Link
             to="/trades"
             className={`py-4 px-6 rounded-t-lg font-medium text-sm transition-all duration-200 cursor-pointer flex items-center gap-2 ${

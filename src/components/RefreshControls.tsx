@@ -3,7 +3,6 @@ import Button from './Button';
 
 interface RefreshControlsProps {
   loading: boolean;
-  emaLoading: boolean;
   handleManualRefresh: () => void;
   autoRefreshEnabled: boolean;
   toggleAutoRefresh: () => void;
@@ -17,7 +16,6 @@ interface RefreshControlsProps {
 
 const RefreshControls: React.FC<RefreshControlsProps> = ({
   loading,
-  emaLoading,
   handleManualRefresh,
   autoRefreshEnabled,
   toggleAutoRefresh,
@@ -32,19 +30,19 @@ const RefreshControls: React.FC<RefreshControlsProps> = ({
           {/* Single Refresh Button */}
           <Button
             onClick={handleManualRefresh}
-            disabled={loading || emaLoading}
+            disabled={loading}
             variant="primary"
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium"
           >
-            {loading || emaLoading ? (
+            {loading ? (
               <>
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                {loading ? 'Refreshing Data...' : 'Calculating Signals...'}
+                Refreshing Data...
               </>
             ) : (
               <>
                 <span className="mr-2">🔄</span>
-                Refresh Data & Signals
+                Refresh Data
               </>
             )}
           </Button>
@@ -54,10 +52,10 @@ const RefreshControls: React.FC<RefreshControlsProps> = ({
             <span className="text-sm font-medium text-gray-700">Auto-refresh:</span>
             <button
               onClick={toggleAutoRefresh}
-              disabled={loading || emaLoading}
+              disabled={loading}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
                 autoRefreshEnabled ? 'bg-emerald-600' : 'bg-gray-200'
-              } ${loading || emaLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              } ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${

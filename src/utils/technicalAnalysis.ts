@@ -190,52 +190,82 @@ interface SupportResistanceResult {
   riskRewardRatio: string;
 }
 
-// Calculate Support and Resistance levels
-export function calculateSupportResistance(prices: [number, number][], lookback: number = 50): SupportResistanceResult | null {
+// Calculate Support and Resistance levels with improved algorithm
+export function calculateSupportResistance(prices: [number, number][], lookback: number = 100): SupportResistanceResult | null {
   if (prices.length < lookback) return null;
 
   const recentPrices = prices.slice(-lookback);
   const highs: number[] = [];
   const lows: number[] = [];
 
-  // Find local highs and lows
-  for (let i = 1; i < recentPrices.length - 1; i++) {
+  // Enhanced peak detection with minimum swing requirement
+  const minSwingPercent = 0.005; // 0.5% minimum swing for significance
+  
+  for (let i = 2; i < recentPrices.length - 2; i++) {
     const current = recentPrices[i][1];
-    const prev = recentPrices[i - 1][1];
-    const next = recentPrices[i + 1][1];
+    const prev1 = recentPrices[i - 1][1];
+    const prev2 = recentPrices[i - 2][1];
+    const next1 = recentPrices[i + 1][1];
+    const next2 = recentPrices[i + 2][1];
 
-    if (current > prev && current > next) {
-      highs.push(current);
+    // More robust high detection (higher than 2 candles on each side)
+    if (current > prev1 && current > prev2 && current > next1 && current > next2) {
+      const swingSize = Math.min(
+        (current - prev1) / prev1,
+        (current - next1) / next1
+      );
+      if (swingSize > minSwingPercent) {
+        highs.push(current);
+      }
     }
-    if (current < prev && current < next) {
-      lows.push(current);
+    
+    // More robust low detection (lower than 2 candles on each side)
+    if (current < prev1 && current < prev2 && current < next1 && current < next2) {
+      const swingSize = Math.min(
+        (prev1 - current) / current,
+        (next1 - current) / current
+      );
+      if (swingSize > minSwingPercent) {
+        lows.push(current);
+      }
     }
   }
 
-  // Find significant levels (clusters)
+  // Find significant levels with improved clustering
   const resistance = findSignificantLevel(highs);
   const support = findSignificantLevel(lows);
 
   const currentPrice = prices[prices.length - 1][1];
 
+  // Validate support and resistance levels
+  const validResistance = resistance > currentPrice ? resistance : currentPrice * 1.05;
+  const validSupport = support < currentPrice ? support : currentPrice * 0.95;
+
   return {
-    resistance: resistance.toFixed(2),
-    support: support.toFixed(2),
-    distanceToResistance: ((resistance - currentPrice) / currentPrice * 100).toFixed(1),
-    distanceToSupport: ((currentPrice - support) / currentPrice * 100).toFixed(1),
-    riskRewardRatio: ((resistance - currentPrice) / (currentPrice - support)).toFixed(2)
+    resistance: validResistance.toFixed(2),
+    support: validSupport.toFixed(2),
+    distanceToResistance: ((validResistance - currentPrice) / currentPrice * 100).toFixed(1),
+    distanceToSupport: ((currentPrice - validSupport) / currentPrice * 100).toFixed(1),
+    riskRewardRatio: ((validResistance - currentPrice) / (currentPrice - validSupport)).toFixed(2)
   };
 }
 
-// Helper function to find significant price levels
+// Helper function to find significant price levels with improved clustering
 export function findSignificantLevel(prices: number[]): number {
   if (prices.length === 0) return 0;
 
-  // Group prices within 2% of each other
-  const groups: number[][] = [];
-  const tolerance = 0.02;
+  // Sort prices for better clustering
+  const sortedPrices = [...prices].sort((a, b) => a - b);
+  
+  // Adaptive tolerance based on price range
+  const priceRange = sortedPrices[sortedPrices.length - 1] - sortedPrices[0];
+  const baseTolerance = 0.015; // 1.5% base tolerance
+  const adaptiveTolerance = Math.min(baseTolerance, priceRange / sortedPrices[0] * 0.5);
+  const tolerance = Math.max(adaptiveTolerance, 0.005); // Minimum 0.5% tolerance
 
-  prices.forEach(price => {
+  const groups: number[][] = [];
+
+  sortedPrices.forEach(price => {
     let added = false;
     for (const group of groups) {
       const avg = group.reduce((sum, p) => sum + p, 0) / group.length;
@@ -250,54 +280,65 @@ export function findSignificantLevel(prices: number[]): number {
     }
   });
 
-  // Find the group with most prices (most significant level)
-  const significantGroup = groups.reduce((max, group) =>
-    group.length > max.length ? group : max, []);
+  // Find the most significant group (considering both size and price level)
+  let bestGroup = groups[0];
+  let bestScore = 0;
 
-  return significantGroup.reduce((sum, price) => sum + price, 0) / significantGroup.length;
+  groups.forEach(group => {
+    const sizeScore = group.length;
+    const recencyScore = group.length > 1 ? 1 : 0; // Bonus for multiple occurrences
+    
+    const totalScore = sizeScore + recencyScore;
+    if (totalScore > bestScore) {
+      bestScore = totalScore;
+      bestGroup = group;
+    }
+  });
+
+  return bestGroup.reduce((sum, price) => sum + price, 0) / bestGroup.length;
 }
 
 interface RiskMetricsResult {
   stopLoss: string;
   takeProfit: string;
-  riskPerShare: string;
-  rewardPerShare: string;
+  riskPerUnit: string;
+  rewardPerUnit: string;
   riskRewardRatio: string;
-  recommendedShares: number;
+  recommendedUnits: number;
   maxRiskAmount: string;
   isGoodRiskReward: boolean;
 }
 
 // Calculate Risk Management metrics
 export function calculateRiskMetrics(coin: Coin, _emaData: any, supportResistance: SupportResistanceResult): RiskMetricsResult {
-  const currentPrice = coin.total_volume; // This should be coin.current_price in real implementation
+  const currentPrice = coin.current_price; // Fixed: Use current_price instead of total_volume
   const stopLoss = parseFloat(supportResistance.support);
   const takeProfit = parseFloat(supportResistance.resistance);
 
-  const riskPerShare = currentPrice - stopLoss;
-  const rewardPerShare = takeProfit - currentPrice;
-  const riskRewardRatio = rewardPerShare / riskPerShare;
+  const riskPerUnit = currentPrice - stopLoss;
+  const rewardPerUnit = takeProfit - currentPrice;
+  const riskRewardRatio = rewardPerUnit / riskPerUnit;
 
   // Position sizing recommendation
   const maxRiskPercent = 2; // 2% max risk per trade
   const accountSize = 10000; // Example account size
   const maxRiskAmount = accountSize * (maxRiskPercent / 100);
   
-  // Handle edge cases for very small risk per share
-  let recommendedShares = 0;
-  if (riskPerShare > 0 && isFinite(riskPerShare)) {
-    recommendedShares = Math.floor(maxRiskAmount / riskPerShare);
-    // Cap at reasonable maximum (e.g., 1000 shares)
-    recommendedShares = Math.min(recommendedShares, 1000);
+  // Handle edge cases for very small risk per unit
+  let recommendedUnits = 0;
+  if (riskPerUnit > 0 && isFinite(riskPerUnit)) {
+    recommendedUnits = Math.floor(maxRiskAmount / riskPerUnit);
+    // Cap at reasonable maximum (e.g., 1000 units)
+    recommendedUnits = Math.min(recommendedUnits, 1000);
   }
 
   return {
     stopLoss: stopLoss.toFixed(2),
     takeProfit: takeProfit.toFixed(2),
-    riskPerShare: riskPerShare.toFixed(2),
-    rewardPerShare: rewardPerShare.toFixed(2),
+    riskPerUnit: riskPerUnit.toFixed(2),
+    rewardPerUnit: rewardPerUnit.toFixed(2),
     riskRewardRatio: riskRewardRatio.toFixed(2),
-    recommendedShares,
+    recommendedUnits,
     maxRiskAmount: maxRiskAmount.toFixed(2),
     isGoodRiskReward: riskRewardRatio >= 2
   };
@@ -310,7 +351,7 @@ export const calculateShortTermPrediction = (coin: Coin, historicalData: [number
   }
 
   const recentPrices = historicalData.slice(-24); // Last 24 data points
-  const currentPrice = coin.total_volume; // This should be coin.current_price in real implementation
+  const currentPrice = coin.current_price; // Fixed: Use current_price instead of total_volume
 
   // Calculate momentum indicators
   const priceChanges: number[] = [];
