@@ -1,45 +1,47 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
-interface TabNavigationProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-}
+const TabNavigation: React.FC = () => {
+  const location = useLocation();
+  const activeTab = location.pathname.substring(1) || 'market'; // Remove leading slash
 
-const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, setActiveTab }) => {
   return (
-    <div className="bg-white/80 backdrop-blur-sm border-b border-blue-200 shadow-sm">
+    <div className="bg-white/90 backdrop-blur-sm border-b border-gray-100 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex space-x-8">
-          <button
-            onClick={() => setActiveTab('market')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors cursor-pointer ${
+        <div className="flex space-x-1">
+          <Link
+            to="/market"
+            className={`py-4 px-6 rounded-t-lg font-medium text-sm transition-all duration-200 cursor-pointer flex items-center gap-2 ${
               activeTab === 'market'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500 shadow-sm'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
             }`}
           >
-            📊 Market Overview
-          </button>
-          <button
-            onClick={() => setActiveTab('swing')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors cursor-pointer ${
+            <span className="text-lg">📊</span>
+            Market Overview
+          </Link>
+          <Link
+            to="/swing"
+            className={`py-4 px-6 rounded-t-lg font-medium text-sm transition-all duration-200 cursor-pointer flex items-center gap-2 ${
               activeTab === 'swing'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500 shadow-sm'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
             }`}
           >
-            📈 Swing Strategy
-          </button>
-          <button
-            onClick={() => setActiveTab('trades')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors cursor-pointer ${
+            <span className="text-lg">📈</span>
+            Swing Strategy
+          </Link>
+          <Link
+            to="/trades"
+            className={`py-4 px-6 rounded-t-lg font-medium text-sm transition-all duration-200 cursor-pointer flex items-center gap-2 ${
               activeTab === 'trades'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500 shadow-sm'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
             }`}
           >
-            📋 Trade Log
-          </button>
+            <span className="text-lg">📋</span>
+            Trade Log
+          </Link>
         </div>
       </div>
     </div>

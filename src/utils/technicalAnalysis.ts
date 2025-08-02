@@ -237,7 +237,7 @@ export function findSignificantLevel(prices: number[]): number {
 
   prices.forEach(price => {
     let added = false;
-    for (let group of groups) {
+    for (const group of groups) {
       const avg = group.reduce((sum, p) => sum + p, 0) / group.length;
       if (Math.abs(price - avg) / avg < tolerance) {
         group.push(price);
@@ -360,7 +360,7 @@ export const analyzeShortTermMomentum = (priceData: [number, number][], changes:
 
   // Momentum scoring
   let momentumScore = 0;
-  let reasoning: string[] = [];
+  const reasoning: string[] = [];
 
   // Recent price change (40% weight)
   if (recentChange > 2) {
@@ -521,7 +521,7 @@ export function calculateQualityScore(coin: Coin, emaData: Partial<EMAData>): nu
 export function calculateHoldingPeriod(coin: Coin, emaData: Partial<EMAData>): HoldingPeriod {
   let period = '3-7 days';
   let confidence: HoldingPeriod['confidence'] = 'Medium';
-  let reasoning: string[] = [];
+  const reasoning: string[] = [];
   
   if (emaData.strength) {
     const strength = parseFloat(emaData.strength);

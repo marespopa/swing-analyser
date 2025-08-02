@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 export const useAutoRefresh = (onRefresh: () => Promise<void>) => {
   const [lastRefresh, setLastRefresh] = useState<Date | null>(new Date()); // Initialize with current time
   const [refreshTimer, setRefreshTimer] = useState<NodeJS.Timeout | null>(null);
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
-  const [countdown, setCountdown] = useState(300); // 5 minutes in seconds
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
+  const [countdown, setCountdown] = useState(900); // 15 minutes in seconds
 
   // Start auto-refresh timer
   const startAutoRefreshTimer = () => {
@@ -15,10 +15,10 @@ export const useAutoRefresh = (onRefresh: () => Promise<void>) => {
       clearTimeout(refreshTimer);
     }
 
-    // Set new timer for 5 minutes (300,000 ms)
+    // Set new timer for 15 minutes (900,000 ms)
     const timer = setTimeout(() => {
       onRefresh();
-    }, 300000);
+    }, 900000);
 
     setRefreshTimer(timer);
   };
@@ -62,7 +62,7 @@ export const useAutoRefresh = (onRefresh: () => Promise<void>) => {
     if (!lastRefresh) return 'Starting...';
 
     const now = new Date();
-    const nextRefresh = new Date(lastRefresh.getTime() + 300000); // 5 minutes
+    const nextRefresh = new Date(lastRefresh.getTime() + 900000); // 15 minutes
     const diffMs = nextRefresh.getTime() - now.getTime();
 
     if (diffMs <= 0) return 'Refreshing...';
@@ -76,7 +76,7 @@ export const useAutoRefresh = (onRefresh: () => Promise<void>) => {
   // Manual refresh function
   const handleManualRefresh = async () => {
     setLastRefresh(new Date());
-    setCountdown(300); // Reset countdown
+    setCountdown(900); // Reset countdown
     await onRefresh();
   };
 
@@ -108,7 +108,7 @@ export const useAutoRefresh = (onRefresh: () => Promise<void>) => {
     const interval = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
-          return 300; // Reset to 5 minutes
+          return 900; // Reset to 15 minutes
         }
         return prev - 1;
       });

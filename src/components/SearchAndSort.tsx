@@ -9,6 +9,7 @@ interface SearchAndSortProps {
   sortBy: string;
   sortOrder: string;
   handleSort: (field: string) => void;
+  toggleSortOrder: () => void;
   filteredCoins: any[];
   coins: any[];
 }
@@ -21,12 +22,11 @@ const SearchAndSort: React.FC<SearchAndSortProps> = ({
   sortBy, 
   sortOrder, 
   handleSort, 
-  filteredCoins, 
-  coins 
+  toggleSortOrder
 }) => {
   return (
-    <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg p-6 mb-8 border border-blue-200">
-      <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+    <div className="bg-white rounded-xl shadow-sm p-6 mb-8 border border-gray-100">
+      <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
         {/* Search */}
         <div className="flex-1 max-w-md">
           <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
@@ -38,7 +38,7 @@ const SearchAndSort: React.FC<SearchAndSortProps> = ({
             placeholder="Search by name or symbol..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
           />
         </div>
 
@@ -51,7 +51,7 @@ const SearchAndSort: React.FC<SearchAndSortProps> = ({
             id="timeframe"
             value={timeframe}
             onChange={(e) => setTimeframe(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
           >
             <option value="1h">1 Hour</option>
             <option value="4h">4 Hours</option>
@@ -60,7 +60,7 @@ const SearchAndSort: React.FC<SearchAndSortProps> = ({
         </div>
 
         {/* Sort Controls */}
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <div>
             <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 mb-2">
               Sort by
@@ -69,7 +69,7 @@ const SearchAndSort: React.FC<SearchAndSortProps> = ({
               id="sortBy"
               value={sortBy}
               onChange={(e) => handleSort(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
             >
               <option value="market_cap">Market Cap</option>
               <option value="name">Name</option>
@@ -86,18 +86,14 @@ const SearchAndSort: React.FC<SearchAndSortProps> = ({
               Order
             </label>
             <Button
-              onClick={() => handleSort(sortBy)}
+              onClick={toggleSortOrder}
               variant="ghost"
+              className="px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
             >
               {sortOrder === 'asc' ? '↑ Asc' : '↓ Desc'}
             </Button>
           </div>
         </div>
-      </div>
-
-      {/* Results Count */}
-      <div className="mt-4 text-sm text-gray-600">
-        Showing {filteredCoins.length} of {coins.length} cryptocurrencies
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ interface MarketOverviewProps {
   sortBy: string;
   sortOrder: string;
   handleSort: (field: string) => void;
+  toggleSortOrder: () => void;
   filteredCoins: any[];
   coins: any[];
   loading: boolean;
@@ -19,7 +20,6 @@ interface MarketOverviewProps {
   autoRefreshEnabled: boolean;
   toggleAutoRefresh: () => void;
   getTimeSinceRefresh: () => string;
-  countdown: number;
   rateLimitInfo: {
     requestsThisMinute: number;
     lastReset: number;
@@ -35,6 +35,7 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({
   sortBy,
   sortOrder,
   handleSort,
+  toggleSortOrder,
   filteredCoins,
   coins,
   loading,
@@ -43,7 +44,6 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({
   autoRefreshEnabled,
   toggleAutoRefresh,
   getTimeSinceRefresh,
-  countdown,
   rateLimitInfo,
   MAX_REQUESTS_PER_MINUTE
 }) => {
@@ -58,6 +58,7 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({
         sortBy={sortBy}
         sortOrder={sortOrder}
         handleSort={handleSort}
+        toggleSortOrder={toggleSortOrder}
         filteredCoins={filteredCoins}
         coins={coins}
       />
@@ -70,7 +71,6 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({
         autoRefreshEnabled={autoRefreshEnabled}
         toggleAutoRefresh={toggleAutoRefresh}
         getTimeSinceRefresh={getTimeSinceRefresh}
-        countdown={countdown}
         rateLimitInfo={rateLimitInfo}
         MAX_REQUESTS_PER_MINUTE={MAX_REQUESTS_PER_MINUTE}
       />

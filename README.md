@@ -4,7 +4,7 @@ A comprehensive React application for analyzing cryptocurrency swing trading opp
 
 ## Features
 
-- **Real-time Market Data**: Top 100 cryptocurrencies with live price updates
+- **Real-time Market Data**: Top cryptocurrencies with live price updates
 - **Technical Analysis**: 50/200 EMA crossovers, RSI, MACD, Bollinger Bands
 - **Swing Trading Signals**: Advanced scoring system with quality indicators
 - **Short-term Predictions**: 4-hour and 1-day price momentum analysis

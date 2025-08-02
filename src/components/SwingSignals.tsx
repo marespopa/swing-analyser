@@ -26,7 +26,7 @@ const SwingSignals: React.FC<SwingSignalsProps> = ({
 
   // Filter and sort coins based on current settings
   const filteredAndSortedCoins = useMemo(() => {
-    let filtered = viewMode === 'buy-signals' ? swingSignals : allAnalyzedCoins;
+    const filtered = viewMode === 'buy-signals' ? swingSignals : allAnalyzedCoins;
     
     // Sort the filtered coins
     return [...filtered].sort((a, b) => {

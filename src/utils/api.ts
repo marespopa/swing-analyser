@@ -91,7 +91,9 @@ export class CoinGeckoAPI {
 
   async fetchTop100Coins(): Promise<Coin[]> {
     const apiKey = import.meta.env.VITE_COINGECKO_API_KEY;
-    const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false&price_change_percentage=1h,4h,24h&x_cg_demo_api_key=${apiKey}`;
+    // Fetch 250 coins (1 page) to optimize API usage while maintaining good coverage
+    // This ensures we have ~200 meaningful coins after filtering
+    const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false&price_change_percentage=1h,4h,24h&x_cg_demo_api_key=${apiKey}`;
     
     return this.makeRequest<Coin[]>(url);
   }
@@ -110,7 +112,7 @@ export class CoinGeckoAPI {
 
   async smartBatchProcessing(coinIds: string[], days = 200): Promise<Record<string, HistoricalData | null>> {
     const results: Record<string, HistoricalData | null> = {};
-    const batchSize = 2;
+    const batchSize = 4;
     
     for (let i = 0; i < coinIds.length; i += batchSize) {
       const batch = coinIds.slice(i, i + batchSize);
@@ -163,7 +165,7 @@ export const smartBatchProcessing = async (
   recordRequest: () => void
 ): Promise<Record<string, HistoricalData | null>> => {
   const results: Record<string, HistoricalData | null> = {};
-  const batchSize = 2; // Even smaller batches to be more conservative
+  const batchSize = 4; // Increased batch size for faster processing of more coins
   const totalBatches = Math.ceil(coinIds.length / batchSize);
   let processedCount = 0;
 

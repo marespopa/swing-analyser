@@ -44,6 +44,10 @@ export const useCoinData = () => {
     }
   };
 
+  const toggleSortOrder = () => {
+    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+  };
+
   const getMarketSentiment = (): MarketSentiment => {
     if (coins.length === 0) return { 
       sentiment: 'neutral', 
@@ -196,10 +200,14 @@ export const useCoinData = () => {
           bValue = b.market_cap;
       }
 
+      // Handle null/undefined values
+      if (aValue === null || aValue === undefined) aValue = 0;
+      if (bValue === null || bValue === undefined) bValue = 0;
+
       if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
       } else {
-        return aValue < bValue ? 1 : -1;
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
       }
     });
 
@@ -238,6 +246,7 @@ export const useCoinData = () => {
     setTimeframe,
     fetchTop100Coins,
     handleSort,
+    toggleSortOrder,
     getMarketSentiment,
     getSentimentColor,
     getSentimentIcon,

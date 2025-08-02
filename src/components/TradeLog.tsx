@@ -39,8 +39,6 @@ const TradeLog: React.FC = () => {
   const [, deleteTrade] = useAtom(deleteTradeAtom);
   const [, clearAllTrades] = useAtom(clearAllTradesAtom);
 
-
-
   const handleAddManualTrade = () => {
     const entryPrice = parseFloat(manualTrade.entryPrice);
     const targetPrice = parseFloat(manualTrade.targetPrice);
@@ -116,81 +114,115 @@ const TradeLog: React.FC = () => {
     }).format(amount);
   };
 
+  // Calculate total portfolio value
+  const totalPortfolioValue = trades.reduce((sum, trade) => sum + trade.totalValue, 0);
+  const averageTradeValue = trades.length > 0 ? totalPortfolioValue / trades.length : 0;
+
   return (
     <div className="space-y-6">
-      {/* Statistics Overview */}
-      <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Trading Statistics</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="text-lg font-bold text-blue-800">{stats.totalTrades}</div>
-            <div className="text-xs text-blue-600">Total Trades</div>
-          </div>
-          <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
-            <div className="text-lg font-bold text-green-800">{stats.openTrades}</div>
-            <div className="text-xs text-green-600">Open</div>
-          </div>
-          <div className="text-center p-3 bg-purple-50 rounded-lg border border-purple-200">
-            <div className="text-lg font-bold text-purple-800">{stats.closedTrades}</div>
-            <div className="text-xs text-purple-600">Closed</div>
-          </div>
-          <div className={`text-center p-3 rounded-lg border ${
-            stats.totalProfitLoss >= 0 
-              ? 'bg-green-50 border-green-200' 
-              : 'bg-red-50 border-red-200'
-          }`}>
-            <div className={`text-lg font-bold ${
-              stats.totalProfitLoss >= 0 ? 'text-green-800' : 'text-red-800'
-            }`}>
-              {formatCurrency(stats.totalProfitLoss)}
+      {/* Statistics Overview - Card-based design */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Statistics Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistics</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+                <span className="text-sm text-gray-600">Total Trades</span>
+              </div>
+              <span className="font-semibold text-gray-900">{stats.totalTrades}</span>
             </div>
-            <div className={`text-xs ${
-              stats.totalProfitLoss >= 0 ? 'text-green-600' : 'text-red-600'
-            }`}>
-              P&L
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm text-gray-600">Open Trades</span>
+              </div>
+              <span className="font-semibold text-gray-900">{stats.openTrades}</span>
             </div>
-          </div>
-          <div className={`text-center p-3 rounded-lg border ${
-            stats.totalProfitLossPercentage >= 0 
-              ? 'bg-green-50 border-green-200' 
-              : 'bg-red-50 border-red-200'
-          }`}>
-            <div className={`text-lg font-bold ${
-              stats.totalProfitLossPercentage >= 0 ? 'text-green-800' : 'text-red-800'
-            }`}>
-              {stats.totalProfitLossPercentage.toFixed(2)}%
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <span className="text-sm text-gray-600">Closed Trades</span>
+              </div>
+              <span className="font-semibold text-gray-900">{stats.closedTrades}</span>
             </div>
-            <div className={`text-xs ${
-              stats.totalProfitLossPercentage >= 0 ? 'text-green-600' : 'text-red-600'
-            }`}>
-              P&L %
-            </div>
-          </div>
-          <div className="text-center p-3 bg-orange-50 rounded-lg border border-orange-200">
-            <div className="text-lg font-bold text-orange-800">{stats.winRate.toFixed(1)}%</div>
-            <div className="text-xs text-orange-600">Win Rate</div>
           </div>
         </div>
-        
-        {stats.bestTrade && (
-          <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
-            <div className="text-sm font-medium text-green-800">Best Trade</div>
-            <div className="text-xs text-green-600">
-              {stats.bestTrade.coinSymbol} - {formatCurrency(stats.bestTrade.profitLoss || 0)} 
-              ({stats.bestTrade.profitLossPercentage?.toFixed(2)}%)
+
+        {/* P&L Overview Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-emerald-50 rounded-lg p-4 mb-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm text-emerald-700">Total P&L</p>
+                <p className={`text-2xl font-bold ${stats.totalProfitLoss >= 0 ? 'text-emerald-800' : 'text-red-800'}`}>
+                  {formatCurrency(stats.totalProfitLoss)}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className={`text-sm font-medium ${stats.totalProfitLossPercentage >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                  {stats.totalProfitLossPercentage >= 0 ? '+' : ''}{stats.totalProfitLossPercentage.toFixed(2)}%
+                </p>
+                <div className={`text-xs ${stats.totalProfitLossPercentage >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {stats.totalProfitLossPercentage >= 0 ? '↗' : '↘'} {stats.totalProfitLossPercentage >= 0 ? 'Gain' : 'Loss'}
+                </div>
+              </div>
             </div>
           </div>
-        )}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Win Rate</span>
+              <span className="font-medium text-gray-900">{stats.winRate.toFixed(1)}%</span>
+            </div>
+            {stats.bestTrade && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Best Trade</span>
+                <span className="font-medium text-emerald-700">
+                  {stats.bestTrade.coinSymbol} +{formatCurrency(stats.bestTrade.profitLoss || 0)}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Portfolio Summary Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <p className="text-sm text-gray-600">Portfolio</p>
+              <p className="text-xs text-gray-500">Trading Summary</p>
+            </div>
+            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+              <div className="w-4 h-4 bg-emerald-500 rounded-full"></div>
+            </div>
+          </div>
+          <div className="bg-emerald-600 rounded-lg p-4 text-white">
+            <p className="text-sm opacity-90">Total Value</p>
+            <p className="text-2xl font-bold">{formatCurrency(totalPortfolioValue)}</p>
+          </div>
+          <div className="mt-3 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Avg Trade</span>
+              <span className="font-medium text-gray-900">{formatCurrency(averageTradeValue)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Active Trades</span>
+              <span className="font-medium text-emerald-700">{stats.openTrades}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Filters and Controls */}
-      <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
-          <h3 className="text-lg font-bold text-gray-900">Trade History</h3>
-          <div className="flex items-center gap-2">
+      {/* Controls Card */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900">Trade Management</h3>
+          <div className="flex items-center gap-3">
             <Button
               variant="primary"
               onClick={() => setShowAddTrade(!showAddTrade)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium"
             >
               {showAddTrade ? 'Cancel' : 'Add Trade'}
             </Button>
@@ -201,6 +233,7 @@ const TradeLog: React.FC = () => {
                   clearAllTrades();
                 }
               }}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium"
             >
               Clear All
             </Button>
@@ -209,37 +242,37 @@ const TradeLog: React.FC = () => {
 
         {/* Manual Trade Form */}
         {showAddTrade && (
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <h4 className="font-medium text-gray-900 mb-3">Add Manual Trade</h4>
+          <div className="mb-6 p-6 bg-gray-50 rounded-xl border border-gray-200">
+            <h4 className="font-semibold text-gray-900 mb-4">Add Manual Trade</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Coin Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Coin Name *</label>
                 <input
                   type="text"
                   placeholder="e.g., Bitcoin"
                   value={manualTrade.coinName}
                   onChange={(e) => setManualTrade({ ...manualTrade, coinName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Symbol *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Symbol *</label>
                 <input
                   type="text"
                   placeholder="e.g., BTC"
                   value={manualTrade.coinSymbol}
                   onChange={(e) => setManualTrade({ ...manualTrade, coinSymbol: e.target.value.toUpperCase() })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Action *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Action *</label>
                 <select
                   value={manualTrade.action}
                   onChange={(e) => setManualTrade({ ...manualTrade, action: e.target.value as 'BUY' | 'SELL' | 'HOLD' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 >
                   <option value="BUY">Buy</option>
                   <option value="SELL">Sell</option>
@@ -248,66 +281,66 @@ const TradeLog: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Entry Price *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Entry Price *</label>
                 <input
                   type="number"
                   step="0.0001"
                   placeholder="e.g., 45000.00"
                   value={manualTrade.entryPrice}
                   onChange={(e) => setManualTrade({ ...manualTrade, entryPrice: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Target Price</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Target Price</label>
                 <input
                   type="number"
                   step="0.0001"
                   placeholder="e.g., 50000.00"
                   value={manualTrade.targetPrice}
                   onChange={(e) => setManualTrade({ ...manualTrade, targetPrice: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Stop Loss</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Stop Loss</label>
                 <input
                   type="number"
                   step="0.0001"
                   placeholder="e.g., 40000.00"
                   value={manualTrade.stopLoss}
                   onChange={(e) => setManualTrade({ ...manualTrade, stopLoss: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Investment Amount (USDT) *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Investment Amount (USDT) *</label>
                 <input
                   type="number"
                   step="0.01"
                   placeholder="e.g., 100"
                   value={manualTrade.investmentAmount}
                   onChange={(e) => setManualTrade({ ...manualTrade, investmentAmount: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 />
               </div>
             </div>
             
-
-            
-            <div className="mt-4 flex gap-2">
+            <div className="mt-6 flex gap-3">
               <Button
                 variant="success"
                 onClick={handleAddManualTrade}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium"
               >
                 Add Trade
               </Button>
               <Button
                 variant="secondary"
                 onClick={() => setShowAddTrade(false)}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-lg font-medium"
               >
                 Cancel
               </Button>
@@ -316,13 +349,13 @@ const TradeLog: React.FC = () => {
         )}
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value as any })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             >
               <option value="ALL">All</option>
               <option value="OPEN">Open</option>
@@ -332,11 +365,11 @@ const TradeLog: React.FC = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Action</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Action</label>
             <select
               value={filters.action}
               onChange={(e) => setFilters({ ...filters, action: e.target.value as any })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             >
               <option value="ALL">All</option>
               <option value="BUY">Buy</option>
@@ -346,11 +379,11 @@ const TradeLog: React.FC = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
             <select
               value={filters.dateRange}
               onChange={(e) => setFilters({ ...filters, dateRange: e.target.value as any })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             >
               <option value="ALL">All Time</option>
               <option value="TODAY">Today</option>
@@ -360,22 +393,22 @@ const TradeLog: React.FC = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
             <input
               type="text"
               placeholder="Search coins..."
               value={filters.searchTerm}
               onChange={(e) => setFilters({ ...filters, searchTerm: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
         </div>
       </div>
 
-      {/* Trade List */}
-      <div className="bg-white rounded-xl shadow-md border border-gray-200">
+      {/* Trade List Card */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {trades.length === 0 ? (
-          <div className="p-8 text-center">
+          <div className="p-12 text-center">
             <div className="text-gray-500 text-lg mb-2">No trades found</div>
             <p className="text-gray-400">Add your first trade to start tracking your swing trading performance</p>
           </div>
@@ -384,85 +417,146 @@ const TradeLog: React.FC = () => {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coin</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P&L</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trade Info</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entry/Exit</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk/Reward</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status & P&L</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {trades.map((trade) => (
                   <tr key={trade.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{trade.coinName}</div>
-                        <div className="text-sm text-gray-500">{trade.coinSymbol.toUpperCase()}</div>
+                    {/* Trade Info Column */}
+                    <td className="px-4 py-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-medium text-gray-900">{trade.coinName}</div>
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            trade.action === 'BUY' 
+                              ? 'bg-emerald-100 text-emerald-800' 
+                              : trade.action === 'SELL'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {trade.action}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500">{trade.coinSymbol.toUpperCase()}</div>
+                        <div className="text-xs text-gray-400">{formatDate(trade.timestamp)}</div>
                       </div>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        trade.action === 'BUY' 
-                          ? 'bg-green-100 text-green-800' 
-                          : trade.action === 'SELL'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {trade.action}
-                      </span>
+
+                    {/* Entry/Exit Column */}
+                    <td className="px-4 py-3">
+                      <div className="space-y-1">
+                        <div className="text-sm">
+                          <span className="text-gray-500">Entry: </span>
+                          <span className="font-medium text-gray-900">{formatCurrency(trade.price)}</span>
+                        </div>
+                        {trade.closePrice && (
+                          <div className="text-sm">
+                            <span className="text-gray-500">Exit: </span>
+                            <span className="font-medium text-gray-900">{formatCurrency(trade.closePrice)}</span>
+                          </div>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(trade.price)}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {trade.quantity}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(trade.totalValue)}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        trade.status === 'OPEN' 
-                          ? 'bg-blue-100 text-blue-800' 
-                          : trade.status === 'CLOSED'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {trade.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      {trade.profitLoss !== undefined ? (
-                        <span className={`text-sm font-medium ${
-                          trade.profitLoss >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {formatCurrency(trade.profitLoss)}
-                          {trade.profitLossPercentage && (
-                            <span className="ml-1">
-                              ({trade.profitLossPercentage >= 0 ? '+' : ''}{trade.profitLossPercentage.toFixed(2)}%)
+
+                    {/* Risk/Reward Column */}
+                    <td className="px-4 py-3">
+                      <div className="space-y-1">
+                        {trade.stopLoss && (
+                          <div className="text-sm">
+                            <span className="text-gray-500">SL: </span>
+                            <span className="text-red-600 font-medium">{formatCurrency(trade.stopLoss)}</span>
+                          </div>
+                        )}
+                        {trade.takeProfit && (
+                          <div className="text-sm">
+                            <span className="text-gray-500">TP: </span>
+                            <span className="text-emerald-600 font-medium">{formatCurrency(trade.takeProfit)}</span>
+                          </div>
+                        )}
+                        {trade.stopLoss && trade.takeProfit && (
+                          <div className="text-xs">
+                            <span className="text-gray-500">R/R: </span>
+                            <span className={`font-medium ${
+                              (() => {
+                                const risk = Math.abs(trade.price - trade.stopLoss);
+                                const reward = Math.abs(trade.takeProfit - trade.price);
+                                const ratio = reward / risk;
+                                return ratio >= 3 ? 'text-emerald-600' : 
+                                       ratio >= 2 ? 'text-blue-600' : 
+                                       ratio >= 1.5 ? 'text-yellow-600' : 'text-red-600';
+                              })()
+                            }`}>
+                              {(() => {
+                                const risk = Math.abs(trade.price - trade.stopLoss);
+                                const reward = Math.abs(trade.takeProfit - trade.price);
+                                const ratio = reward / risk;
+                                return ratio.toFixed(1) + ':1';
+                              })()}
                             </span>
-                          )}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Position Column */}
+                    <td className="px-4 py-3">
+                      <div className="space-y-1">
+                        <div className="text-sm">
+                          <span className="text-gray-500">Qty: </span>
+                          <span className="font-medium text-gray-900">{trade.quantity.toFixed(4)}</span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-gray-500">Total: </span>
+                          <span className="font-medium text-gray-900">{formatCurrency(trade.totalValue)}</span>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Status & P&L Column */}
+                    <td className="px-4 py-3">
+                      <div className="space-y-1">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          trade.status === 'OPEN' 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : trade.status === 'CLOSED'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {trade.status}
                         </span>
-                      ) : (
-                        <span className="text-sm text-gray-500">-</span>
-                      )}
+                        {trade.profitLoss !== undefined && (
+                          <div className="text-sm">
+                            <span className={`font-medium ${
+                              trade.profitLoss >= 0 ? 'text-emerald-600' : 'text-red-600'
+                            }`}>
+                              {formatCurrency(trade.profitLoss)}
+                            </span>
+                            {trade.profitLossPercentage && (
+                              <div className="text-xs text-gray-500">
+                                {trade.profitLossPercentage >= 0 ? '+' : ''}{trade.profitLossPercentage.toFixed(2)}%
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(trade.timestamp)}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex gap-1">
+
+                    {/* Actions Column */}
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col gap-1">
                         {trade.status === 'OPEN' && (
                           <>
                             <Button
                               variant="primary"
                               size="sm"
                               onClick={() => setSelectedTrade(trade)}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded text-xs w-full"
                             >
                               Close
                             </Button>
@@ -470,12 +564,12 @@ const TradeLog: React.FC = () => {
                               variant="warning"
                               size="sm"
                               onClick={() => setSelectedTrade(trade)}
+                              className="bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded text-xs w-full"
                             >
                               Cancel
                             </Button>
                           </>
                         )}
-
                         <Button
                           variant="danger"
                           size="sm"
@@ -484,6 +578,7 @@ const TradeLog: React.FC = () => {
                               deleteTrade(trade.id);
                             }
                           }}
+                          className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs w-full"
                         >
                           Delete
                         </Button>
@@ -500,42 +595,42 @@ const TradeLog: React.FC = () => {
       {/* Modals */}
       {selectedTrade && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
               {selectedTrade.status === 'OPEN' ? 'Close Trade' : 'Trade Details'}
             </h3>
             
             {selectedTrade.status === 'OPEN' && (
               <div className="space-y-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Close Price</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Close Price</label>
                   <input
                     type="number"
                     step="0.0001"
                     placeholder="Enter close price"
                     value={closePrice}
                     onChange={(e) => setClosePrice(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                 </div>
               </div>
             )}
             
-            <div className="flex gap-2 mt-6">
+            <div className="flex gap-3 mt-6">
               {selectedTrade.status === 'OPEN' && (
                 <>
                   <Button
                     variant="success"
                     onClick={() => handleCloseTrade(selectedTrade.id)}
                     disabled={!closePrice || parseFloat(closePrice) <= 0}
-                    className="flex-1"
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium"
                   >
                     Close Trade
                   </Button>
                   <Button
                     variant="danger"
                     onClick={() => handleCancelTrade(selectedTrade.id)}
-                    className="flex-1"
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium"
                   >
                     Cancel Trade
                   </Button>
@@ -545,6 +640,7 @@ const TradeLog: React.FC = () => {
               <Button
                 variant="secondary"
                 onClick={() => setSelectedTrade(null)}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium"
               >
                 Cancel
               </Button>

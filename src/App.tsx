@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Provider } from 'jotai';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import TabNavigation from './components/TabNavigation';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -8,7 +9,6 @@ import MarketOverview from './components/MarketOverview';
 import ProcessingStatus from './components/ProcessingStatus';
 import SwingStrategy from './components/SwingStrategy';
 import AnalysisSummary from './components/AnalysisSummary';
-import SwingAnalysisSummary from './components/SwingAnalysisSummary';
 import SwingSignals from './components/SwingSignals';
 import TradeLog from './components/TradeLog';
 import Button from './components/Button';
@@ -19,9 +19,7 @@ import { useSwingAnalysis } from './hooks/useSwingAnalysis';
 import { getErrorMessage } from './utils/errorMessages';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'market' | 'swing' | 'trades'>('market');
   const [apiError, setApiError] = useState<string | null>(null);
-
 
   // Use custom hooks
   const {
@@ -39,15 +37,14 @@ function App() {
     setTimeframe,
     fetchTop100Coins,
     handleSort,
+    toggleSortOrder,
     getMarketSentiment,
-    getSentimentColor,
     getSentimentIcon
   } = useCoinData();
 
   const {
     setLastRefresh,
     autoRefreshEnabled,
-    countdown,
     handleManualRefresh: handleRefresh,
     toggleAutoRefresh,
     getTimeSinceRefresh
@@ -76,7 +73,7 @@ function App() {
     allAnalyzedCoins,
     recalculateSignals,
     progress
-  } = useSwingAnalysis(coins as any, activeTab);
+  } = useSwingAnalysis(coins as any);
 
   // Manual refresh function
   const handleManualRefresh = async () => {
@@ -88,10 +85,8 @@ function App() {
       const data = await fetchTop100Coins();
       setCoins(data);
 
-      // If on swing tab, recalculate signals
-      if (activeTab === 'swing') {
-        recalculateSignals(); // Recalculate swing signals with new data
-      }
+      // Always recalculate signals since we're using routing
+      recalculateSignals();
     } catch (error: any) {
       setApiError('network');
     } finally {
@@ -102,21 +97,16 @@ function App() {
   // Handle retry action
   const handleRetry = () => {
     setApiError(null);
-    if (activeTab === 'swing') {
-      // Recalculate swing signals
-      // This would need to be implemented based on your swing analysis logic
-    } else {
-      window.location.reload();
-    }
+    window.location.reload();
   };
 
   if (loading) {
-    return <LoadingSpinner message="Loading top 100 cryptocurrencies..." />;
+    return <LoadingSpinner message="Loading cryptocurrencies..." />;
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center">
         <div className="text-center bg-white p-8 rounded-xl shadow-lg max-w-md">
           <h2 className="text-2xl font-bold text-red-600 mb-4">Error</h2>
           <p className="text-gray-700 mb-6">{error}</p>
@@ -133,96 +123,89 @@ function App() {
 
   return (
     <Provider>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-        <Header
-          loading={loading}
-          coins={coins}
-          activeTab={activeTab}
-          swingSignals={swingSignals}
-          allAnalyzedCoins={allAnalyzedCoins}
-          getMarketSentiment={getMarketSentiment}
-          getSentimentColor={getSentimentColor}
-          getSentimentIcon={getSentimentIcon}
-        />
-
-        <TabNavigation activeTab={activeTab} setActiveTab={(tab: string) => setActiveTab(tab as 'market' | 'swing' | 'trades')} />
-
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'market' ? (
-          <MarketOverview
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            timeframe={timeframe}
-            setTimeframe={setTimeframe}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            handleSort={handleSort}
-            filteredCoins={filteredCoins}
-            coins={coins}
+      <Router>
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-100">
+          <Header
             loading={loading}
-            emaLoading={emaLoading}
-            handleManualRefresh={handleRefresh}
-            autoRefreshEnabled={autoRefreshEnabled}
-            toggleAutoRefresh={toggleAutoRefresh}
-            getTimeSinceRefresh={getTimeSinceRefresh}
-            countdown={countdown}
-            rateLimitInfo={rateLimitInfo}
-            MAX_REQUESTS_PER_MINUTE={MAX_REQUESTS_PER_MINUTE}
+            coins={coins}
+            swingSignals={swingSignals}
+            allAnalyzedCoins={allAnalyzedCoins}
+            getMarketSentiment={getMarketSentiment}
+            getSentimentIcon={getSentimentIcon}
           />
-        ) : activeTab === 'trades' ? (
-          <TradeLog />
-        ) : (
-          <>
-            {/* API Error Banner */}
-            <ErrorBanner errorType={apiError} getErrorMessage={getErrorMessage} handleRetry={handleRetry} />
 
-            {/* Swing Strategy Content */}
-            <SwingStrategy
-              emaLoading={emaLoading}
-              swingSignals={swingSignals}
-              allAnalyzedCoins={allAnalyzedCoins}
-              loading={loading}
-              onRefresh={handleRefresh}
-              onRecalculateSignals={recalculateSignals}
-              autoRefreshEnabled={autoRefreshEnabled}
-              onToggleAutoRefresh={toggleAutoRefresh}
-              getTimeSinceRefresh={getTimeSinceRefresh}
-              countdown={countdown}
-              rateLimitInfo={rateLimitInfo}
-              MAX_REQUESTS_PER_MINUTE={MAX_REQUESTS_PER_MINUTE}
-            />
+          <TabNavigation />
 
-            {/* Enhanced Loading State with Progress */}
-            <ProcessingStatus
-              emaLoading={emaLoading}
-              onCancel={() => setEmaLoading(false)}
-              realProgress={progress}
-            />
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <Routes>
+              {/* Market Overview Route */}
+              <Route path="/market" element={
+                <MarketOverview
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                  timeframe={timeframe}
+                  setTimeframe={setTimeframe}
+                  sortBy={sortBy}
+                  sortOrder={sortOrder}
+                  handleSort={handleSort}
+                  toggleSortOrder={toggleSortOrder}
+                  filteredCoins={filteredCoins}
+                  coins={coins}
+                  loading={loading}
+                  emaLoading={emaLoading}
+                  handleManualRefresh={handleRefresh}
+                  autoRefreshEnabled={autoRefreshEnabled}
+                  toggleAutoRefresh={toggleAutoRefresh}
+                  getTimeSinceRefresh={getTimeSinceRefresh}
+                  rateLimitInfo={rateLimitInfo}
+                  MAX_REQUESTS_PER_MINUTE={MAX_REQUESTS_PER_MINUTE}
+                />
+              } />
 
-            {/* Analysis Summary */}
-            <AnalysisSummary
-              swingSignals={swingSignals}
-              allAnalyzedCoins={allAnalyzedCoins}
-            />
+              {/* Swing Strategy Route */}
+              <Route path="/swing" element={
+                <>
+                  {/* API Error Banner */}
+                  <ErrorBanner errorType={apiError} getErrorMessage={getErrorMessage} handleRetry={handleRetry} />
 
-            {/* Swing Analysis Summary */}
-            <SwingAnalysisSummary
-              totalCoins={coins.length}
-              analyzedCoins={allAnalyzedCoins}
-              swingSignals={swingSignals}
-              isVisible={!emaLoading && allAnalyzedCoins.length > 0}
-            />
+                  {/* Swing Strategy Content */}
+                  <SwingStrategy
+                    emaLoading={emaLoading}
+                    swingSignals={swingSignals}
+                    allAnalyzedCoins={allAnalyzedCoins}
+                  />
 
-            {/* Swing Analysis Results */}
-            <SwingSignals
-              swingSignals={swingSignals}
-              allAnalyzedCoins={allAnalyzedCoins}
-              emaLoading={emaLoading}
-            />
-          </>
-        )}
-        </main>
-      </div>
+                  {/* Enhanced Loading State with Progress */}
+                  <ProcessingStatus
+                    emaLoading={emaLoading}
+                    onCancel={() => setEmaLoading(false)}
+                    realProgress={progress}
+                  />
+
+                  {/* Analysis Summary */}
+                  <AnalysisSummary
+                    swingSignals={swingSignals}
+                    allAnalyzedCoins={allAnalyzedCoins}
+                  />
+
+                  {/* Swing Analysis Results */}
+                  <SwingSignals
+                    swingSignals={swingSignals}
+                    allAnalyzedCoins={allAnalyzedCoins}
+                    emaLoading={emaLoading}
+                  />
+                </>
+              } />
+
+              {/* Trade Log Route */}
+              <Route path="/trades" element={<TradeLog />} />
+
+              {/* Default redirect to market */}
+              <Route path="/" element={<Navigate to="/market" replace />} />
+            </Routes>
+          </main>
+        </div>
+      </Router>
     </Provider>
   );
 }

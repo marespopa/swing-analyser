@@ -10,19 +10,19 @@ interface AnalyzedCoin extends Coin {
   emaData: EMAData;
 }
 
-export const useSwingAnalysis = (coins: Coin[], activeTab: string) => {
+export const useSwingAnalysis = (coins: Coin[]) => {
   const [emaLoading, setEmaLoading] = useState(false);
   const [swingSignals, setSwingSignals] = useState<AnalyzedCoin[]>([]);
   const [allAnalyzedCoins, setAllAnalyzedCoins] = useState<AnalyzedCoin[]>([]);
   const [progress, setProgress] = useState({ current: 0, total: 0, currentCoin: '' });
   const [historicalData, setHistoricalData] = useAtom(historicalDataAtom);
 
-  // Calculate swing signals when switching to swing tab
+  // Calculate swing signals when coins are available
   useEffect(() => {
-    if (activeTab === 'swing' && coins.length > 0 && swingSignals.length === 0) {
+    if (coins.length > 0 && swingSignals.length === 0) {
       performSwingAnalysis();
     }
-  }, [activeTab, coins, swingSignals.length]);
+  }, [coins, swingSignals.length]);
 
   const performSwingAnalysis = async () => {
     if (coins.length === 0) return;
@@ -33,7 +33,7 @@ export const useSwingAnalysis = (coins: Coin[], activeTab: string) => {
     try {
       // Use comprehensive swing trading portfolio strategy
       const comprehensiveCoins = getComprehensiveSwingPortfolio(coins);
-      const testCoins = comprehensiveCoins.slice(0, 25); // Increased to 25 for better coverage
+      const testCoins = comprehensiveCoins.slice(0, 30); // Optimized to 30 for API efficiency
       
       // Update progress with actual number of coins to analyze
       setProgress({ current: 0, total: testCoins.length, currentCoin: '' });

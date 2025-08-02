@@ -1,3 +1,5 @@
+import React from "react";
+
 export const formatPrice = (price: number): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -14,7 +16,7 @@ export const formatMarketCap = (marketCap: number): string => {
   return `$${marketCap.toLocaleString()}`;
 };
 
-export const formatPercentage = (percentage: number | null | undefined): JSX.Element | string => {
+export const formatPercentage = (percentage: number | null | undefined): React.ReactNode | string => {
   if (percentage === null || percentage === undefined) {
     return <span className="text-gray-400">N/A</span>;
   }
