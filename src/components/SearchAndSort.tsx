@@ -10,6 +10,8 @@ interface SearchAndSortProps {
   toggleSortOrder: () => void;
   filteredCoins: any[];
   coins: any[];
+  timeframe: string;
+  setTimeframe: (timeframe: string) => void;
 }
 
 const SearchAndSort: React.FC<SearchAndSortProps> = ({ 
@@ -17,7 +19,10 @@ const SearchAndSort: React.FC<SearchAndSortProps> = ({
   setSearchTerm, 
   sortBy, 
   sortOrder, 
-  toggleSortOrder
+  handleSort,
+  toggleSortOrder,
+  timeframe,
+  setTimeframe
 }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 mb-8 border border-gray-100">
@@ -50,7 +55,33 @@ const SearchAndSort: React.FC<SearchAndSortProps> = ({
           </div>
         </div>
 
-
+        {/* Timeframe Selector */}
+        <div className="flex flex-col gap-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Timeframe
+          </label>
+          <div className="flex gap-1">
+            {[
+              { value: '1h', label: '1h' },
+              { value: '1d', label: '1d' },
+              { value: '1w', label: '1w' }
+            ].map((tf) => (
+              <Button
+                key={tf.value}
+                onClick={() => setTimeframe(tf.value)}
+                variant={timeframe === tf.value ? 'primary' : 'ghost'}
+                size="sm"
+                className={`px-3 py-2 text-xs font-medium ${
+                  timeframe === tf.value 
+                    ? 'bg-emerald-600 text-white' 
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                {tf.label}
+              </Button>
+            ))}
+          </div>
+        </div>
 
         {/* Sort Controls */}
         <div className="flex gap-3">
@@ -58,13 +89,21 @@ const SearchAndSort: React.FC<SearchAndSortProps> = ({
             <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 mb-2">
               Sort by
             </label>
-            <div className="text-sm text-gray-600">
-              Auto-sorted by {sortBy === 'market_cap' ? 'Market Cap' : 
-                sortBy === 'change_1h' ? '1h Change' :
-                sortBy === 'change_4h' ? '4h Change' :
-                sortBy === 'change_1d' ? 'Daily Change' :
-                sortBy === 'change_1w' ? 'Weekly Change' : sortBy}
-            </div>
+            <select
+              id="sortBy"
+              value={sortBy}
+              onChange={(e) => handleSort(e.target.value)}
+              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors bg-white"
+            >
+              <option value="market_cap">Market Cap</option>
+              <option value="price">Price</option>
+              <option value="volume">Volume (24h)</option>
+              <option value="change_1h">1h Change</option>
+              <option value="change_1d">24h Change</option>
+              <option value="change_1w">7d Change</option>
+              <option value="name">Name (A-Z)</option>
+              <option value="market_cap_rank">Rank</option>
+            </select>
           </div>
 
           <div>

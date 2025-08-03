@@ -1,31 +1,35 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAtomValue } from 'jotai';
-import MarketSentimentWidget from './MarketSentimentWidget';
 import Button from './Button';
 import { tradeStatsAtom } from '../stores/tradeLogStore';
-import { Coin } from '../types';
 
 interface HeaderProps {
   loading: boolean;
-  coins: Coin[];
-  getMarketSentiment: () => {
-    sentiment: string;
-    upCount: number;
-    downCount: number;
-    neutralCount: number;
-    total: number;
-  };
-  getSentimentIcon: (sentiment: string) => string;
   onOpenSettings?: () => void;
+  // Refresh controls props
+  handleManualRefresh?: () => void;
+  autoRefreshEnabled?: boolean;
+  toggleAutoRefresh?: () => void;
+  refreshInterval?: number;
+  getTimeSinceRefresh?: () => string;
+  rateLimitInfo?: {
+    requestsThisMinute: number;
+    lastReset: number;
+  };
+  MAX_REQUESTS_PER_MINUTE?: number;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
   loading, 
-  coins, 
-  getMarketSentiment, 
-  getSentimentIcon,
-  onOpenSettings
+  onOpenSettings,
+  handleManualRefresh,
+  autoRefreshEnabled = false,
+  toggleAutoRefresh,
+  refreshInterval,
+  getTimeSinceRefresh,
+  rateLimitInfo,
+  MAX_REQUESTS_PER_MINUTE = 30
 }) => {
   const location = useLocation();
   const activeTab = location.pathname.substring(1) || 'market'; // Remove leading slash
@@ -61,15 +65,87 @@ const Header: React.FC<HeaderProps> = ({
             <p className="text-gray-600">Real-time cryptocurrency analysis & trading insights</p>
           </div>
 
-          {/* Market Sentiment Widget */}
-          {!loading && coins.length > 0 && activeTab === 'market' && (
-            <div className="flex flex-col sm:flex-row gap-4">
-              <MarketSentimentWidget
-                getMarketSentiment={getMarketSentiment}
-                getSentimentIcon={getSentimentIcon}
-              />
+          {/* Compact Refresh Controls - Only show on market data pages */}
+          {handleManualRefresh && activeTab !== 'trades' && (
+            <div className="flex items-center gap-4 bg-gray-50 rounded-lg p-3 border border-gray-200">
+              {/* Refresh Button */}
+              <Button
+                onClick={handleManualRefresh}
+                disabled={loading}
+                variant="primary"
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Refreshing...
+                  </>
+                ) : (
+                  <>
+                    <span className="mr-1">🔄</span>
+                    Refresh
+                  </>
+                )}
+              </Button>
+
+              {/* Auto-refresh Toggle */}
+              {toggleAutoRefresh && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-600">Auto:</span>
+                  <button
+                    onClick={toggleAutoRefresh}
+                    disabled={loading}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1 ${
+                      autoRefreshEnabled ? 'bg-emerald-600' : 'bg-gray-300'
+                    } ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  >
+                    <span
+                      className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                        autoRefreshEnabled ? 'translate-x-5' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                  <span className={`text-xs font-medium ${
+                    autoRefreshEnabled ? 'text-emerald-600' : 'text-gray-500'
+                  }`}>
+                    {autoRefreshEnabled ? 'ON' : 'OFF'}
+                  </span>
+                  {refreshInterval && (
+                    <span className="text-xs text-gray-500">
+                      ({Math.floor(refreshInterval / 60)}m)
+                    </span>
+                  )}
+
+                </div>
+              )}
+
+              {/* Last Updated */}
+              {getTimeSinceRefresh && (
+                <div className="text-xs text-gray-500">
+                  Updated: {getTimeSinceRefresh()}
+                </div>
+              )}
+
+              {/* Rate Limit */}
+              {rateLimitInfo && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">API:</span>
+                  <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                    rateLimitInfo.requestsThisMinute >= MAX_REQUESTS_PER_MINUTE
+                      ? 'bg-red-100 text-red-700'
+                      : rateLimitInfo.requestsThisMinute >= MAX_REQUESTS_PER_MINUTE * 0.8
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-emerald-100 text-emerald-700'
+                  }`}>
+                    {rateLimitInfo.requestsThisMinute}/{MAX_REQUESTS_PER_MINUTE}
+                  </span>
+                </div>
+              )}
             </div>
           )}
+
+
 
           {/* Trade Stats for Trades Tab */}
           {!loading && activeTab === 'trades' && (
@@ -121,6 +197,8 @@ const Header: React.FC<HeaderProps> = ({
           )}
         </div>
       </div>
+      
+
     </header>
   );
 };

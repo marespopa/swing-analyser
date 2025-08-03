@@ -46,6 +46,7 @@ const AppContent: React.FC = () => {
   const {
     setLastRefresh,
     autoRefreshEnabled,
+    refreshInterval,
     handleManualRefresh: handleRefresh,
     toggleAutoRefresh,
     getTimeSinceRefresh
@@ -122,10 +123,14 @@ const AppContent: React.FC = () => {
       {/* Show Header and TabNavigation for all routes */}
       <Header
         loading={loading}
-        coins={coins}
-        getMarketSentiment={getMarketSentiment}
-        getSentimentIcon={getSentimentIcon}
         onOpenSettings={() => setShowSetupWizard(true)}
+        handleManualRefresh={handleRefresh}
+        autoRefreshEnabled={autoRefreshEnabled}
+        toggleAutoRefresh={toggleAutoRefresh}
+        refreshInterval={refreshInterval}
+        getTimeSinceRefresh={getTimeSinceRefresh}
+        rateLimitInfo={rateLimitInfo}
+        MAX_REQUESTS_PER_MINUTE={MAX_REQUESTS_PER_MINUTE}
       />
       <TabNavigation />
 
@@ -133,52 +138,43 @@ const AppContent: React.FC = () => {
         <Routes>
           {/* Market Overview Route */}
           <Route path="/market" element={
-            <div>
-              <TopDownAnalysis
-                coins={coins}
-                selectedTimeframe={timeframe}
-                onTimeframeChange={(newTimeframe) => {
-                  setTimeframe(newTimeframe);
-                  // Auto-sort by the selected timeframe
-                  const sortField = newTimeframe === '1h' ? 'change_1h' :
-                                   newTimeframe === '4h' ? 'change_4h' :
-                                   newTimeframe === '1d' ? 'change_1d' :
-                                   newTimeframe === '1w' ? 'change_1w' : 'market_cap';
-                  handleSort(sortField);
-                }}
-              />
-              <MarketOverview
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                timeframe={timeframe}
-                setTimeframe={setTimeframe}
-                sortBy={sortBy}
-                sortOrder={sortOrder}
-                handleSort={handleSort}
-                toggleSortOrder={toggleSortOrder}
-                filteredCoins={filteredCoins}
-                coins={coins}
-                loading={loading}
+            <MarketOverview
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              timeframe={timeframe}
+              setTimeframe={setTimeframe}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              handleSort={handleSort}
+              toggleSortOrder={toggleSortOrder}
+              filteredCoins={filteredCoins}
+              coins={coins}
+              loading={loading}
+              getMarketSentiment={getMarketSentiment}
+              getSentimentIcon={getSentimentIcon}
+              analyzeIndividualCoin={analyzeIndividualCoin}
+              individualAnalysisLoading={individualAnalysisLoading}
+              individualAnalysisResult={individualAnalysisResult}
+              setIndividualAnalysisResult={setIndividualAnalysisResult}
+            />
+          } />
 
-                handleManualRefresh={handleRefresh}
-                autoRefreshEnabled={autoRefreshEnabled}
-                toggleAutoRefresh={toggleAutoRefresh}
-                getTimeSinceRefresh={getTimeSinceRefresh}
-                rateLimitInfo={rateLimitInfo}
-                MAX_REQUESTS_PER_MINUTE={MAX_REQUESTS_PER_MINUTE}
-                analyzeIndividualCoin={analyzeIndividualCoin}
-                individualAnalysisLoading={individualAnalysisLoading}
-                individualAnalysisResult={individualAnalysisResult}
-                setIndividualAnalysisResult={setIndividualAnalysisResult}
-              />
-            </div>
+          {/* Recommended Buys Route */}
+          <Route path="/recommended" element={
+            <TopDownAnalysis
+              coins={coins}
+              onCoinSelect={(coin) => {
+                // When a coin is selected from the scanner, analyze it
+                analyzeIndividualCoin(coin);
+              }}
+            />
           } />
 
           {/* Trade Log Route */}
           <Route path="/trades" element={<TradeLog />} />
 
-          {/* Default redirect to market page */}
-          <Route path="/" element={<Navigate to="/market" replace />} />
+          {/* Default redirect to recommended buys page */}
+          <Route path="/" element={<Navigate to="/recommended" replace />} />
         </Routes>
       </main>
 

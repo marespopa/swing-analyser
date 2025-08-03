@@ -4,7 +4,15 @@ export const useAutoRefresh = (onRefresh: () => Promise<void>) => {
   const [lastRefresh, setLastRefresh] = useState<Date | null>(new Date()); // Initialize with current time
   const [refreshTimer, setRefreshTimer] = useState<NodeJS.Timeout | null>(null);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
-  const [countdown, setCountdown] = useState(900); // 15 minutes in seconds
+  
+  // Get interval from localStorage or default to 5 minutes (300 seconds)
+  const getStoredInterval = (): number => {
+    const stored = localStorage.getItem('autoRefreshInterval');
+    return stored ? parseInt(stored, 10) : 300;
+  };
+  
+  const [refreshInterval] = useState<number>(getStoredInterval);
+  const [countdown, setCountdown] = useState(refreshInterval);
 
   // Start auto-refresh timer
   const startAutoRefreshTimer = () => {
@@ -15,10 +23,10 @@ export const useAutoRefresh = (onRefresh: () => Promise<void>) => {
       clearTimeout(refreshTimer);
     }
 
-    // Set new timer for 15 minutes (900,000 ms)
+    // Set new timer using the configurable interval
     const timer = setTimeout(() => {
       onRefresh();
-    }, 900000);
+    }, refreshInterval * 1000);
 
     setRefreshTimer(timer);
   };
@@ -62,7 +70,7 @@ export const useAutoRefresh = (onRefresh: () => Promise<void>) => {
     if (!lastRefresh) return 'Starting...';
 
     const now = new Date();
-    const nextRefresh = new Date(lastRefresh.getTime() + 900000); // 15 minutes
+    const nextRefresh = new Date(lastRefresh.getTime() + (refreshInterval * 1000));
     const diffMs = nextRefresh.getTime() - now.getTime();
 
     if (diffMs <= 0) return 'Refreshing...';
@@ -76,7 +84,7 @@ export const useAutoRefresh = (onRefresh: () => Promise<void>) => {
   // Manual refresh function
   const handleManualRefresh = async () => {
     setLastRefresh(new Date());
-    setCountdown(900); // Reset countdown
+    setCountdown(refreshInterval); // Reset countdown
     await onRefresh();
   };
 
@@ -101,27 +109,30 @@ export const useAutoRefresh = (onRefresh: () => Promise<void>) => {
   // Countdown timer effect
   useEffect(() => {
     if (!autoRefreshEnabled) {
-      setCountdown(300);
+      setCountdown(refreshInterval);
       return;
     }
 
     const interval = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
-          return 900; // Reset to 15 minutes
+          return refreshInterval; // Reset to current interval
         }
         return prev - 1;
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [autoRefreshEnabled]);
+  }, [autoRefreshEnabled, refreshInterval]);
+
+
 
   return {
     lastRefresh,
     setLastRefresh,
     autoRefreshEnabled,
     countdown,
+    refreshInterval,
     handleManualRefresh,
     toggleAutoRefresh,
     getTimeSinceRefresh,

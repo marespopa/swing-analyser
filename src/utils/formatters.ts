@@ -32,35 +32,32 @@ interface Coin {
 export const getPriceChange = (coin: Coin, timeframe: string): number | null => {
   switch (timeframe) {
     case '1h':
-      return coin.price_change_percentage_1h_in_currency;
-    case '4h':
-      // Try 4h data first, fallback to 24h if not available
-      return coin.price_change_percentage_4h_in_currency !== null && coin.price_change_percentage_4h_in_currency !== undefined
-        ? coin.price_change_percentage_4h_in_currency
-        : coin.price_change_percentage_24h;
+      return coin.price_change_percentage_1h_in_currency ?? null;
     case '1d':
       return coin.price_change_percentage_24h;
     case '1w':
-      return coin.price_change_percentage_7d_in_currency !== null && coin.price_change_percentage_7d_in_currency !== undefined
-        ? coin.price_change_percentage_7d_in_currency
-        : coin.price_change_percentage_24h;
+      return coin.price_change_percentage_7d_in_currency ?? null;
     default:
       return coin.price_change_percentage_24h;
   }
 };
 
-export const getTimeframeLabel = (coin: Coin, timeframe: string): string => {
+export const getPriceChangeWithFallback = (coin: Coin, timeframe: string): { value: number | null; actualTimeframe: string } => {
   switch (timeframe) {
     case '1h':
-      return coin.price_change_percentage_1h_in_currency !== null && coin.price_change_percentage_1h_in_currency !== undefined ? '1h' : '24h';
-    case '4h':
-      return coin.price_change_percentage_4h_in_currency !== null && coin.price_change_percentage_4h_in_currency !== undefined ? '4h' : '24h';
+      if (coin.price_change_percentage_1h_in_currency !== null && coin.price_change_percentage_1h_in_currency !== undefined) {
+        return { value: coin.price_change_percentage_1h_in_currency, actualTimeframe: '1h' };
+      }
+      return { value: coin.price_change_percentage_24h, actualTimeframe: '24h' };
     case '1d':
-      return '24h';
+      return { value: coin.price_change_percentage_24h, actualTimeframe: '24h' };
     case '1w':
-      return coin.price_change_percentage_7d_in_currency !== null && coin.price_change_percentage_7d_in_currency !== undefined ? '7d' : '24h';
+      if (coin.price_change_percentage_7d_in_currency !== null && coin.price_change_percentage_7d_in_currency !== undefined) {
+        return { value: coin.price_change_percentage_7d_in_currency, actualTimeframe: '7d' };
+      }
+      return { value: coin.price_change_percentage_24h, actualTimeframe: '24h' };
     default:
-      return '24h';
+      return { value: coin.price_change_percentage_24h, actualTimeframe: '24h' };
   }
 };
 
@@ -85,7 +82,6 @@ export const getTrendArrows = (coin: Coin): React.ReactElement => {
 
   const arrows = [
     getArrow(coin.price_change_percentage_1h_in_currency, '1h'),
-    getArrow(coin.price_change_percentage_4h_in_currency, '4h'),
     getArrow(coin.price_change_percentage_24h, '24h'),
     getArrow(coin.price_change_percentage_7d_in_currency, '7d')
   ];
@@ -98,7 +94,6 @@ export const getTrendArrows = (coin: Coin): React.ReactElement => {
 export const getTrendStrength = (coin: Coin): { strength: string; color: string; arrows: number } => {
   const changes = [
     coin.price_change_percentage_1h_in_currency,
-    coin.price_change_percentage_4h_in_currency,
     coin.price_change_percentage_24h,
     coin.price_change_percentage_7d_in_currency
   ].filter(change => change !== null && change !== undefined);
@@ -112,7 +107,7 @@ export const getTrendStrength = (coin: Coin): { strength: string; color: string;
   const total = changes.length;
 
   if (bullishCount === total) {
-    return { strength: 'Strong Bullish', color: 'text-green-600', arrows: 4 };
+    return { strength: 'Strong Bullish', color: 'text-green-600', arrows: 3 };
   } else if (bearishCount === total) {
     return { strength: 'Strong Bearish', color: 'text-red-600', arrows: 0 };
   } else if (bullishCount > bearishCount) {
@@ -123,3 +118,5 @@ export const getTrendStrength = (coin: Coin): { strength: string; color: string;
     return { strength: 'Mixed', color: 'text-yellow-500', arrows: bullishCount };
   }
 }; 
+
+ 

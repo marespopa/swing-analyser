@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatPrice, formatMarketCap, formatPercentage, getPriceChange, getTimeframeLabel, getTrendArrows, getTrendStrength } from '../utils/formatters';
+import { formatPrice, formatMarketCap, formatPercentage, getPriceChangeWithFallback, getTrendArrows, getTrendStrength } from '../utils/formatters';
 
 interface Coin {
   id: string;
@@ -29,8 +29,8 @@ interface CoinCardProps {
   isRefreshing?: boolean;
 }
 
-const CoinCard: React.FC<CoinCardProps> = ({ coin, index, timeframe, onClick, onRefreshData, isRefreshing }) => {
-  const priceChange = getPriceChange(coin, timeframe);
+const CoinCard: React.FC<CoinCardProps> = ({ coin, index, timeframe, onClick }) => {
+  const { value: priceChange, actualTimeframe } = getPriceChangeWithFallback(coin, timeframe);
   const isPositive = priceChange !== null && priceChange >= 0;
 
   // Calculate price range percentage for visual indicator
@@ -40,13 +40,6 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, index, timeframe, onClick, on
   const handleClick = () => {
     if (onClick) {
       onClick(coin);
-    }
-  };
-
-  const handleRefreshClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering the main card click
-    if (onRefreshData) {
-      onRefreshData(coin);
     }
   };
 
@@ -83,24 +76,6 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, index, timeframe, onClick, on
             <div className="bg-gray-100 text-gray-700 text-xs font-semibold px-2 py-1 rounded-lg">
               #{index + 1}
             </div>
-            {onRefreshData && (
-              <button
-                onClick={handleRefreshClick}
-                disabled={isRefreshing}
-                className={`p-1 rounded-lg transition-colors ${
-                  isRefreshing 
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800'
-                }`}
-                title="Refresh data"
-              >
-                {isRefreshing ? (
-                  <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
-                ) : (
-                  <span className="text-sm">↻</span>
-                )}
-              </button>
-            )}
           </div>
           
 
@@ -130,7 +105,7 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, index, timeframe, onClick, on
                 {priceChange !== null && <span className="text-lg">{isPositive ? '↗' : '↘'}</span>}
               </div>
               <span>{formatPercentage(priceChange)}</span>
-              <span className="text-gray-500 font-normal">({getTimeframeLabel(coin, timeframe)})</span>
+              <span className="text-gray-500 font-normal">({actualTimeframe})</span>
             </div>
             
             {/* Trend Arrows - All Timeframes */}
@@ -144,7 +119,7 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, index, timeframe, onClick, on
               const trendInfo = getTrendStrength(coin);
               return (
                 <div className={`text-xs font-medium ${trendInfo.color} mt-1`}>
-                  {trendInfo.strength} ({trendInfo.arrows}/4 arrows)
+                  {trendInfo.strength} ({trendInfo.arrows}/3 arrows)
                 </div>
               );
             })()}

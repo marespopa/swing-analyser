@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import SearchAndSort from './SearchAndSort';
-import RefreshControls from './RefreshControls';
 import CoinCard from './CoinCard';
 import CoinAnalysisModal from './CoinAnalysisModal';
+import MarketSentimentWidget from './MarketSentimentWidget';
 
 // Use the same Coin interface as CoinCard
 interface CoinCardCoin {
@@ -36,15 +36,15 @@ interface MarketOverviewProps {
   filteredCoins: any[];
   coins: any[];
   loading: boolean;
-  handleManualRefresh: () => void;
-  autoRefreshEnabled: boolean;
-  toggleAutoRefresh: () => void;
-  getTimeSinceRefresh: () => string;
-  rateLimitInfo: {
-    requestsThisMinute: number;
-    lastReset: number;
+  // Market sentiment functions
+  getMarketSentiment: () => {
+    sentiment: string;
+    upCount: number;
+    downCount: number;
+    neutralCount: number;
+    total: number;
   };
-  MAX_REQUESTS_PER_MINUTE: number;
+  getSentimentIcon: (sentiment: string) => string;
   // Add analysis functions
   analyzeIndividualCoin?: (coin: any) => Promise<any>;
   individualAnalysisLoading?: boolean;
@@ -56,6 +56,7 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({
   searchTerm,
   setSearchTerm,
   timeframe,
+  setTimeframe,
   sortBy,
   sortOrder,
   handleSort,
@@ -63,12 +64,8 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({
   filteredCoins,
   coins,
   loading,
-  handleManualRefresh,
-  autoRefreshEnabled,
-  toggleAutoRefresh,
-  getTimeSinceRefresh,
-  rateLimitInfo,
-  MAX_REQUESTS_PER_MINUTE,
+  getMarketSentiment,
+  getSentimentIcon,
   analyzeIndividualCoin,
   individualAnalysisLoading = false,
   individualAnalysisResult = null,
@@ -76,7 +73,6 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({
 }) => {
   const [selectedCoin, setSelectedCoin] = useState<CoinCardCoin | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [refreshingCoinId, setRefreshingCoinId] = useState<string | null>(null);
 
   const handleCoinClick = (coin: CoinCardCoin) => {
     setSelectedCoin(coin);
@@ -98,16 +94,7 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({
     }
   };
 
-  const handleRefreshCoinData = async (coin: CoinCardCoin) => {
-    setRefreshingCoinId(coin.id);
-    try {
-      if (analyzeIndividualCoin) {
-        await analyzeIndividualCoin(coin);
-      }
-    } finally {
-      setRefreshingCoinId(null);
-    }
-  };
+
 
   return (
     <>
@@ -121,18 +108,19 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({
         toggleSortOrder={toggleSortOrder}
         filteredCoins={filteredCoins}
         coins={coins}
+        timeframe={timeframe}
+        setTimeframe={setTimeframe}
       />
 
-      {/* Refresh Controls */}
-      <RefreshControls
-        loading={loading}
-        handleManualRefresh={handleManualRefresh}
-        autoRefreshEnabled={autoRefreshEnabled}
-        toggleAutoRefresh={toggleAutoRefresh}
-        getTimeSinceRefresh={getTimeSinceRefresh}
-        rateLimitInfo={rateLimitInfo}
-        MAX_REQUESTS_PER_MINUTE={MAX_REQUESTS_PER_MINUTE}
-      />
+      {/* Market Sentiment Widget */}
+      {!loading && coins.length > 0 && (
+        <div className="mb-6">
+          <MarketSentimentWidget
+            getMarketSentiment={getMarketSentiment}
+            getSentimentIcon={getSentimentIcon}
+          />
+        </div>
+      )}
 
       {/* Coins Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -143,8 +131,6 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({
             index={index}
             timeframe={timeframe}
             onClick={handleCoinClick}
-            onRefreshData={handleRefreshCoinData}
-            isRefreshing={refreshingCoinId === coin.id}
           />
         ))}
       </div>
