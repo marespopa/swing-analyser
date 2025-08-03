@@ -84,6 +84,8 @@ export interface EMAData {
   isRealData: boolean;
   dataQuality: 'excellent' | 'good' | 'limited' | 'basic';
   note?: string;
+  signalReasoning?: string[];
+  actionRecommendation?: string;
 }
 
 export interface HoldingPeriod {
@@ -121,6 +123,11 @@ export interface RiskMetricsData {
   riskRewardRatio: number;
   isGoodRiskReward: boolean;
   recommendedUnits: number;
+  positionSizing?: {
+    smallAccount: string; // $100-500
+    mediumAccount: string; // $1000-5000
+    largeAccount: string; // $10000+
+  };
 }
 
 export interface ShortTermPrediction {

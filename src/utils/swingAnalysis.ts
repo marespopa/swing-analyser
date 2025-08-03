@@ -71,14 +71,11 @@ const calculateRSI = (prices: number[], period: number = 14): number => {
 
 
 
-// Optimized risk metrics calculation with pre-calculated constants
+// Simplified risk metrics calculation with clear position sizing
 const RISK_CONSTANTS = {
-  STOP_LOSS_PERCENTAGE: 0.025,
-  TAKE_PROFIT_PERCENTAGE: 0.075,
+  STOP_LOSS_PERCENTAGE: 0.025, // 2.5% stop loss
+  TAKE_PROFIT_PERCENTAGE: 0.075, // 7.5% take profit
   ENTRY_DISCOUNT: 0.005,
-  ACCOUNT_SIZE: 10000,
-  RISK_PER_TRADE_PERCENTAGE: 0.02,
-  MAX_SHARES: 1000,
   MIN_RISK_REWARD_RATIO: 2.5
 } as const;
 
@@ -95,24 +92,11 @@ const calculateRiskMetrics = (currentPrice: number) => {
   // Pre-calculated risk/reward ratio
   const riskRewardRatio = RISK_CONSTANTS.TAKE_PROFIT_PERCENTAGE / RISK_CONSTANTS.STOP_LOSS_PERCENTAGE;
   
-  // Optimized position size calculation
-  const riskPerTrade = RISK_CONSTANTS.ACCOUNT_SIZE * RISK_CONSTANTS.RISK_PER_TRADE_PERCENTAGE;
-  const riskAmount = (currentPrice - stopLoss) * 100;
-  
-  let suggestedShares = 0;
-  if (riskAmount > 0 && isFinite(riskAmount)) {
-    suggestedShares = Math.min(
-      Math.floor(riskPerTrade / riskAmount),
-      RISK_CONSTANTS.MAX_SHARES
-    );
-  }
-  
   return {
     stopLoss,
     takeProfit,
     riskRewardRatio,
     suggestedEntry,
-    suggestedShares,
     isGoodRiskReward: riskRewardRatio >= RISK_CONSTANTS.MIN_RISK_REWARD_RATIO,
     stopLossPercentage: RISK_CONSTANTS.STOP_LOSS_PERCENTAGE * 100,
     takeProfitPercentage: RISK_CONSTANTS.TAKE_PROFIT_PERCENTAGE * 100
@@ -231,21 +215,68 @@ export const analyzeCoinForSwing = async (
   const qualityScore = trendScore + rsiScore + volumeScore + momentumScore + marketCapScore;
   const swingTradingScore = Math.min(100, qualityScore + (isVolumeIncreasing ? 10 : 0));
   
-  // Determine signal - Balanced approach
+  // Enhanced signal determination with actionable recommendations
   let signal: 'BUY' | 'HOLD' | 'SELL' = 'HOLD';
+  let signalReasoning: string[] = [];
+  let actionRecommendation: string = '';
   
   // BUY signal: Strong technical setup with positive momentum
-  if (swingTradingScore >= 70 && isBullish && isRSIHealthy && recentMomentum > -2) {
+  if (swingTradingScore >= 75 && isBullish && isRSIHealthy && recentMomentum > -1) {
     signal = 'BUY';
+    signalReasoning = [
+      'Strong bullish trend with EMA crossover',
+      'RSI in healthy range (not overbought)',
+      'Positive momentum across timeframes',
+      'Good volume support'
+    ];
+    actionRecommendation = 'Consider buying now with proper position sizing';
   } 
+  // WAIT signal: Mixed signals but potential
+  else if (swingTradingScore >= 60 && isBullish && isRSIHealthy) {
+    signal = 'HOLD';
+    signalReasoning = [
+      'Bullish trend but momentum is weak',
+      'Wait for stronger confirmation signals',
+      'Monitor for breakout above resistance'
+    ];
+    actionRecommendation = 'Wait for better entry - monitor key levels';
+  }
   // SELL signal: Clear bearish indicators
-  else if (swingTradingScore < 30 || !isBullish || recentMomentum < -8) {
+  else if (swingTradingScore < 40 || !isBullish || recentMomentum < -5) {
     signal = 'SELL';
+    signalReasoning = [
+      'Bearish trend or weak technical setup',
+      'Negative momentum across timeframes',
+      'Poor risk/reward ratio'
+    ];
+    actionRecommendation = 'Avoid buying - wait for trend reversal';
   }
   // HOLD: Mixed signals or neutral conditions
+  else {
+    signalReasoning = [
+      'Mixed technical signals',
+      'Neutral momentum',
+      'Wait for clearer direction'
+    ];
+    actionRecommendation = 'Wait for clearer signals before entering';
+  }
   
   // Calculate risk metrics
   const riskMetrics = calculateRiskMetrics(coin.current_price);
+  
+  // Simple position sizing calculator
+  const calculatePositionSize = (accountSize: number, riskPercentage: number = 2) => {
+    const riskAmount = accountSize * (riskPercentage / 100);
+    const stopLossDistance = coin.current_price - riskMetrics.stopLoss;
+    const units = Math.floor(riskAmount / stopLossDistance);
+    return units;
+  };
+  
+  const positionSizing = {
+    smallAccount: `${calculatePositionSize(250, 2)} units (≈$${(calculatePositionSize(250, 2) * coin.current_price).toFixed(0)})`,
+    mediumAccount: `${calculatePositionSize(2500, 2)} units (≈$${(calculatePositionSize(2500, 2) * coin.current_price).toFixed(0)})`,
+    largeAccount: `${calculatePositionSize(10000, 2)} units (≈$${(calculatePositionSize(10000, 2) * coin.current_price).toFixed(0)})`
+  };
   
   // Determine holding period
   const holdingPeriod = {
@@ -288,11 +319,14 @@ export const analyzeCoinForSwing = async (
       takeProfit: riskMetrics.takeProfit,
       riskRewardRatio: riskMetrics.riskRewardRatio,
       isGoodRiskReward: riskMetrics.isGoodRiskReward,
-      recommendedUnits: riskMetrics.suggestedShares
+      recommendedUnits: 0, // Simplified - will be calculated in UI
+      positionSizing
     },
     shortTermPrediction: null,
     isRealData: isRealData,
-    dataQuality: dataQuality as 'excellent' | 'good' | 'limited' | 'basic'
+    dataQuality: dataQuality as 'excellent' | 'good' | 'limited' | 'basic',
+    signalReasoning,
+    actionRecommendation
   };
   
   return {

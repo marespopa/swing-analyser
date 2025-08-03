@@ -100,18 +100,42 @@ const CoinAnalysisModal: React.FC<CoinAnalysisModalProps> = ({
                 </div>
 
                 <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Swing Signal</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Action Signal</h3>
                   <div className={`text-2xl font-bold mb-2 ${
                     analysisResult.emaData.signal === 'BUY' ? 'text-emerald-600' :
                     analysisResult.emaData.signal === 'SELL' ? 'text-red-600' : 'text-yellow-600'
                   }`}>
-                    {analysisResult.emaData.signal}
+                    {analysisResult.emaData.signal === 'BUY' ? 'BUY NOW' : 
+                     analysisResult.emaData.signal === 'SELL' ? 'WAIT' : 'MONITOR'}
                   </div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-gray-600 mb-3">
                     Quality Score: {analysisResult.emaData.qualityScore.toFixed(1)}/10
                   </div>
+                  {analysisResult.emaData.actionRecommendation && (
+                    <div className="text-sm font-medium text-gray-800 bg-white/50 rounded-lg p-2">
+                      {analysisResult.emaData.actionRecommendation}
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Signal Reasoning */}
+              {analysisResult.emaData.signalReasoning && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Why {analysisResult.emaData.signal === 'BUY' ? 'Buy Now' : analysisResult.emaData.signal === 'SELL' ? 'Wait' : 'Monitor'}?</h3>
+                  <div className="space-y-2">
+                    {analysisResult.emaData.signalReasoning.map((reason, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                          analysisResult.emaData.signal === 'BUY' ? 'bg-emerald-500' :
+                          analysisResult.emaData.signal === 'SELL' ? 'bg-red-500' : 'bg-yellow-500'
+                        }`}></div>
+                        <div className="text-sm text-gray-700">{reason}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Technical Analysis */}
               <div className="bg-white border border-gray-200 rounded-xl p-6">
@@ -171,53 +195,14 @@ const CoinAnalysisModal: React.FC<CoinAnalysisModalProps> = ({
                 </div>
               </div>
 
-              {/* Risk Metrics */}
-              {analysisResult.emaData.riskMetrics && (
-                <div className="bg-white border border-gray-200 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Risk Management</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="font-medium text-gray-700 mb-2">Entry & Exit Points</h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Stop Loss:</span>
-                          <span className="text-red-600 font-medium">{formatCurrency(analysisResult.emaData.riskMetrics.stopLoss)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Take Profit:</span>
-                          <span className="text-emerald-600 font-medium">{formatCurrency(analysisResult.emaData.riskMetrics.takeProfit)}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {analysisResult.emaData.riskMetrics.recommendedUnits > 0 && (
-                      <div>
-                        <h4 className="font-medium text-gray-700 mb-2">Position Sizing</h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Recommended:</span>
-                            <span className="font-medium">{analysisResult.emaData.riskMetrics.recommendedUnits.toFixed(2)} units</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Risk Level:</span>
-                            <span className={`font-medium ${analysisResult.emaData.riskMetrics.isGoodRiskReward ? 'text-emerald-600' : 'text-yellow-600'}`}>
-                              {analysisResult.emaData.riskMetrics.isGoodRiskReward ? 'Good' : 'Moderate'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Entry Point Analysis */}
+                            {/* Entry & Exit Strategy */}
               <div className="bg-white border border-gray-200 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Entry Point Analysis</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Entry & Exit Strategy</h3>
+                
                 <div className="space-y-6">
-                  {/* Entry Timing */}
+                  {/* Entry Analysis */}
                   <div>
-                    <h4 className="font-medium text-gray-700 mb-3">Optimal Entry Timing</h4>
+                    <h4 className="font-medium text-gray-700 mb-3">Entry Analysis</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4">
                         <div className="flex items-center gap-2 mb-2">
@@ -275,6 +260,46 @@ const CoinAnalysisModal: React.FC<CoinAnalysisModalProps> = ({
                     </div>
                   </div>
 
+                  {/* Target/Stop Loss */}
+                  {analysisResult.emaData.riskMetrics && (
+                    <div>
+                      <h4 className="font-medium text-gray-700 mb-3">Target/Stop Loss</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-4">
+                          <div className="text-center">
+                            <div className="text-red-600 font-bold text-lg">
+                              {formatCurrency(analysisResult.emaData.riskMetrics.stopLoss)}
+                            </div>
+                            <div className="text-sm text-red-600 font-medium">Stop Loss</div>
+                            <div className="text-xs text-gray-500">2.5% below current</div>
+                          </div>
+                        </div>
+
+                        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg p-4">
+                          <div className="text-center">
+                            <div className="text-emerald-600 font-bold text-lg">
+                              {formatCurrency(analysisResult.emaData.riskMetrics.takeProfit)}
+                            </div>
+                            <div className="text-sm text-emerald-600 font-medium">Take Profit</div>
+                            <div className="text-xs text-gray-500">7.5% above current</div>
+                          </div>
+                        </div>
+
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4">
+                          <div className="text-center">
+                            <div className={`font-bold text-lg ${analysisResult.emaData.riskMetrics.isGoodRiskReward ? 'text-emerald-600' : 'text-yellow-600'}`}>
+                              {analysisResult.emaData.riskMetrics.riskRewardRatio.toFixed(1)}:1
+                            </div>
+                            <div className="text-sm text-gray-600 font-medium">Risk/Reward</div>
+                            <div className="text-xs text-gray-500">
+                              {analysisResult.emaData.riskMetrics.isGoodRiskReward ? 'Good ratio' : 'Moderate ratio'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Support & Resistance Levels */}
                   <div>
                     <h4 className="font-medium text-gray-700 mb-3">Support & Resistance Levels</h4>
@@ -323,7 +348,7 @@ const CoinAnalysisModal: React.FC<CoinAnalysisModalProps> = ({
 
                   {/* Entry Strategy */}
                   <div>
-                    <h4 className="font-medium text-gray-700 mb-3">Entry Strategy Recommendations</h4>
+                    <h4 className="font-medium text-gray-700 mb-3">What Should You Do?</h4>
                     <div className="bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg p-4">
                       <div className="space-y-3">
                         {analysisResult.emaData.signal === 'BUY' ? (
@@ -331,22 +356,22 @@ const CoinAnalysisModal: React.FC<CoinAnalysisModalProps> = ({
                             <div className="flex items-start gap-3">
                               <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 flex-shrink-0"></div>
                               <div className="text-sm">
-                                <span className="font-medium text-emerald-600">Scale-in Approach:</span>
-                                <span className="text-gray-700"> Enter with 50% of position at current price, add 30% on pullback to support, final 20% on breakout confirmation.</span>
+                                <span className="font-medium text-emerald-600">Immediate Action:</span>
+                                <span className="text-gray-700"> Consider buying now with proper position sizing and stop loss at {formatCurrency(analysisResult.emaData.riskMetrics?.stopLoss || 0)}.</span>
                               </div>
                             </div>
                             <div className="flex items-start gap-3">
                               <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 flex-shrink-0"></div>
                               <div className="text-sm">
-                                <span className="font-medium text-emerald-600">Wait for Confirmation:</span>
-                                <span className="text-gray-700"> Look for price to hold above {formatCurrency(analysisResult.current_price * 0.98)} before entering.</span>
+                                <span className="font-medium text-emerald-600">Entry Strategy:</span>
+                                <span className="text-gray-700"> Enter with 60% of position now, add 40% if price pulls back to {formatCurrency(analysisResult.current_price * 0.97)}.</span>
                               </div>
                             </div>
                             <div className="flex items-start gap-3">
                               <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 flex-shrink-0"></div>
                               <div className="text-sm">
-                                <span className="font-medium text-emerald-600">Volume Confirmation:</span>
-                                <span className="text-gray-700"> Ensure volume increases on price moves to confirm trend strength.</span>
+                                <span className="font-medium text-emerald-600">Target:</span>
+                                <span className="text-gray-700"> Aim for {formatCurrency(analysisResult.emaData.riskMetrics?.takeProfit || 0)} (7.5% gain) with stop loss at {formatCurrency(analysisResult.emaData.riskMetrics?.stopLoss || 0)}.</span>
                               </div>
                             </div>
                           </>
@@ -355,15 +380,22 @@ const CoinAnalysisModal: React.FC<CoinAnalysisModalProps> = ({
                             <div className="flex items-start gap-3">
                               <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
                               <div className="text-sm">
-                                <span className="font-medium text-red-600">Avoid Entry:</span>
-                                <span className="text-gray-700"> Current conditions suggest avoiding new long positions. Consider waiting for better setup.</span>
+                                <span className="font-medium text-red-600">Avoid Buying:</span>
+                                <span className="text-gray-700"> Current conditions are unfavorable. Wait for trend reversal or better setup.</span>
                               </div>
                             </div>
                             <div className="flex items-start gap-3">
                               <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
                               <div className="text-sm">
-                                <span className="font-medium text-red-600">Wait for Reversal:</span>
-                                <span className="text-gray-700"> Monitor for bullish reversal signals before considering entry.</span>
+                                <span className="font-medium text-red-600">Wait For:</span>
+                                <span className="text-gray-700"> Price to show bullish reversal signals or RSI to move above 30.</span>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
+                              <div className="text-sm">
+                                <span className="font-medium text-red-600">Monitor:</span>
+                                <span className="text-gray-700"> Check back in 4-8 hours for improved conditions.</span>
                               </div>
                             </div>
                           </>
@@ -372,15 +404,22 @@ const CoinAnalysisModal: React.FC<CoinAnalysisModalProps> = ({
                             <div className="flex items-start gap-3">
                               <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
                               <div className="text-sm">
-                                <span className="font-medium text-yellow-600">Neutral Stance:</span>
+                                <span className="font-medium text-yellow-600">Wait & Watch:</span>
                                 <span className="text-gray-700"> Mixed signals suggest waiting for clearer direction before entering.</span>
                               </div>
                             </div>
                             <div className="flex items-start gap-3">
                               <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
                               <div className="text-sm">
-                                <span className="font-medium text-yellow-600">Monitor Key Levels:</span>
-                                <span className="text-gray-700"> Watch for breakout above resistance or breakdown below support for entry signals.</span>
+                                <span className="font-medium text-yellow-600">Look For:</span>
+                                <span className="text-gray-700"> Breakout above {formatCurrency(analysisResult.current_price * 1.02)} or breakdown below {formatCurrency(analysisResult.current_price * 0.98)}.</span>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
+                              <div className="text-sm">
+                                <span className="font-medium text-yellow-600">Check Back:</span>
+                                <span className="text-gray-700"> Re-analyze in 2-4 hours for updated signals.</span>
                               </div>
                             </div>
                           </>
