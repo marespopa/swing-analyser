@@ -128,12 +128,23 @@ export const analyzeCoinForSwing = async (
   // Use provided historical data (must be real data)
   const dataSourceInfo = getDataSourceInfo(coin.id, get);
   const isRealData = dataSourceInfo.isRealData;
-  const dataQuality = dataSourceInfo.dataQuality;
   
-  // Calculate technical indicators
-  const ema50 = calculateEMA(historicalPrices, 50);
-  const ema200 = calculateEMA(historicalPrices, 200);
-  const rsi = calculateRSI(historicalPrices, 14);
+  // Adjust data quality based on available data length
+  const dataLength = historicalPrices.length;
+  let dataQuality = dataSourceInfo.dataQuality;
+  if (dataLength < 30) {
+    dataQuality = 'limited';
+  } else if (dataLength < 100) {
+    dataQuality = 'basic';
+  }
+  
+  // Calculate technical indicators with adaptive periods based on available data
+  const adaptiveEma50 = Math.min(50, Math.floor(dataLength * 0.25)); // Use 25% of available data for EMA
+  const adaptiveEma200 = Math.min(200, Math.floor(dataLength * 0.5)); // Use 50% of available data for EMA
+  
+  const ema50 = calculateEMA(historicalPrices, adaptiveEma50);
+  const ema200 = calculateEMA(historicalPrices, adaptiveEma200);
+  const rsi = calculateRSI(historicalPrices, Math.min(14, dataLength - 1));
   
   // Determine bullish/bearish trend
   const emaBullish = ema50 > ema200;
@@ -178,7 +189,7 @@ export const analyzeCoinForSwing = async (
         holdingPeriod: {
           period: '1-2 weeks',
           confidence: 'Low',
-          reasoning: ['Extreme conditions detected']
+          reasoning: dataLength < 30 ? ['Extreme conditions detected', `Limited data (${dataLength} days)`] : ['Extreme conditions detected']
         },
         macd: null,
         bollinger: null,
@@ -238,8 +249,8 @@ export const analyzeCoinForSwing = async (
   
   // Determine holding period
   const holdingPeriod = {
-    period: swingTradingScore >= 80 ? '1-3 days' : swingTradingScore >= 60 ? '3-7 days' : '1-2 weeks',
-    confidence: swingTradingScore >= 80 ? 'High' : swingTradingScore >= 60 ? 'Medium' : 'Low' as 'High' | 'Medium' | 'Low',
+    period: swingTradingScore >= 90 ? '1-3 days' : swingTradingScore >= 75 ? '3-7 days' : '1-2 weeks',
+    confidence: swingTradingScore >= 90 ? 'High' : swingTradingScore >= 75 ? 'Medium' : 'Low' as 'High' | 'Medium' | 'Low',
     reasoning: [
       emaBullish ? 'Bullish EMA trend' : 'Bearish EMA trend',
       isMomentumBullish ? 'Positive momentum' : 'Negative momentum',
@@ -299,9 +310,10 @@ export const analyzeCoinsForSwing = async (
 ): Promise<AnalyzedCoin[]> => {
   // Pre-filter coins with valid data and basic criteria
   const validCoins = coins.filter(coin => {
-    const hasData = historicalData[coin.id] && historicalData[coin.id].length >= 200;
-    const hasVolume = coin.total_volume > 1000000; // $1M minimum volume
-    const hasMarketCap = coin.market_cap > 10000000; // $10M minimum market cap
+    const hasData = historicalData[coin.id] && historicalData[coin.id].length >= 14; // Minimum 14 days for RSI calculation
+    const hasVolume = coin.total_volume > 100000; // $100K minimum volume (lowered for testing)
+    const hasMarketCap = coin.market_cap > 1000000; // $1M minimum market cap (lowered for testing)
+
     return hasData && hasVolume && hasMarketCap;
   });
 

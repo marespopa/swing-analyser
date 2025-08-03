@@ -107,13 +107,14 @@ export const useSwingAnalysis = (coins: Coin[]) => {
       );
       
       if (!historicalDataMap[coin.id]) {
+        console.error('No historical data for coin:', coin.id);
         throw new Error(`Failed to fetch historical data for ${coin.name}`);
       }
       
       // Analyze the single coin
       const analyzedCoins = await analyzeCoinsForSwing(
         [coin],
-        { [coin.id]: historicalData[coin.id]?.data || [] },
+        { [coin.id]: historicalDataMap[coin.id] || [] },
         (_atom) => historicalData,
         (_atom, value) => setHistoricalData(value)
       );

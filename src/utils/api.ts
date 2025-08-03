@@ -65,7 +65,7 @@ export class CoinGeckoAPI {
 
   private async makeRequest<T>(url: string): Promise<T> {
     const apiKey = import.meta.env.VITE_COINGECKO_API_KEY;
-    
+
     if (!apiKey) {
       throw new Error('CoinGecko API key is missing. Please add VITE_COINGECKO_API_KEY to your .env file.');
     }
