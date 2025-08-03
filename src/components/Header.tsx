@@ -3,10 +3,11 @@ import { useLocation } from 'react-router-dom';
 import { useAtomValue } from 'jotai';
 import MarketSentimentWidget from './MarketSentimentWidget';
 import { tradeStatsAtom } from '../stores/tradeLogStore';
+import { Coin } from '../types';
 
 interface HeaderProps {
   loading: boolean;
-  coins: any[];
+  coins: Coin[];
   getMarketSentiment: () => {
     sentiment: string;
     upCount: number;
@@ -66,8 +67,6 @@ const Header: React.FC<HeaderProps> = ({
               />
             </div>
           )}
-
-
 
           {/* Trade Stats for Trades Tab */}
           {!loading && activeTab === 'trades' && (

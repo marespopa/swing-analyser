@@ -11,7 +11,7 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
   const [preferences, setPreferences] = useState({
     autoRefresh: true,
     refreshInterval: 30,
-    defaultTimeframe: '24h',
+    defaultTimeframe: '1d',
     showNewsSentiment: true,
     riskTolerance: 'moderate'
   });
@@ -85,21 +85,26 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
                 entry signals, and risk management tools to make informed trading decisions.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
               <div className="bg-white p-4 rounded-lg border border-gray-200">
-                <div className="text-2xl mb-2">📈</div>
-                <h3 className="font-semibold text-gray-900">Real-time Analysis</h3>
-                <p className="text-sm text-gray-600">Live market data and technical indicators</p>
+                <div className="text-2xl mb-2">📊</div>
+                <h3 className="font-semibold text-gray-900">Market Conditions</h3>
+                <p className="text-sm text-gray-600">Real-time market breadth and sector analysis</p>
               </div>
               <div className="bg-white p-4 rounded-lg border border-gray-200">
                 <div className="text-2xl mb-2">🎯</div>
-                <h3 className="font-semibold text-gray-900">Entry Signals</h3>
-                <p className="text-sm text-gray-600">Precise buy/sell recommendations</p>
+                <h3 className="font-semibold text-gray-900">Swing Signals</h3>
+                <p className="text-sm text-gray-600">Multi-timeframe trend analysis</p>
+              </div>
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <div className="text-2xl mb-2">📈</div>
+                <h3 className="font-semibold text-gray-900">Trade Log</h3>
+                <p className="text-sm text-gray-600">Track and analyze your trades</p>
               </div>
               <div className="bg-white p-4 rounded-lg border border-gray-200">
                 <div className="text-2xl mb-2">🛡️</div>
                 <h3 className="font-semibold text-gray-900">Risk Management</h3>
-                <p className="text-sm text-gray-600">Stop-loss and take-profit guidance</p>
+                <p className="text-sm text-gray-600">Market-wide risk assessment</p>
               </div>
             </div>
           </div>
@@ -163,10 +168,10 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { value: '1h', label: '1 Hour', description: 'Short-term' },
-                { value: '4h', label: '4 Hours', description: 'Medium-term' },
-                { value: '24h', label: '24 Hours', description: 'Daily' },
-                { value: '7d', label: '7 Days', description: 'Weekly' }
+                { value: '1h', label: '1 Hour', description: 'Short-term swings' },
+                { value: '4h', label: '4 Hours', description: 'Medium-term swings' },
+                { value: '1d', label: 'Daily', description: 'Primary swing timeframe' },
+                { value: '1w', label: 'Weekly', description: 'Trend analysis' }
               ].map((timeframe) => (
                 <button
                   key={timeframe.value}
@@ -230,7 +235,7 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">You're All Set!</h2>
               <p className="text-gray-600 text-lg">
-                Your Swing Analyser is configured and ready to help you make informed trading decisions.
+                Your Swing Analyser is configured with market conditions analysis, multi-timeframe trends, and comprehensive risk management tools.
               </p>
             </div>
             <div className="bg-white p-6 rounded-lg border border-gray-200 max-w-md mx-auto">
@@ -239,6 +244,8 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
                 <div>• Auto Refresh: {preferences.autoRefresh ? `${preferences.refreshInterval}s` : 'Disabled'}</div>
                 <div>• Default Timeframe: {preferences.defaultTimeframe}</div>
                 <div>• Risk Tolerance: {preferences.riskTolerance}</div>
+                <div>• Market Conditions Analysis: Enabled</div>
+                <div>• Multi-timeframe Trends: Enabled</div>
               </div>
             </div>
           </div>

@@ -116,8 +116,6 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({
       <SearchAndSort
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
-        timeframe={timeframe}
-        setTimeframe={setTimeframe}
         sortBy={sortBy}
         sortOrder={sortOrder}
         handleSort={handleSort}

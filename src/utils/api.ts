@@ -93,7 +93,7 @@ export class CoinGeckoAPI {
     const apiKey = import.meta.env.VITE_COINGECKO_API_KEY;
     // Fetch 250 coins (1 page) to optimize API usage while maintaining good coverage
     // This ensures we have ~200 meaningful coins after filtering
-    const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false&price_change_percentage=1h,4h,24h&x_cg_demo_api_key=${apiKey}`;
+    const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false&price_change_percentage=1h,4h,24h,7d&x_cg_demo_api_key=${apiKey}`;
     
     return this.makeRequest<Coin[]>(url);
   }

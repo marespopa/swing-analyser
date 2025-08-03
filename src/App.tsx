@@ -7,6 +7,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 import MarketOverview from './components/MarketOverview';
 import TradeLog from './components/TradeLog';
 import SetupWizard from './components/SetupWizard';
+import TopDownAnalysis from './components/TopDownAnalysis';
 import Button from './components/Button';
 import { useCoinData } from './hooks/useCoinData';
 import { useAutoRefresh } from './hooks/useAutoRefresh';
@@ -132,30 +133,45 @@ const AppContent: React.FC = () => {
         <Routes>
           {/* Market Overview Route */}
           <Route path="/market" element={
-            <MarketOverview
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              timeframe={timeframe}
-              setTimeframe={setTimeframe}
-              sortBy={sortBy}
-              sortOrder={sortOrder}
-              handleSort={handleSort}
-              toggleSortOrder={toggleSortOrder}
-              filteredCoins={filteredCoins}
-              coins={coins}
-              loading={loading}
+            <div>
+              <TopDownAnalysis
+                coins={coins}
+                selectedTimeframe={timeframe}
+                onTimeframeChange={(newTimeframe) => {
+                  setTimeframe(newTimeframe);
+                  // Auto-sort by the selected timeframe
+                  const sortField = newTimeframe === '1h' ? 'change_1h' :
+                                   newTimeframe === '4h' ? 'change_4h' :
+                                   newTimeframe === '1d' ? 'change_1d' :
+                                   newTimeframe === '1w' ? 'change_1w' : 'market_cap';
+                  handleSort(sortField);
+                }}
+              />
+              <MarketOverview
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                timeframe={timeframe}
+                setTimeframe={setTimeframe}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                handleSort={handleSort}
+                toggleSortOrder={toggleSortOrder}
+                filteredCoins={filteredCoins}
+                coins={coins}
+                loading={loading}
 
-              handleManualRefresh={handleRefresh}
-              autoRefreshEnabled={autoRefreshEnabled}
-              toggleAutoRefresh={toggleAutoRefresh}
-              getTimeSinceRefresh={getTimeSinceRefresh}
-              rateLimitInfo={rateLimitInfo}
-              MAX_REQUESTS_PER_MINUTE={MAX_REQUESTS_PER_MINUTE}
-              analyzeIndividualCoin={analyzeIndividualCoin}
-              individualAnalysisLoading={individualAnalysisLoading}
-              individualAnalysisResult={individualAnalysisResult}
-              setIndividualAnalysisResult={setIndividualAnalysisResult}
-            />
+                handleManualRefresh={handleRefresh}
+                autoRefreshEnabled={autoRefreshEnabled}
+                toggleAutoRefresh={toggleAutoRefresh}
+                getTimeSinceRefresh={getTimeSinceRefresh}
+                rateLimitInfo={rateLimitInfo}
+                MAX_REQUESTS_PER_MINUTE={MAX_REQUESTS_PER_MINUTE}
+                analyzeIndividualCoin={analyzeIndividualCoin}
+                individualAnalysisLoading={individualAnalysisLoading}
+                individualAnalysisResult={individualAnalysisResult}
+                setIndividualAnalysisResult={setIndividualAnalysisResult}
+              />
+            </div>
           } />
 
           {/* Trade Log Route */}

@@ -13,8 +13,6 @@ import {
 } from '../stores/tradeLogStore';
 import Button from './Button';
 import Dropdown from './Dropdown';
-import { save } from '@tauri-apps/plugin-dialog';
-import { writeTextFile } from '@tauri-apps/plugin-fs';
 
 const TradeLog: React.FC = () => {
   const [filters, setFilters] = useAtom(tradeFiltersAtom);
@@ -98,7 +96,7 @@ const TradeLog: React.FC = () => {
     setSelectedTrade(null);
   };
 
-  const handleExportTrades = async () => {    
+  const handleExportTrades = () => {    
     console.log('Export clicked, allTrades:', allTrades);
     if (allTrades.length === 0) {
       alert('No trades to export');
@@ -117,37 +115,20 @@ const TradeLog: React.FC = () => {
       };
       console.log('Export data prepared:', exportData);
 
-      // Use Tauri's native save dialog to get the file path
-      console.log('Opening save dialog...');
-      const filePath = await save({
-        title: 'Save Trade Log',
-        filters: [{
-          name: 'JSON Files',
-          extensions: ['json']
-        }],
-        defaultPath: `swing-analyser-trades-${new Date().toISOString().split('T')[0]}.json`
-      });
-      console.log('Save dialog result:', filePath);
-
-      if (filePath) {
-        console.log('Writing file to:', filePath);
-        
-        // Write the file using Tauri's File System API
-        await writeTextFile(filePath, JSON.stringify(exportData, null, 2));
-        console.log('File written successfully');
-        
-        const fileName = filePath.split('/').pop() || filePath.split('\\').pop() || `swing-analyser-trades-${new Date().toISOString().split('T')[0]}.json`;
-        alert(`Trade log exported successfully! File saved as: ${fileName}`);
-      } else {
-        console.log('No file path selected, export cancelled');
-      }
+      // Create and download file using web APIs
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `swing-analyser-trades-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      alert(`Trade log exported successfully! File downloaded as: swing-analyser-trades-${new Date().toISOString().split('T')[0]}.json`);
     } catch (error) {
       console.error('Export error:', error);
-      console.error('Error details:', {
-        name: error instanceof Error ? error.name : 'Unknown',
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : 'No stack trace'
-      });
       alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };

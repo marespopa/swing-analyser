@@ -21,7 +21,7 @@ export const useCoinData = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('market_cap');
   const [sortOrder, setSortOrder] = useState('desc');
-  const [timeframe, setTimeframe] = useState('24h');
+  const [timeframe, setTimeframe] = useState('1d');
 
   const api = CoinGeckoAPI.getInstance();
 
@@ -191,9 +191,13 @@ export const useCoinData = () => {
           aValue = a.price_change_percentage_4h_in_currency ?? a.price_change_percentage_24h ?? 0;
           bValue = b.price_change_percentage_4h_in_currency ?? b.price_change_percentage_24h ?? 0;
           break;
-        case 'change_24h':
+        case 'change_1d':
           aValue = a.price_change_percentage_24h;
           bValue = b.price_change_percentage_24h;
+          break;
+        case 'change_1w':
+          aValue = a.price_change_percentage_7d_in_currency ?? a.price_change_percentage_24h ?? 0;
+          bValue = b.price_change_percentage_7d_in_currency ?? b.price_change_percentage_24h ?? 0;
           break;
         default:
           aValue = a.market_cap;

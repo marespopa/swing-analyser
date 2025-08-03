@@ -1,12 +1,9 @@
 import React from 'react';
 import Button from './Button';
-import Dropdown from './Dropdown';
 
 interface SearchAndSortProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  timeframe: string;
-  setTimeframe: (timeframe: string) => void;
   sortBy: string;
   sortOrder: string;
   handleSort: (field: string) => void;
@@ -18,11 +15,8 @@ interface SearchAndSortProps {
 const SearchAndSort: React.FC<SearchAndSortProps> = ({ 
   searchTerm, 
   setSearchTerm, 
-  timeframe, 
-  setTimeframe, 
   sortBy, 
   sortOrder, 
-  handleSort, 
   toggleSortOrder
 }) => {
   return (
@@ -43,22 +37,7 @@ const SearchAndSort: React.FC<SearchAndSortProps> = ({
           />
         </div>
 
-        {/* Timeframe Selector */}
-        <div>
-          <label htmlFor="timeframe" className="block text-sm font-medium text-gray-700 mb-2">
-            Timeframe
-          </label>
-          <Dropdown
-            value={timeframe}
-            onChange={setTimeframe}
-            options={[
-              { value: '1h', label: '1 Hour' },
-              { value: '4h', label: '4 Hours' },
-              { value: '24h', label: '24 Hours' }
-            ]}
-            placeholder="Select timeframe"
-          />
-        </div>
+
 
         {/* Sort Controls */}
         <div className="flex gap-3">
@@ -66,20 +45,13 @@ const SearchAndSort: React.FC<SearchAndSortProps> = ({
             <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 mb-2">
               Sort by
             </label>
-            <Dropdown
-              value={sortBy}
-              onChange={handleSort}
-              options={[
-                { value: 'market_cap', label: 'Market Cap' },
-                { value: 'name', label: 'Name' },
-                { value: 'price', label: 'Price' },
-                { value: 'volume', label: 'Volume (24h)' },
-                { value: 'change_1h', label: '1h Change' },
-                { value: 'change_4h', label: '4h Change' },
-                { value: 'change_24h', label: '24h Change' }
-              ]}
-              placeholder="Select sort field"
-            />
+            <div className="text-sm text-gray-600">
+              Auto-sorted by {sortBy === 'market_cap' ? 'Market Cap' : 
+                sortBy === 'change_1h' ? '1h Change' :
+                sortBy === 'change_4h' ? '4h Change' :
+                sortBy === 'change_1d' ? 'Daily Change' :
+                sortBy === 'change_1w' ? 'Weekly Change' : sortBy}
+            </div>
           </div>
 
           <div>
@@ -96,6 +68,25 @@ const SearchAndSort: React.FC<SearchAndSortProps> = ({
           </div>
         </div>
       </div>
+      
+      {/* Helpful tip for swing trading */}
+      {sortBy === 'market_cap' && sortOrder === 'desc' && (
+        <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-emerald-800">
+                <strong>Perfect for Swing Trading:</strong> Higher market cap coins typically have better liquidity, 
+                tighter spreads, and more predictable price movements - ideal for swing trading strategies.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

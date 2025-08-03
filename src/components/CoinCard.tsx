@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatPrice, formatMarketCap, formatPercentage, getPriceChange, getTimeframeLabel } from '../utils/formatters';
+import { formatPrice, formatMarketCap, formatPercentage, getPriceChange, getTimeframeLabel, getTrendArrows, getTrendStrength } from '../utils/formatters';
 
 interface Coin {
   id: string;
@@ -32,7 +32,6 @@ interface CoinCardProps {
 const CoinCard: React.FC<CoinCardProps> = ({ coin, index, timeframe, onClick, onRefreshData, isRefreshing }) => {
   const priceChange = getPriceChange(coin, timeframe);
   const isPositive = priceChange !== null && priceChange >= 0;
-  const isPositive1h = coin.price_change_percentage_1h_in_currency !== null && coin.price_change_percentage_1h_in_currency >= 0;
 
   // Calculate price range percentage for visual indicator
   const priceRange = coin.high_24h - coin.low_24h;
@@ -134,19 +133,21 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, index, timeframe, onClick, on
               <span className="text-gray-500 font-normal">({getTimeframeLabel(coin, timeframe)})</span>
             </div>
             
-            {/* 1h momentum */}
-            {coin.price_change_percentage_1h_in_currency !== null && (
-              <div className={`flex items-center gap-2 text-xs font-medium ${
-                isPositive1h ? 'text-emerald-500' : 'text-red-500'
-              }`}>
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                  isPositive1h ? 'bg-emerald-50' : 'bg-red-50'
-                }`}>
-                  <span>{isPositive1h ? '↗' : '↘'}</span>
+            {/* Trend Arrows - All Timeframes */}
+            <div className="flex items-center gap-1 mt-2">
+              <span className="text-xs text-gray-500 mr-1">Trend:</span>
+              {getTrendArrows(coin)}
+            </div>
+            
+            {/* Trend Strength */}
+            {(() => {
+              const trendInfo = getTrendStrength(coin);
+              return (
+                <div className={`text-xs font-medium ${trendInfo.color} mt-1`}>
+                  {trendInfo.strength} ({trendInfo.arrows}/4 arrows)
                 </div>
-                <span>{coin.price_change_percentage_1h_in_currency.toFixed(2)}% (1h)</span>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </div>
 
