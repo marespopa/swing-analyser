@@ -54,13 +54,15 @@ const CoinAnalysisModal: React.FC<CoinAnalysisModalProps> = ({
                 <p className="text-emerald-600 font-semibold">{coin.symbol.toUpperCase()}</p>
               </div>
             </div>
-            <Button
-              onClick={onClose}
-              variant="secondary"
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg"
-            >
-              ✕
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={onClose}
+                variant="secondary"
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg"
+              >
+                ✕
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -443,6 +445,8 @@ const CoinAnalysisModal: React.FC<CoinAnalysisModalProps> = ({
 
               {/* News Sentiment */}
               <NewsSentimentWidget coinSymbol={coin.symbol} />
+
+
 
               {/* Data Quality */}
               <div className="bg-gray-50 rounded-xl p-4">

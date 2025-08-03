@@ -170,14 +170,22 @@ const NewsSentimentWidget: React.FC<NewsSentimentWidgetProps> = ({ coinSymbol })
                   </div>
                 </div>
               </div>
-              <a
-                href={article.url}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={() => {
+                  if (window.__TAURI__) {
+                    try {
+                      window.__TAURI__.shell.open(article.url);
+                    } catch (error) {
+                      window.open(article.url, '_blank', 'noopener,noreferrer');
+                    }
+                  } else {
+                    window.open(article.url, '_blank', 'noopener,noreferrer');
+                  }
+                }}
                 className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
               >
                 Read More →
-              </a>
+              </button>
             </div>
           ))}
         </div>

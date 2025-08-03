@@ -1,5 +1,6 @@
 import React from 'react';
 import Button from './Button';
+import Dropdown from './Dropdown';
 
 interface SearchAndSortProps {
   searchTerm: string;
@@ -47,16 +48,16 @@ const SearchAndSort: React.FC<SearchAndSortProps> = ({
           <label htmlFor="timeframe" className="block text-sm font-medium text-gray-700 mb-2">
             Timeframe
           </label>
-          <select
-            id="timeframe"
+          <Dropdown
             value={timeframe}
-            onChange={(e) => setTimeframe(e.target.value)}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-          >
-            <option value="1h">1 Hour</option>
-            <option value="4h">4 Hours</option>
-            <option value="24h">24 Hours</option>
-          </select>
+            onChange={setTimeframe}
+            options={[
+              { value: '1h', label: '1 Hour' },
+              { value: '4h', label: '4 Hours' },
+              { value: '24h', label: '24 Hours' }
+            ]}
+            placeholder="Select timeframe"
+          />
         </div>
 
         {/* Sort Controls */}
@@ -65,20 +66,20 @@ const SearchAndSort: React.FC<SearchAndSortProps> = ({
             <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 mb-2">
               Sort by
             </label>
-            <select
-              id="sortBy"
+            <Dropdown
               value={sortBy}
-              onChange={(e) => handleSort(e.target.value)}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-            >
-              <option value="market_cap">Market Cap</option>
-              <option value="name">Name</option>
-              <option value="price">Price</option>
-              <option value="volume">Volume (24h)</option>
-              <option value="change_1h">1h Change</option>
-              <option value="change_4h">4h Change</option>
-              <option value="change_24h">24h Change</option>
-            </select>
+              onChange={handleSort}
+              options={[
+                { value: 'market_cap', label: 'Market Cap' },
+                { value: 'name', label: 'Name' },
+                { value: 'price', label: 'Price' },
+                { value: 'volume', label: 'Volume (24h)' },
+                { value: 'change_1h', label: '1h Change' },
+                { value: 'change_4h', label: '4h Change' },
+                { value: 'change_24h', label: '24h Change' }
+              ]}
+              placeholder="Select sort field"
+            />
           </div>
 
           <div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
 import { 
   filteredTradesAtom, 
@@ -8,9 +8,13 @@ import {
   deleteTradeAtom,
   clearAllTradesAtom,
   addTradeAtom,
+  tradeLogAtom,
   TradeEntry
 } from '../stores/tradeLogStore';
 import Button from './Button';
+import Dropdown from './Dropdown';
+import { save } from '@tauri-apps/plugin-dialog';
+import { writeTextFile } from '@tauri-apps/plugin-fs';
 
 const TradeLog: React.FC = () => {
   const [filters, setFilters] = useAtom(tradeFiltersAtom);
@@ -36,6 +40,9 @@ const TradeLog: React.FC = () => {
   const [, closeTrade] = useAtom(closeTradeAtom);
   const [, deleteTrade] = useAtom(deleteTradeAtom);
   const [, clearAllTrades] = useAtom(clearAllTradesAtom);
+  const [allTrades, setAllTrades] = useAtom(tradeLogAtom);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddManualTrade = () => {
     const entryPrice = parseFloat(manualTrade.entryPrice);
@@ -89,6 +96,118 @@ const TradeLog: React.FC = () => {
     closeTrade(tradeId, price);
     setClosePrice('');
     setSelectedTrade(null);
+  };
+
+  const handleExportTrades = async () => {    
+    console.log('Export clicked, allTrades:', allTrades);
+    if (allTrades.length === 0) {
+      alert('No trades to export');
+      return;
+    }
+
+    try {
+      const exportData = {
+        version: '1.0',
+        exportDate: new Date().toISOString(),
+        trades: allTrades.map(trade => ({
+          ...trade,
+          timestamp: trade.timestamp instanceof Date ? trade.timestamp.toISOString() : trade.timestamp,
+          closeTimestamp: trade.closeTimestamp instanceof Date ? trade.closeTimestamp.toISOString() : trade.closeTimestamp
+        }))
+      };
+      console.log('Export data prepared:', exportData);
+
+      // Use Tauri's native save dialog to get the file path
+      console.log('Opening save dialog...');
+      const filePath = await save({
+        title: 'Save Trade Log',
+        filters: [{
+          name: 'JSON Files',
+          extensions: ['json']
+        }],
+        defaultPath: `swing-analyser-trades-${new Date().toISOString().split('T')[0]}.json`
+      });
+      console.log('Save dialog result:', filePath);
+
+      if (filePath) {
+        console.log('Writing file to:', filePath);
+        
+        // Write the file using Tauri's File System API
+        await writeTextFile(filePath, JSON.stringify(exportData, null, 2));
+        console.log('File written successfully');
+        
+        const fileName = filePath.split('/').pop() || filePath.split('\\').pop() || `swing-analyser-trades-${new Date().toISOString().split('T')[0]}.json`;
+        alert(`Trade log exported successfully! File saved as: ${fileName}`);
+      } else {
+        console.log('No file path selected, export cancelled');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      console.error('Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace'
+      });
+      alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  const handleImportTrades = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const importData = JSON.parse(content);
+        
+        if (!importData.trades || !Array.isArray(importData.trades)) {
+          throw new Error('Invalid file format: trades array not found');
+        }
+
+        const importedTrades: TradeEntry[] = importData.trades.map((trade: any) => ({
+          ...trade,
+          timestamp: new Date(trade.timestamp),
+          closeTimestamp: trade.closeTimestamp ? new Date(trade.closeTimestamp) : undefined
+        }));
+
+        // Validate trade structure
+        const validTrades = importedTrades.filter(trade => 
+          trade.id && 
+          trade.coinId && 
+          trade.coinName && 
+          trade.coinSymbol && 
+          trade.action && 
+          typeof trade.price === 'number' &&
+          typeof trade.quantity === 'number' &&
+          typeof trade.totalValue === 'number' &&
+          trade.timestamp instanceof Date &&
+          trade.status
+        );
+
+        if (validTrades.length === 0) {
+          throw new Error('No valid trades found in the file');
+        }
+
+        if (validTrades.length !== importedTrades.length) {
+          alert(`Warning: ${importedTrades.length - validTrades.length} trades were skipped due to invalid data.`);
+        }
+
+        setAllTrades(validTrades);
+        alert(`Successfully imported ${validTrades.length} trades!`);
+        
+      } catch (error) {
+        console.error('Import error:', error);
+        alert(`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
 
@@ -225,13 +344,32 @@ const TradeLog: React.FC = () => {
               {showAddTrade ? 'Cancel' : 'Add Trade'}
             </Button>
             <Button
+              variant="secondary"
+              onClick={handleExportTrades}
+              disabled={allTrades.length === 0}
+            >
+              Export ({allTrades.length})
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Import
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImportTrades}
+              className="hidden"
+            />
+            <Button
               variant="danger"
               onClick={() => {
                 if (confirm('Are you sure you want to clear all trades? This cannot be undone.')) {
                   clearAllTrades();
                 }
               }}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium"
             >
               Clear All
             </Button>
@@ -267,15 +405,16 @@ const TradeLog: React.FC = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Action *</label>
-                <select
+                <Dropdown
                   value={manualTrade.action}
-                  onChange={(e) => setManualTrade({ ...manualTrade, action: e.target.value as 'BUY' | 'SELL' | 'HOLD' })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                >
-                  <option value="BUY">Buy</option>
-                  <option value="SELL">Sell</option>
-                  <option value="HOLD">Hold</option>
-                </select>
+                  onChange={(value) => setManualTrade({ ...manualTrade, action: value as 'BUY' | 'SELL' | 'HOLD' })}
+                  options={[
+                    { value: 'BUY', label: 'Buy' },
+                    { value: 'SELL', label: 'Sell' },
+                    { value: 'HOLD', label: 'Hold' }
+                  ]}
+                  placeholder="Select action"
+                />
               </div>
               
               <div>
@@ -350,44 +489,47 @@ const TradeLog: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select
+            <Dropdown
               value={filters.status}
-              onChange={(e) => setFilters({ ...filters, status: e.target.value as any })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-            >
-              <option value="ALL">All</option>
-              <option value="OPEN">Open</option>
-              <option value="CLOSED">Closed</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
+              onChange={(value) => setFilters({ ...filters, status: value as any })}
+              options={[
+                { value: 'ALL', label: 'All' },
+                { value: 'OPEN', label: 'Open' },
+                { value: 'CLOSED', label: 'Closed' },
+                { value: 'CANCELLED', label: 'Cancelled' }
+              ]}
+              placeholder="Select status"
+            />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Action</label>
-            <select
+            <Dropdown
               value={filters.action}
-              onChange={(e) => setFilters({ ...filters, action: e.target.value as any })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-            >
-              <option value="ALL">All</option>
-              <option value="BUY">Buy</option>
-              <option value="SELL">Sell</option>
-              <option value="HOLD">Hold</option>
-            </select>
+              onChange={(value) => setFilters({ ...filters, action: value as any })}
+              options={[
+                { value: 'ALL', label: 'All' },
+                { value: 'BUY', label: 'Buy' },
+                { value: 'SELL', label: 'Sell' },
+                { value: 'HOLD', label: 'Hold' }
+              ]}
+              placeholder="Select action"
+            />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
-            <select
+            <Dropdown
               value={filters.dateRange}
-              onChange={(e) => setFilters({ ...filters, dateRange: e.target.value as any })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-            >
-              <option value="ALL">All Time</option>
-              <option value="TODAY">Today</option>
-              <option value="WEEK">This Week</option>
-              <option value="MONTH">This Month</option>
-            </select>
+              onChange={(value) => setFilters({ ...filters, dateRange: value as any })}
+              options={[
+                { value: 'ALL', label: 'All Time' },
+                { value: 'TODAY', label: 'Today' },
+                { value: 'WEEK', label: 'This Week' },
+                { value: 'MONTH', label: 'This Month' }
+              ]}
+              placeholder="Select date range"
+            />
           </div>
           
           <div>

@@ -71,7 +71,20 @@ const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
       {/* Data Source Info */}
       <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
         <div className="text-sm text-green-700">
-          <span className="font-medium">Data Source:</span> <a href="https://www.coingecko.com/en/api" target="_blank" rel="noopener noreferrer" className="text-green-700 hover:text-green-800">CoinGecko API</a>   (Real Historical Data)
+          <span className="font-medium">Data Source:</span> <button
+            onClick={() => {
+              if (window.__TAURI__) {
+                try {
+                  window.__TAURI__.shell.open('https://www.coingecko.com/en/api');
+                } catch (error) {
+                  window.open('https://www.coingecko.com/en/api', '_blank', 'noopener,noreferrer');
+                }
+              } else {
+                window.open('https://www.coingecko.com/en/api', '_blank', 'noopener,noreferrer');
+              }
+            }}
+            className="text-green-700 hover:text-green-800 underline"
+          >CoinGecko API</button>   (Real Historical Data)
         </div>
         <div className="text-xs text-green-600 mt-1">
           Rate limited to 30 requests/minute - Data cached in localStorage

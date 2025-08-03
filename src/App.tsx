@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Provider } from 'jotai';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import TabNavigation from './components/TabNavigation';
 import LoadingSpinner from './components/LoadingSpinner';
 import MarketOverview from './components/MarketOverview';
 import TradeLog from './components/TradeLog';
-import LandingPage from './components/LandingPage';
+import SetupWizard from './components/SetupWizard';
 import Button from './components/Button';
 import { useCoinData } from './hooks/useCoinData';
 import { useAutoRefresh } from './hooks/useAutoRefresh';
@@ -15,7 +15,11 @@ import { useSwingAnalysis } from './hooks/useSwingAnalysis';
 
 // Separate component to use useLocation hook
 const AppContent: React.FC = () => {
-  const location = useLocation();
+  const [showSetupWizard, setShowSetupWizard] = useState(() => {
+    // Check if setup is complete
+    const setupComplete = localStorage.getItem('swingAnalyserSetupComplete');
+    return !setupComplete;
+  });
   
   // Use custom hooks
   const {
@@ -86,6 +90,11 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // Show setup wizard if not completed
+  if (showSetupWizard) {
+    return <SetupWizard onComplete={() => setShowSetupWizard(false)} />;
+  }
+
   if (loading) {
     return <LoadingSpinner message="Loading cryptocurrencies..." />;
   }
@@ -109,24 +118,18 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-100">
-      {/* Only show main Header on app routes, not landing page */}
-      {location.pathname !== '/landing' && (
-        <Header
-          loading={loading}
-          coins={coins}
-          getMarketSentiment={getMarketSentiment}
-          getSentimentIcon={getSentimentIcon}
-        />
-      )}
-
-      {/* Only show TabNavigation on main app routes */}
-      {location.pathname !== '/landing' && <TabNavigation />}
+      {/* Show Header and TabNavigation for all routes */}
+      <Header
+        loading={loading}
+        coins={coins}
+        getMarketSentiment={getMarketSentiment}
+        getSentimentIcon={getSentimentIcon}
+        onOpenSettings={() => setShowSetupWizard(true)}
+      />
+      <TabNavigation />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Routes>
-          {/* Landing Page Route */}
-          <Route path="/landing" element={<LandingPage />} />
-          
           {/* Market Overview Route */}
           <Route path="/market" element={
             <MarketOverview
@@ -158,8 +161,8 @@ const AppContent: React.FC = () => {
           {/* Trade Log Route */}
           <Route path="/trades" element={<TradeLog />} />
 
-          {/* Default redirect to landing page */}
-          <Route path="/" element={<Navigate to="/landing" replace />} />
+          {/* Default redirect to market page */}
+          <Route path="/" element={<Navigate to="/market" replace />} />
         </Routes>
       </main>
 
