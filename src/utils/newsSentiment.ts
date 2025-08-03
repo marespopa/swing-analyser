@@ -134,7 +134,7 @@ export class NewsSentimentAPI {
     }
   }
 
-  private createNewsFromCoinGeckoData(data: any, coinSymbol: string): NewsArticle[] {
+  private createNewsFromCoinGeckoData(_data: any, _coinSymbol: string): NewsArticle[] {
     // Don't generate fake articles - only return real news
     return [];
   }

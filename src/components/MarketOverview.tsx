@@ -56,7 +56,6 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({
   searchTerm,
   setSearchTerm,
   timeframe,
-  setTimeframe,
   sortBy,
   sortOrder,
   handleSort,

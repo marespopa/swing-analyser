@@ -87,7 +87,7 @@ export const useRateLimiting = () => {
         try {
           recordRequest();
           await request.fn();
-        } catch (error) {
+        } catch (_error) {
           // Silently handle error
         }
       }

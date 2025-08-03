@@ -44,7 +44,8 @@ export const fetchRealHistoricalData = async (
       
       return prices;
     }
-  } catch (error) {
+  } catch (_error) {
+    console.error(`Failed to fetch real historical data for ${coinId}:`, _error);
     // Silently handle error
   }
   
@@ -79,7 +80,8 @@ export const fetchBatchHistoricalData = async (
         await new Promise(resolve => setTimeout(resolve, delayBetweenRequests));
       }
       
-    } catch (error) {
+    } catch (_error) {
+      console.error(`Failed to fetch historical data for ${coinId}:`, _error);
       // Continue with next coin instead of failing completely
     }
   }

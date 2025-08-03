@@ -68,8 +68,7 @@ export const useSwingAnalysis = (coins: Coin[]) => {
         (_atom) => {
           // The atom parameter is actually the historicalDataAtom, so we need to get its value
           return historicalData;
-        },
-        (_atom, value) => setHistoricalData(value)
+        }
       );
       
       setAllAnalyzedCoins(analyzedCoins);
@@ -78,7 +77,7 @@ export const useSwingAnalysis = (coins: Coin[]) => {
       const highQualitySignals = getHighQualitySignals(analyzedCoins);
       setSwingSignals(highQualitySignals);
       
-    } catch (error) {
+    } catch (_error) {
       // Clear any partial results on error
       setSwingSignals([]);
       setAllAnalyzedCoins([]);
@@ -115,8 +114,7 @@ export const useSwingAnalysis = (coins: Coin[]) => {
       const analyzedCoins = await analyzeCoinsForSwing(
         [coin],
         { [coin.id]: historicalDataMap[coin.id] || [] },
-        (_atom) => historicalData,
-        (_atom, value) => setHistoricalData(value)
+        (_atom) => historicalData
       );
       
       if (analyzedCoins.length > 0) {

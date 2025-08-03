@@ -76,7 +76,7 @@ const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
               if (window.__TAURI__) {
                 try {
                   window.__TAURI__.shell.open('https://www.coingecko.com/en/api');
-                } catch (error) {
+                } catch (_error) {
                   window.open('https://www.coingecko.com/en/api', '_blank', 'noopener,noreferrer');
                 }
               } else {

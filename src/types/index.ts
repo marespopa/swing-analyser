@@ -1,11 +1,7 @@
 // Vite Environment Types
 declare global {
-  interface ImportMetaEnv {
-    readonly VITE_COINGECKO_API_KEY: string;
-  }
-
   interface ImportMeta {
-    readonly env: ImportMetaEnv;
+    readonly env: Record<string, string>;
   }
 }
 

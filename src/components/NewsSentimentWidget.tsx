@@ -175,7 +175,7 @@ const NewsSentimentWidget: React.FC<NewsSentimentWidgetProps> = ({ coinSymbol })
                   if (window.__TAURI__) {
                     try {
                       window.__TAURI__.shell.open(article.url);
-                    } catch (error) {
+                    } catch (_error) {
                       window.open(article.url, '_blank', 'noopener,noreferrer');
                     }
                   } else {

@@ -65,7 +65,7 @@ export class CoinGeckoAPI {
   }
 
   private async makeRequest<T>(url: string): Promise<T> {
-    const apiKey = getApiKeyForUse() || import.meta.env.VITE_COINGECKO_API_KEY;
+    const apiKey = getApiKeyForUse();
 
     if (!apiKey) {
       throw new Error('CoinGecko API key is missing. Please configure your API key in the settings.');
@@ -91,7 +91,7 @@ export class CoinGeckoAPI {
   }
 
   async fetchTop100Coins(): Promise<Coin[]> {
-    const apiKey = getApiKeyForUse() || import.meta.env.VITE_COINGECKO_API_KEY;
+    const apiKey = getApiKeyForUse();
     // Fetch 250 coins (1 page) to optimize API usage while maintaining good coverage
     // This ensures we have ~200 meaningful coins after filtering
     const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false&price_change_percentage=1h,4h,24h,7d&x_cg_demo_api_key=${apiKey}`;
@@ -100,13 +100,13 @@ export class CoinGeckoAPI {
   }
 
   async fetchHistoricalData(coinId: string, days = 200): Promise<HistoricalData | null> {
-    const apiKey = getApiKeyForUse() || import.meta.env.VITE_COINGECKO_API_KEY;
+    const apiKey = getApiKeyForUse();
     const url = `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${days}&interval=daily&x_cg_demo_api_key=${apiKey}`;
     
     try {
       const data = await this.makeRequest<{ prices: HistoricalData }>(url);
       return data.prices;
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   }

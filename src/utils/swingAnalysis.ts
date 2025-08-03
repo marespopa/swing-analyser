@@ -7,7 +7,6 @@ interface AnalyzedCoin extends Coin {
 
 // Type for Jotai get/set functions
 type JotaiGet = (atom: any) => any;
-type JotaiSet = (atom: any, value: any) => void;
 
 // Calculate EMA (Exponential Moving Average)
 // Optimized EMA calculation with early exit and better performance
@@ -339,8 +338,7 @@ export const analyzeCoinForSwing = async (
 export const analyzeCoinsForSwing = async (
   coins: Coin[], 
   historicalData: Record<string, number[]>,
-  get: JotaiGet, 
-  _set: JotaiSet
+  get: JotaiGet
 ): Promise<AnalyzedCoin[]> => {
   // Pre-filter coins with valid data and basic criteria
   const validCoins = coins.filter(coin => {
