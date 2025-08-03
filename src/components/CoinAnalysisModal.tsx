@@ -2,6 +2,7 @@ import React from 'react';
 import { Coin, EMAData } from '../types';
 import Button from './Button';
 import LoadingSpinner from './LoadingSpinner';
+import NewsSentimentWidget from './NewsSentimentWidget';
 
 interface AnalyzedCoin extends Coin {
   emaData: EMAData;
@@ -439,6 +440,9 @@ const CoinAnalysisModal: React.FC<CoinAnalysisModalProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* News Sentiment */}
+              <NewsSentimentWidget coinSymbol={coin.symbol} />
 
               {/* Data Quality */}
               <div className="bg-gray-50 rounded-xl p-4">

@@ -80,8 +80,28 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, index, timeframe, onClick, on
             </div>
           </div>
           
-          <div className="bg-gray-100 text-gray-700 text-xs font-semibold px-2 py-1 rounded-lg">
-            #{index + 1}
+          <div className="flex items-center gap-2">
+            <div className="bg-gray-100 text-gray-700 text-xs font-semibold px-2 py-1 rounded-lg">
+              #{index + 1}
+            </div>
+            {onRefreshData && (
+              <button
+                onClick={handleRefreshClick}
+                disabled={isRefreshing}
+                className={`p-1 rounded-lg transition-colors ${
+                  isRefreshing 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800'
+                }`}
+                title="Refresh data"
+              >
+                {isRefreshing ? (
+                  <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                ) : (
+                  <span className="text-sm">↻</span>
+                )}
+              </button>
+            )}
           </div>
           
 
