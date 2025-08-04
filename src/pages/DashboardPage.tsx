@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useAtom } from 'jotai'
 import { useNavigate } from 'react-router-dom'
-import { portfolioAtom, swingTradeOpportunitiesAtom, addSwingTradeOpportunityAtom, setLoadingAtom, setPortfolioAtom } from '../store'
-import type { SwingTradeOpportunity, CryptoAsset } from '../types'
+import { portfolioAtom, swingTradeOpportunitiesAtom, addSwingTradeOpportunityAtom, removeSwingTradeOpportunityAtom, setLoadingAtom, setPortfolioAtom } from '../store'
+import type { SwingTradeOpportunity } from '../types'
 import { CoinGeckoAPI } from '../services/api'
 import { CacheService } from '../services/cache'
+import { RebalancingService } from '../services/rebalancing'
+import { TechnicalAnalysisService } from '../services/technicalAnalysis'
 import Button from '../components/ui/Button'
 import LoadingOverlay from '../components/ui/LoadingOverlay'
 
@@ -12,11 +14,15 @@ const DashboardPage: React.FC = () => {
   const [portfolio] = useAtom(portfolioAtom)
   const [swingTradeOpportunities] = useAtom(swingTradeOpportunitiesAtom)
   const [, addSwingTradeOpportunity] = useAtom(addSwingTradeOpportunityAtom)
+  const [, removeSwingTradeOpportunity] = useAtom(removeSwingTradeOpportunityAtom)
   const [isLoading, setIsLoading] = useAtom(setLoadingAtom)
   const [, setPortfolio] = useAtom(setPortfolioAtom)
   const navigate = useNavigate()
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
   const [cacheInfo] = useState(CacheService.getCacheInfo())
+  const [rebalancingRecommendation] = useState(() => {
+    return portfolio ? RebalancingService.analyzePortfolio(portfolio) : null
+  })
 
   // Debug: Log portfolio state
   console.log('Dashboard - Portfolio state:', portfolio)
@@ -44,59 +50,65 @@ const DashboardPage: React.FC = () => {
       // Get high volatility cryptocurrencies for potential opportunities
       const volatileCoins = await CoinGeckoAPI.getHighVolatilityCryptocurrencies()
       
-      // Generate buy/sell opportunities for spot trading
-      const opportunities: SwingTradeOpportunity[] = volatileCoins.slice(0, 3).map((coin, index) => {
-        // Determine signal based on price action - no conflicting signals
-        const priceChange = coin.price_change_percentage_24h
-        let signalType: 'buy' | 'sell'
-        let reason: string
-        let expectedReturn: number
-        let riskLevel: 'low' | 'medium' | 'high'
-
-        if (priceChange < -8) {
-          // Strong buy signal - oversold
-          signalType = 'buy'
-          reason = generateBuyReason(coin)
-          expectedReturn = Math.floor(Math.random() * 15) + 8 // 8-23%
-          riskLevel = priceChange < -15 ? 'high' : 'medium'
-        } else if (priceChange > 8) {
-          // Strong sell signal - overbought
-          signalType = 'sell'
-          reason = generateSellReason(coin)
-          expectedReturn = Math.floor(Math.random() * 10) + 3 // 3-13%
-          riskLevel = priceChange > 15 ? 'high' : 'medium'
-        } else if (priceChange < -3) {
-          // Moderate buy signal
-          signalType = 'buy'
-          reason = generateBuyReason(coin)
-          expectedReturn = Math.floor(Math.random() * 10) + 5 // 5-15%
-          riskLevel = 'low'
-        } else if (priceChange > 3) {
-          // Moderate sell signal
-          signalType = 'sell'
-          reason = generateSellReason(coin)
-          expectedReturn = Math.floor(Math.random() * 8) + 2 // 2-10%
-          riskLevel = 'low'
-        } else {
-          // Neutral - skip this coin
-          return null
+      // Generate swing trade opportunities using real technical analysis
+      const opportunities: SwingTradeOpportunity[] = []
+      const usedCoinIds = new Set<string>()
+      
+      for (const coin of volatileCoins) {
+        if (opportunities.length >= 10) break // Generate more opportunities for better selection
+        if (usedCoinIds.has(coin.id)) continue // Skip if coin already used
+        
+        // Additional check: skip if this coin already has an opportunity
+        const existingOpportunity = swingTradeOpportunities.find(opp => opp.asset.id === coin.id)
+        if (existingOpportunity) continue
+        
+        // Generate real technical analysis signal
+        const technicalSignal = TechnicalAnalysisService.generateSwingTradeSignal(coin, portfolio.assets)
+        
+        // Only add if we have a clear buy or sell signal with good confidence
+        if (technicalSignal.signal !== 'hold' && technicalSignal.confidence >= 70) {
+          const expectedReturn = technicalSignal.signal === 'buy' 
+            ? Math.abs(technicalSignal.technicalScore) * 0.3 + 5 // 5-20% for buys
+            : Math.abs(technicalSignal.technicalScore) * 0.2 + 3 // 3-15% for sells
+          
+          const riskLevel = technicalSignal.riskScore > 50 ? 'high' : 
+                           technicalSignal.riskScore > 25 ? 'medium' : 'low'
+          
+          opportunities.push({
+            id: `opportunity-${Date.now()}-${coin.id}`,
+            type: technicalSignal.signal,
+            asset: coin,
+            reason: technicalSignal.reasons.join(', '),
+            confidence: technicalSignal.confidence,
+            suggestedAllocation: Math.floor(Math.random() * 8) + 7, // 7-15%
+            expectedReturn,
+            riskLevel,
+            timestamp: new Date()
+          })
+          
+          usedCoinIds.add(coin.id) // Mark coin as used
         }
+      }
 
-        return {
-          id: `opportunity-${Date.now()}-${index}`,
-          type: signalType,
-          asset: coin,
-          reason,
-          confidence: Math.floor(Math.random() * 20) + 80, // 80-100% (higher confidence with clear signals)
-          suggestedAllocation: Math.floor(Math.random() * 8) + 7, // 7-15%
-          expectedReturn,
-          riskLevel,
-          timestamp: new Date()
-        }
-      }).filter(Boolean) as SwingTradeOpportunity[] // Remove null entries
-
-      // Add opportunities to store
-      opportunities.forEach(opportunity => {
+      // Clear ALL existing opportunities first to prevent duplicates
+      swingTradeOpportunities.forEach(opportunity => {
+        removeSwingTradeOpportunity(opportunity.id)
+      })
+      
+      // Sort opportunities by confidence and freshness, then limit to 5
+      const sortedOpportunities = opportunities
+        .sort((a, b) => {
+          // Primary sort by confidence
+          if (b.confidence !== a.confidence) {
+            return b.confidence - a.confidence
+          }
+          // Secondary sort by timestamp (freshest first)
+          return b.timestamp.getTime() - a.timestamp.getTime()
+        })
+        .slice(0, 5) // Limit to 5 items
+      
+      // Add new opportunities
+      sortedOpportunities.forEach(opportunity => {
         addSwingTradeOpportunity(opportunity)
       })
 
@@ -106,7 +118,7 @@ const DashboardPage: React.FC = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [portfolio, setIsLoading, addSwingTradeOpportunity])
+  }, [portfolio, setIsLoading, addSwingTradeOpportunity, removeSwingTradeOpportunity, swingTradeOpportunities])
 
   useEffect(() => {
     if (portfolio) {
@@ -118,31 +130,6 @@ const DashboardPage: React.FC = () => {
       return () => clearInterval(interval)
     }
   }, [portfolio, analyzeForSwingTrades])
-
-  const generateBuyReason = (coin: CryptoAsset) => {
-    const reasons = [
-      `${coin.symbol} showing oversold conditions with ${coin.price_change_percentage_24h.toFixed(1)}% 24h drop - potential bounce`,
-      `${coin.symbol} breaking out of support levels with increased volume`,
-      `${coin.symbol} showing bullish momentum reversal pattern`,
-      `${coin.symbol} trading at attractive entry point after recent correction`,
-      `${coin.symbol} showing positive divergence on technical indicators`,
-      `${coin.symbol} approaching key support level with strong buying pressure`
-    ]
-    return reasons[Math.floor(Math.random() * reasons.length)]
-  }
-
-  const generateSellReason = (coin: CryptoAsset) => {
-    const reasons = [
-      `${coin.symbol} showing overbought conditions with ${coin.price_change_percentage_24h.toFixed(1)}% 24h gain - potential pullback`,
-      `${coin.symbol} hitting resistance levels with decreasing volume`,
-      `${coin.symbol} showing bearish reversal pattern`,
-      `${coin.symbol} trading at resistance after strong rally`,
-      `${coin.symbol} showing negative divergence on technical indicators`,
-      `${coin.symbol} approaching key resistance level with selling pressure`
-    ]
-    return reasons[Math.floor(Math.random() * reasons.length)]
-  }
-
 
   const handleResetPortfolio = () => {
     if (confirm('Are you sure you want to reset your portfolio? This will clear all your current holdings and take you back to setup.')) {
@@ -330,6 +317,161 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Portfolio Rebalancing */}
+        {rebalancingRecommendation && (
+          <div className="bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-8 rounded-neo-lg mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-neo font-black text-neo-text">
+                PORTFOLIO REBALANCING
+              </h2>
+              <div className={`px-3 py-1 rounded-neo text-sm font-neo font-bold ${
+                rebalancingRecommendation.urgency === 'high' 
+                  ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                  : rebalancingRecommendation.urgency === 'medium'
+                  ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+                  : 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+              }`}>
+                {rebalancingRecommendation.urgency.toUpperCase()} PRIORITY
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Rebalancing Summary */}
+              <div>
+                <h3 className="text-xl font-neo font-black text-neo-text mb-4">
+                  RECOMMENDATION
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-neo text-neo-text/60">Action</p>
+                    <p className={`font-neo font-bold text-lg ${
+                      rebalancingRecommendation.type === 'rebalance' 
+                        ? 'text-red-600 dark:text-red-400'
+                        : rebalancingRecommendation.type === 'partial-rebalance'
+                        ? 'text-yellow-600 dark:text-yellow-400'
+                        : 'text-green-600 dark:text-green-400'
+                    }`}>
+                      {rebalancingRecommendation.type.toUpperCase()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-neo text-neo-text/60">Portfolio Drift</p>
+                    <p className={`font-neo font-bold text-lg ${
+                      rebalancingRecommendation.driftPercentage > 15 
+                        ? 'text-red-600 dark:text-red-400'
+                        : rebalancingRecommendation.driftPercentage > 10
+                        ? 'text-yellow-600 dark:text-yellow-400'
+                        : 'text-green-600 dark:text-green-400'
+                    }`}>
+                      {rebalancingRecommendation.driftPercentage.toFixed(1)}%
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-neo text-neo-text/60">Next Review</p>
+                    <p className="font-neo font-bold text-neo-text">
+                      {rebalancingRecommendation.nextReviewDate.toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-neo text-neo-text/60">Reason</p>
+                    <p className="font-neo text-neo-text">
+                      {rebalancingRecommendation.reason}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Suggested Actions */}
+              <div>
+                <h3 className="text-xl font-neo font-black text-neo-text mb-4">
+                  SUGGESTED ACTIONS
+                </h3>
+                <ul className="space-y-2">
+                  {rebalancingRecommendation.suggestedActions.map((action, index) => (
+                    <li key={index} className="flex items-start space-x-2">
+                      <span className="text-neo-primary dark:text-neo-primary-dark mt-1">•</span>
+                      <span className="font-neo text-neo-text/80">{action}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Strategy Recommendations */}
+                <div className="mt-6 p-4 bg-neo-surface/50 dark:bg-neo-surface-dark/50 border-neo border-neo-border rounded-neo">
+                  <h4 className="font-neo font-bold text-neo-text mb-2">Strategy Tips</h4>
+                  <div className="space-y-2 text-sm font-neo text-neo-text/80">
+                    <p>{RebalancingService.getFrequencyRecommendation(portfolio.riskProfile)}</p>
+                    <p>{RebalancingService.getHoldingPeriodRecommendation(portfolio.riskProfile)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Assets to Rebalance */}
+            {rebalancingRecommendation.assetsToRebalance.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-xl font-neo font-black text-neo-text mb-4">
+                  ASSETS TO REBALANCE
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {rebalancingRecommendation.assetsToRebalance.map((item) => (
+                    <div
+                      key={item.asset.id}
+                      className="p-4 border-neo border-neo-border rounded-neo bg-neo-surface/50 dark:bg-neo-surface-dark/50"
+                    >
+                      <div className="flex items-center space-x-3 mb-3">
+                        <img
+                          src={item.asset.image}
+                          alt={item.asset.name}
+                          className="w-10 h-10 rounded-neo"
+                        />
+                        <div>
+                          <h4 className="font-neo font-bold text-neo-text">
+                            {item.asset.symbol}
+                          </h4>
+                          <p className="text-sm font-neo text-neo-text/60">
+                            {item.asset.name}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm font-neo text-neo-text/60">Current</span>
+                          <span className="font-neo font-bold text-neo-text">
+                            {item.currentAllocation.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-neo text-neo-text/60">Target</span>
+                          <span className="font-neo font-bold text-neo-text">
+                            {item.targetAllocation.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-neo text-neo-text/60">Action</span>
+                          <span className={`font-neo font-bold ${
+                            item.action === 'sell' 
+                              ? 'text-red-600 dark:text-red-400'
+                              : 'text-green-600 dark:text-green-400'
+                          }`}>
+                            {item.action.toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-neo text-neo-text/60">Amount</span>
+                          <span className="font-neo font-bold text-neo-text">
+                            {formatCurrency(item.amount)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Swing Trade Opportunities */}
         <div className="bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-8 rounded-neo-lg mb-8">
           <h2 className="text-2xl font-neo font-black text-neo-text mb-6">
@@ -401,6 +543,57 @@ const DashboardPage: React.FC = () => {
                         </div>
                       </div>
 
+                      {/* Technical Analysis Details */}
+                      <div className="mt-4 p-4 bg-neo-surface/30 dark:bg-neo-surface-dark/30 border-neo border-neo-border rounded-neo">
+                        <h4 className="font-neo font-bold text-neo-text mb-3">Technical Analysis</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                          {(() => {
+                            const indicators = TechnicalAnalysisService.calculateAllIndicators(opportunity.asset)
+                            const metrics = TechnicalAnalysisService.calculateAdvancedMetrics(opportunity.asset)
+                            return (
+                              <>
+                                <div>
+                                  <p className="text-neo-text/60">RSI</p>
+                                  <p className={`font-neo font-bold ${
+                                    indicators.rsi < 30 ? 'text-green-600 dark:text-green-400' :
+                                    indicators.rsi > 70 ? 'text-red-600 dark:text-red-400' :
+                                    'text-neo-text'
+                                  }`}>
+                                    {indicators.rsi.toFixed(1)}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-neo-text/60">Sharpe Ratio</p>
+                                  <p className={`font-neo font-bold ${
+                                    metrics.sharpeRatio > 1 ? 'text-green-600 dark:text-green-400' :
+                                    metrics.sharpeRatio < 0 ? 'text-red-600 dark:text-red-400' :
+                                    'text-neo-text'
+                                  }`}>
+                                    {metrics.sharpeRatio.toFixed(2)}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-neo-text/60">Volatility</p>
+                                  <p className="font-neo font-bold text-neo-text">
+                                    {(metrics.volatility * 100).toFixed(1)}%
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-neo-text/60">Max Drawdown</p>
+                                  <p className={`font-neo font-bold ${
+                                    metrics.maxDrawdown > 0.3 ? 'text-red-600 dark:text-red-400' :
+                                    metrics.maxDrawdown > 0.2 ? 'text-yellow-600 dark:text-yellow-400' :
+                                    'text-green-600 dark:text-green-400'
+                                  }`}>
+                                    {(metrics.maxDrawdown * 100).toFixed(1)}%
+                                  </p>
+                                </div>
+                              </>
+                            )
+                          })()}
+                        </div>
+                      </div>
+
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
                           <span className="text-sm font-neo text-neo-text/60">Risk:</span>
@@ -422,8 +615,6 @@ const DashboardPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-
-
                   </div>
                 </div>
               ))}
