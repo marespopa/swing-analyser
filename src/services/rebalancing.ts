@@ -56,7 +56,7 @@ export class RebalancingService {
     const settings = this.getDefaultSettings(portfolio.riskProfile)
     const now = new Date()
     
-    // Calculate total drift
+    // Calculate total drift (average of individual drifts, not sum)
     let totalDrift = 0
     const assetsToRebalance: RebalancingRecommendation['assetsToRebalance'] = []
     
@@ -80,13 +80,16 @@ export class RebalancingService {
       }
     })
 
+    // Calculate average drift instead of sum
+    totalDrift = totalDrift / portfolio.assets.length
+
     // Determine rebalancing type and urgency
     let type: RebalancingRecommendation['type'] = 'hold'
     let urgency: RebalancingRecommendation['urgency'] = 'low'
     let reason = ''
     let suggestedActions: string[] = []
 
-    if (totalDrift > 20) {
+    if (totalDrift > 8) {
       type = 'rebalance'
       urgency = 'high'
       reason = 'Significant portfolio drift detected. Major rebalancing recommended to maintain risk profile.'
@@ -96,7 +99,7 @@ export class RebalancingService {
         'Add to under-weighted positions',
         'Monitor for 1-2 weeks before executing'
       ]
-    } else if (totalDrift > 15) {
+    } else if (totalDrift > 5) {
       type = 'rebalance'
       urgency = 'medium'
       reason = 'Moderate portfolio drift. Rebalancing recommended to optimize allocation.'
@@ -105,12 +108,12 @@ export class RebalancingService {
         'Consider dollar-cost averaging',
         'Review within 1 week'
       ]
-    } else if (totalDrift > 10) {
+    } else if (totalDrift > 3) {
       type = 'partial-rebalance'
       urgency = 'medium'
       reason = 'Minor portfolio drift. Consider selective rebalancing.'
       suggestedActions = [
-        'Focus on assets with >10% drift',
+        'Focus on assets with >3% drift',
         'Consider gradual adjustments',
         'Monitor for 2-3 weeks'
       ]
@@ -144,10 +147,8 @@ export class RebalancingService {
     // Base allocation on market cap and risk profile
     const baseAllocation = this.getBaseAllocation(asset, riskProfile)
     
-    // Adjust for volatility (reduce allocation for very volatile assets)
-    const volatilityAdjustment = Math.max(0.5, 1 - Math.abs(asset.price_change_percentage_24h) / 100)
-    
-    return baseAllocation * volatilityAdjustment
+    // Normalize to ensure total allocation equals 100%
+    return baseAllocation
   }
 
   // Get base allocation based on asset characteristics
@@ -158,22 +159,22 @@ export class RebalancingService {
     switch (riskProfile) {
       case 'conservative':
         // Focus on top 10 coins with higher allocations
-        if (marketCapRank <= 5) return 20
-        if (marketCapRank <= 10) return 15
-        if (marketCapRank <= 20) return 10
-        return 5
+        if (marketCapRank <= 5) return 25
+        if (marketCapRank <= 10) return 20
+        if (marketCapRank <= 20) return 15
+        return 10
       case 'balanced':
         // More diversified with moderate allocations
-        if (marketCapRank <= 5) return 15
-        if (marketCapRank <= 10) return 12
-        if (marketCapRank <= 20) return 8
-        return 6
+        if (marketCapRank <= 5) return 20
+        if (marketCapRank <= 10) return 15
+        if (marketCapRank <= 20) return 12
+        return 8
       case 'aggressive':
         // More weight on smaller, volatile coins
-        if (marketCapRank <= 5) return 12
-        if (marketCapRank <= 10) return 10
-        if (marketCapRank <= 20) return 8
-        return 7
+        if (marketCapRank <= 5) return 18
+        if (marketCapRank <= 10) return 15
+        if (marketCapRank <= 20) return 12
+        return 10
     }
   }
 

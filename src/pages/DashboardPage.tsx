@@ -9,6 +9,7 @@ import { RebalancingService } from '../services/rebalancing'
 import { TechnicalAnalysisService } from '../services/technicalAnalysis'
 import Button from '../components/ui/Button'
 import LoadingOverlay from '../components/ui/LoadingOverlay'
+import Dialog from '../components/ui/Dialog'
 
 const DashboardPage: React.FC = () => {
   const [portfolio] = useAtom(portfolioAtom)
@@ -23,6 +24,7 @@ const DashboardPage: React.FC = () => {
   const [rebalancingRecommendation] = useState(() => {
     return portfolio ? RebalancingService.analyzePortfolio(portfolio) : null
   })
+  const [showResetDialog, setShowResetDialog] = useState(false)
 
   // Debug: Log portfolio state
   console.log('Dashboard - Portfolio state:', portfolio)
@@ -132,10 +134,12 @@ const DashboardPage: React.FC = () => {
   }, [portfolio, analyzeForSwingTrades])
 
   const handleResetPortfolio = () => {
-    if (confirm('Are you sure you want to reset your portfolio? This will clear all your current holdings and take you back to setup.')) {
-      setPortfolio(null)
-      navigate('/setup')
-    }
+    setShowResetDialog(true)
+  }
+
+  const confirmResetPortfolio = () => {
+    setPortfolio(null)
+    navigate('/setup')
   }
 
   const formatCurrency = (amount: number) => {
@@ -678,6 +682,18 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Reset Portfolio Dialog */}
+      <Dialog
+        isOpen={showResetDialog}
+        onClose={() => setShowResetDialog(false)}
+        onConfirm={confirmResetPortfolio}
+        title="Reset Portfolio"
+        message="Are you sure you want to reset your portfolio? This will clear all your current holdings and take you back to setup. This action cannot be undone."
+        confirmText="Reset Portfolio"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   )
 }
