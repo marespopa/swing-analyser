@@ -35,6 +35,13 @@ const Layout: React.FC = () => {
 
         {/* Page Content */}
         <Outlet />
+
+        {/* Floating Theme Toggle - show on all pages except welcome */}
+        {!showHeader && (
+          <div className="fixed top-4 right-4 z-50">
+            <ThemeToggle />
+          </div>
+        )}
       </div>
     </div>
   )
