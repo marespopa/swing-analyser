@@ -5,9 +5,15 @@ import { useState, useEffect } from 'react'
 // Jotai atom for state management
 const countAtom = atom(0)
 
+interface ApiData {
+  id: number
+  title: string
+  body: string
+}
+
 function HomePage() {
   const [count, setCount] = useAtom(countAtom)
-  const [data, setData] = useState<any>(null)
+  const [data, setData] = useState<ApiData | null>(null)
   const [loading, setLoading] = useState(false)
 
   // Example API call with Axios

@@ -1,20 +1,39 @@
 import React, { useEffect, useState } from 'react'
+import Button from './Button'
 
 interface ThemeToggleProps {
   className?: string
 }
 
-const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
-  const [isDark, setIsDark] = useState(false)
+const ThemeToggle: React.FC<ThemeToggleProps> = () => {
+  const [isDark, setIsDark] = useState(() => {
+    // Initialize theme state immediately to prevent flash
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme')
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.documentElement.classList.add('dark')
+        return true
+      } else {
+        document.documentElement.classList.remove('dark')
+        return false
+      }
+    }
+    return false
+  })
 
   useEffect(() => {
-    // Check for saved theme preference or default to light mode
+    // Ensure theme is applied on mount
     const savedTheme = localStorage.getItem('theme')
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     
     if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
       setIsDark(true)
       document.documentElement.classList.add('dark')
+    } else {
+      setIsDark(false)
+      document.documentElement.classList.remove('dark')
     }
   }, [])
 
@@ -32,17 +51,13 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
   }
 
   return (
-    <button
+    <Button
       onClick={toggleTheme}
-      className={`
-        font-neo font-bold border-neo shadow-neo hover-press focus:outline-none focus:ring-2 focus:ring-offset-2
-        bg-neo-accent text-white border-neo-border hover:bg-blue-400 hover:border-blue-500 focus:ring-neo-accent
-        px-4 py-2 text-sm transition-all ${className}
-      `}
+      variant="accent"
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
     >
-      {isDark ? '☀️ LIGHT' : '🌙 DARK'}
-    </button>
+      {isDark ? 'DARK' : 'LIGHT'}
+    </Button>
   )
 }
 

@@ -13,7 +13,7 @@ const Button: React.FC<ButtonProps> = ({
   className = '', 
   ...props 
 }) => {
-  const baseClasses = 'font-neo font-bold border-neo shadow-neo hover-press focus:outline-none focus:ring-2 focus:ring-offset-2'
+  const baseClasses = 'cursor-pointer font-neo font-bold border-neo shadow-neo hover-press focus:outline-none focus:ring-2 focus:ring-offset-2'
   
   const variantClasses = {
     primary: 'bg-neo-primary text-white border-neo-border hover:bg-purple-600 hover:border-purple-700 focus:ring-purple-400',
