@@ -34,7 +34,7 @@ export interface Portfolio {
   updatedAt: Date
 }
 
-export type RiskProfile = 'conservative' | 'balanced' | 'aggressive'
+export type RiskProfile = 'conservative' | 'balanced' | 'aggressive' | 'degen'
 
 export interface SwingTradeOpportunity {
   id: string

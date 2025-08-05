@@ -36,6 +36,23 @@ const Layout: React.FC = () => {
         {/* Page Content */}
         <Outlet />
 
+        {/* Footer */}
+        <footer className="mt-16 pt-8 border-t border-neo-text/20">
+          <div className="flex justify-between items-center text-sm text-neo-text/60">
+            <div>
+              <p>&copy; {new Date().getFullYear()} Swing Analyser. All rights reserved.</p>
+            </div>
+            <div className="flex space-x-4">
+              <a 
+                href="/disclaimer" 
+                className="hover:text-neo-text transition-colors"
+              >
+                Legal Disclaimer
+              </a>
+            </div>
+          </div>
+        </footer>
+
         {/* Floating Theme Toggle - show on all pages except welcome */}
         {!showHeader && (
           <div className="fixed top-4 right-4 z-50">

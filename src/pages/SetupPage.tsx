@@ -41,6 +41,14 @@ const SetupPage: React.FC = () => {
       details: 'Includes volatile coins and trending assets',
       color: 'bg-neo-accent dark:bg-neo-accent-dark',
       icon: '🚀'
+    },
+    {
+      id: 'degen' as RiskProfile,
+      name: 'DEGEN MODE',
+      description: 'Ultra-high risk, maximum potential',
+      details: 'Targeting 100%+ returns with microcaps and trending narratives',
+      color: 'bg-red-500 dark:bg-red-600',
+      icon: '🔥'
     }
   ]
 
@@ -131,6 +139,27 @@ const SetupPage: React.FC = () => {
               </div>
             ))}
           </div>
+          
+          {/* Degen Mode Warning */}
+          {riskProfile === 'degen' && (
+            <div className="mt-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-neo">
+              <div className="flex items-start space-x-3">
+                <span className="text-2xl">⚠️</span>
+                <div>
+                  <h4 className="font-neo font-bold text-red-700 dark:text-red-300 mb-2">
+                    EXTREME RISK WARNING
+                  </h4>
+                  <ul className="text-sm text-red-600 dark:text-red-400 space-y-1">
+                    <li>• Can lose 50%+ of capital quickly</li>
+                    <li>• Requires constant monitoring (hourly)</li>
+                    <li>• High gas fees from frequent trading</li>
+                    <li>• Only use money you can afford to lose completely</li>
+                    <li>• Not suitable for essential funds</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Starting Amount */}

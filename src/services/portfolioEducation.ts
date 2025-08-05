@@ -28,10 +28,10 @@ export class PortfolioEducationService {
           name: 'Conservative',
           description: 'A conservative portfolio prioritizes stability and capital preservation, consisting mostly of large-cap cryptocurrencies and stablecoins.',
           allocations: {
-            bitcoin: 60,
+            bitcoin: 50,
             ethereum: 30,
             altcoins: 0,
-            stablecoins: 10,
+            stablecoins: 20,
             speculative: 0
           },
           characteristics: [
@@ -62,10 +62,10 @@ export class PortfolioEducationService {
           name: 'Balanced',
           description: 'A balanced portfolio combines established assets with modest allocation to altcoins for higher growth potential, balancing risk and reward.',
           allocations: {
-            bitcoin: 50,
+            bitcoin: 45,
             ethereum: 25,
             altcoins: 15,
-            stablecoins: 10,
+            stablecoins: 15,
             speculative: 0
           },
           characteristics: [
@@ -96,10 +96,10 @@ export class PortfolioEducationService {
           name: 'Aggressive',
           description: 'An aggressive portfolio seeks maximum returns with willingness for higher volatility and risk, involving significant allocations to altcoins and speculative investments.',
           allocations: {
-            bitcoin: 40,
+            bitcoin: 35,
             ethereum: 20,
             altcoins: 25,
-            stablecoins: 0,
+            stablecoins: 5,
             speculative: 15
           },
           characteristics: [
@@ -125,6 +125,44 @@ export class PortfolioEducationService {
             'Maximum growth potential',
             'Exposure to emerging projects',
             'Higher returns in bull markets',
+            'Active trading opportunities'
+          ]
+        },
+        {
+          name: 'Degen',
+          description: 'Ultra-aggressive strategy targeting 100%+ returns in short timeframes. Focuses on trending mid-caps and high-conviction microcaps with strong narratives. EXTREMELY HIGH RISK.',
+          allocations: {
+            bitcoin: 0,
+            ethereum: 0,
+            altcoins: 45,
+            stablecoins: 5,
+            speculative: 50
+          },
+          characteristics: [
+            '45% trending mid-caps for momentum',
+            '50% speculative microcaps for moonshots',
+            '5% stablecoins for quick re-entry',
+            'Ultra-high risk, ultra-high reward',
+            'Requires constant monitoring and rotation',
+            'Targets 100%+ returns in 1 month'
+          ],
+          suitableFor: [
+            'Experienced degen traders only',
+            'Those comfortable losing entire capital',
+            'Short-term momentum trading',
+            'High-conviction narrative plays'
+          ],
+          risks: [
+            'EXTREMELY HIGH RISK - can lose 50%+ quickly',
+            'Requires hourly monitoring',
+            'High gas fees from frequent trading',
+            'Potential for complete capital loss',
+            'Not suitable for any essential funds'
+          ],
+          benefits: [
+            'Maximum growth potential (100%+ targets)',
+            'Early exposure to trending narratives',
+            'Can outperform all other strategies in bull markets',
             'Active trading opportunities'
           ]
         }
@@ -161,12 +199,14 @@ export class PortfolioEducationService {
     conservative: PortfolioStrategy
     balanced: PortfolioStrategy
     aggressive: PortfolioStrategy
+    degen: PortfolioStrategy
   } {
     const strategies = this.getPortfolioStrategies().strategies
     return {
       conservative: strategies[0],
       balanced: strategies[1],
-      aggressive: strategies[2]
+      aggressive: strategies[2],
+      degen: strategies[3]
     }
   }
 } 

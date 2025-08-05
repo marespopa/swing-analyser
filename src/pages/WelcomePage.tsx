@@ -180,6 +180,17 @@ const WelcomePage: React.FC = () => {
             <strong>Note:</strong> This app uses CoinGecko's free API. No API key required for basic functionality.
           </p>
         </div>
+
+        {/* Disclaimer Notice */}
+        <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 shadow-neo p-4 rounded-neo-lg text-center">
+          <p className="font-neo text-red-700 dark:text-red-300 text-sm">
+            <strong>DISCLAIMER:</strong> This application is for educational purposes only. 
+            Not financial advice. Cryptocurrency investments carry high risk. 
+            <a href="/disclaimer" className="underline ml-1 hover:text-red-800 dark:hover:text-red-200">
+              Read full terms
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   )

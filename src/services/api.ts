@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { CryptoAsset, RiskProfile } from '../types'
+import type { MarketSentiment } from './marketSentiment'
 import { CacheService } from './cache'
 import { rateLimiter } from './rateLimiter'
 
@@ -463,7 +464,40 @@ export class PortfolioService {
       // Always start with top cryptocurrencies to ensure Bitcoin and Ethereum are available
       const topCoins = await CoinGeckoAPI.getTopCryptocurrencies(50)
       
-      // Ensure Bitcoin and Ethereum are always included
+      // For degen mode, we don't include BTC/ETH
+      if (riskProfile === 'degen') {
+        const additionalAssets = (() => {
+          // Degen: 45% trending mid-caps, 50% speculative microcaps, 5% stablecoins
+          // Focus on trending mid-caps and high-momentum coins
+          const trendingMidCaps = topCoins
+            .filter(coin => 
+              coin.symbol.toLowerCase() !== 'btc' && 
+              coin.symbol.toLowerCase() !== 'eth' &&
+              coin.market_cap <= 10000000000 && // Top 50 by market cap (roughly)
+              coin.price_change_percentage_24h > 5
+            )
+            .slice(0, 2)
+          
+          // Add high-momentum speculative coins
+          const speculativeCoins = topCoins
+            .filter(coin => 
+              coin.symbol.toLowerCase() !== 'btc' && 
+              coin.symbol.toLowerCase() !== 'eth' &&
+              Math.abs(coin.price_change_percentage_24h) > 15 &&
+              coin.market_cap <= 2000000000 // Top 100 by market cap (roughly)
+            )
+            .slice(0, 3)
+          
+          return [...trendingMidCaps, ...speculativeCoins]
+        })()
+        
+        // Add USDC for degen mode
+        const stablecoinAssets = [this.createUSDC()]
+        
+        return [...additionalAssets, ...stablecoinAssets]
+      }
+      
+      // For other risk profiles, ensure Bitcoin and Ethereum are always included
       const bitcoin = topCoins.find(coin => coin.symbol.toLowerCase() === 'btc')
       const ethereum = topCoins.find(coin => coin.symbol.toLowerCase() === 'eth')
       
@@ -494,29 +528,29 @@ export class PortfolioService {
               return altcoins
             }
               
-            case 'aggressive': {
-              // Aggressive: 40% BTC, 20% ETH, 25% altcoins, 15% speculative
-              // Focus on 3-4 high-potential altcoins for maximum impact
-              const altcoins = topCoins
-                .filter(coin => coin.symbol.toLowerCase() !== 'btc' && coin.symbol.toLowerCase() !== 'eth')
-                .slice(0, 3)
-              
-              // Add 1-2 volatile coins for speculative portion
-              const volatileCoins = topCoins
-                .filter(coin => 
-                  coin.symbol.toLowerCase() !== 'btc' && 
-                  coin.symbol.toLowerCase() !== 'eth' &&
-                  Math.abs(coin.price_change_percentage_24h) > 8
-                )
-                .slice(0, 2)
-              
-              return [...altcoins, ...volatileCoins]
-            }
+                  case 'aggressive': {
+        // Aggressive: 40% BTC, 20% ETH, 25% altcoins, 15% speculative
+        // Focus on 3-4 high-potential altcoins for maximum impact
+        const altcoins = topCoins
+          .filter(coin => coin.symbol.toLowerCase() !== 'btc' && coin.symbol.toLowerCase() !== 'eth')
+          .slice(0, 3)
+        
+        // Add 1-2 volatile coins for speculative portion
+        const volatileCoins = topCoins
+          .filter(coin => 
+            coin.symbol.toLowerCase() !== 'btc' && 
+            coin.symbol.toLowerCase() !== 'eth' &&
+            Math.abs(coin.price_change_percentage_24h) > 8
+          )
+          .slice(0, 2)
+        
+                      return [...altcoins, ...volatileCoins]
+      }
           }
         })()
 
-                // Add USDC as stablecoin position (except for aggressive portfolios)
-        const stablecoinAssets = riskProfile !== 'aggressive' ? [this.createUSDC()] : []
+                // Add USDC as stablecoin position for all profiles (amount varies by risk profile)
+        const stablecoinAssets = [this.createUSDC()]
         
         return [...selectedAssets, ...additionalAssets, ...stablecoinAssets]
     } catch (error) {
@@ -544,10 +578,11 @@ export class PortfolioService {
   }
 
   // Calculate allocation percentages based on risk profile
-  static calculateAllocations(
+  static async calculateAllocations(
     assets: CryptoAsset[], 
-    riskProfile: RiskProfile
-  ): { [key: string]: number } {
+    riskProfile: RiskProfile,
+    sentiment?: MarketSentiment // Market sentiment for dynamic allocation
+  ): Promise<{ [key: string]: number }> {
     const allocations: { [key: string]: number } = {}
     
     // Separate USDC from other assets
@@ -557,9 +592,10 @@ export class PortfolioService {
     // Get USDC allocation based on risk profile
     let usdcAllocation = 0
     switch (riskProfile) {
-      case 'conservative': usdcAllocation = 10; break
-      case 'balanced': usdcAllocation = 10; break
-      case 'aggressive': usdcAllocation = 0; break
+      case 'conservative': usdcAllocation = 20; break
+      case 'balanced': usdcAllocation = 15; break
+      case 'aggressive': usdcAllocation = 5; break
+      case 'degen': usdcAllocation = 5; break
     }
     
     // Calculate crypto allocations using industry-standard percentages
@@ -592,6 +628,31 @@ export class PortfolioService {
       allocations[usdc.id] = usdcAllocation
     }
 
+    // If sentiment is provided, use dynamic allocation
+    if (sentiment) {
+      try {
+        const { DynamicAllocationService } = await import('./dynamicAllocation')
+        const dynamicAllocation = DynamicAllocationService.calculateDynamicAllocation(
+          assets,
+          riskProfile,
+          sentiment
+        )
+        
+        console.log(`Dynamic portfolio allocation calculation for ${riskProfile} profile:`)
+        console.log(`- Market sentiment: ${sentiment.overallSentiment}`)
+        console.log(`- Risk level: ${dynamicAllocation.riskLevel}`)
+        console.log(`- Adjustments made: ${dynamicAllocation.adjustments.changes.length}`)
+        Object.entries(dynamicAllocation.adjustedAllocation).forEach(([id, allocation]) => {
+          const asset = assets.find(a => a.id === id)
+          console.log(`- ${asset?.symbol || id}: ${allocation.toFixed(2)}%`)
+        })
+        
+        return dynamicAllocation.adjustedAllocation
+      } catch (error) {
+        console.warn('Dynamic allocation failed, falling back to static allocation:', error)
+      }
+    }
+
     // Debug logging
     console.log(`Portfolio allocation calculation for ${riskProfile} profile:`)
     console.log(`- USDC allocation: ${usdcAllocation}%`)
@@ -614,6 +675,7 @@ export class PortfolioService {
         case 'conservative': return 10 // 10% stablecoins for conservative
         case 'balanced': return 10 // 10% stablecoins for balanced
         case 'aggressive': return 0 // No stablecoins for aggressive
+        case 'degen': return 6 // Minimal stablecoins for degen
       }
     }
     
@@ -647,6 +709,16 @@ export class PortfolioService {
         if (marketCapRank <= 50) return 5
         if (marketCapRank <= 100) return 3
         return 2
+      case 'degen':
+        // Degen: 28% trending mid-caps, 66% speculative microcaps, 6% stablecoins
+        // No Bitcoin or Ethereum allocation
+        if (asset.symbol === 'BTC') return 0
+        if (asset.symbol === 'ETH') return 0
+        // Focus on trending mid-caps and speculative assets
+        if (marketCapRank <= 20) return 15 // Trending mid-caps
+        if (marketCapRank <= 50) return 10 // Mid-tier altcoins
+        if (marketCapRank <= 100) return 8 // Speculative plays
+        return 5 // Microcaps
     }
   }
 

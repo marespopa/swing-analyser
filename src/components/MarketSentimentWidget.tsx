@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { MarketSentimentService } from '../services/marketSentiment'
 import type { MarketSentiment } from '../services/marketSentiment'
+import Button from './ui/Button'
 
 interface MarketSentimentWidgetProps {
   className?: string
@@ -76,11 +77,11 @@ export const MarketSentimentWidget: React.FC<MarketSentimentWidgetProps> = ({
 
   if (isLoading) {
     return (
-      <div className={`bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-8 rounded-neo-lg ${className}`}>
+      <div className={`bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-4 rounded-neo-lg ${className}`}>
         <div className="animate-pulse">
-          <div className="h-6 bg-neo-text/20 rounded-neo w-1/3 mb-4"></div>
-          <div className="h-4 bg-neo-text/20 rounded-neo w-1/2 mb-2"></div>
-          <div className="h-4 bg-neo-text/20 rounded-neo w-2/3"></div>
+          <div className="h-5 bg-neo-text/20 rounded-neo w-1/3 mb-3"></div>
+          <div className="h-3 bg-neo-text/20 rounded-neo w-1/2 mb-2"></div>
+          <div className="h-3 bg-neo-text/20 rounded-neo w-2/3"></div>
         </div>
       </div>
     )
@@ -88,56 +89,60 @@ export const MarketSentimentWidget: React.FC<MarketSentimentWidgetProps> = ({
 
   if (error || !sentiment) {
     return (
-      <div className={`bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-8 rounded-neo-lg ${className}`}>
+      <div className={`bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-4 rounded-neo-lg ${className}`}>
         <div className="text-center">
-          <p className="font-neo text-neo-text/80 mb-4">{error || 'No sentiment data available'}</p>
-          <button
+          <p className="font-neo text-neo-text/80 mb-3">{error || 'No sentiment data available'}</p>
+          <Button
             onClick={loadSentiment}
-            className="px-4 py-2 bg-neo-primary dark:bg-neo-primary-dark text-white rounded-neo hover:bg-neo-primary/80 transition-colors font-neo font-bold"
+            variant="primary"
+            size="sm"
           >
             RETRY
-          </button>
+          </Button>
         </div>
       </div>
     )
   }
 
+  // Get active signals only
+  const activeSignals = [
+    { label: 'Bull Market', value: sentiment.signals.isBullMarket, icon: '📈', color: 'green' },
+    { label: 'Bear Market', value: sentiment.signals.isBearMarket, icon: '📉', color: 'red' },
+    { label: 'Altcoin Season', value: sentiment.signals.isAltcoinSeason, icon: '🌱', color: 'purple' },
+    { label: 'High Risk', value: sentiment.signals.riskLevel === 'high', icon: '⚠️', color: 'orange' }
+  ].filter(signal => signal.value)
+
   return (
-    <div className={`bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-8 rounded-neo-lg ${className}`}>
+    <div className={`bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-4 rounded-neo-lg ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-2xl font-neo font-black text-neo-text">MARKET SENTIMENT</h3>
-          <p className="text-sm font-neo text-neo-text/80">
-            Last updated: {sentiment.timestamp.toLocaleTimeString()}
-          </p>
-        </div>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xl font-neo font-black text-neo-text">MARKET SENTIMENT</h3>
         <button
           onClick={loadSentiment}
-          className="p-2 text-neo-text/60 hover:text-neo-text transition-colors"
+          className="p-1 text-neo-text/60 hover:text-neo-text transition-colors"
           title="Refresh data"
         >
           🔄
         </button>
       </div>
 
-      {/* Main Sentiment Display */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      {/* Main Sentiment & Key Metrics - Compact Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         {/* Overall Sentiment */}
-        <div className="text-center p-4 bg-neo-surface/50 dark:bg-neo-surface-dark/50 border-neo border-neo-border rounded-neo">
-          <div className="text-2xl mb-2">{getSentimentIcon(sentiment.overallSentiment)}</div>
-          <div className={`text-sm font-neo font-bold px-3 py-1 rounded-neo border ${getSentimentColor(sentiment.overallSentiment)}`}>
+        <div className="text-center p-3 bg-neo-surface/50 dark:bg-neo-surface-dark/50 border-neo border-neo-border rounded-neo">
+          <div className="text-lg mb-1">{getSentimentIcon(sentiment.overallSentiment)}</div>
+          <div className={`text-xs font-neo font-bold px-2 py-1 rounded-neo border ${getSentimentColor(sentiment.overallSentiment)}`}>
             {sentiment.overallSentiment.toUpperCase()}
           </div>
           <div className="text-xs font-neo text-neo-text/60 mt-1">
-            Confidence: {Math.round(sentiment.confidence)}%
+            {Math.round(sentiment.confidence)}%
           </div>
         </div>
 
         {/* Fear & Greed Index */}
-        <div className="text-center p-4 bg-neo-surface/50 dark:bg-neo-surface-dark/50 border-neo border-neo-border rounded-neo">
-          <div className="text-lg font-neo font-bold mb-1 text-neo-text">Fear & Greed</div>
-          <div className={`text-2xl font-neo font-black ${getFearGreedColor(sentiment.indicators.fearGreedIndex)}`}>
+        <div className="text-center p-3 bg-neo-surface/50 dark:bg-neo-surface-dark/50 border-neo border-neo-border rounded-neo">
+          <div className="text-xs font-neo text-neo-text/60 mb-1">Fear & Greed</div>
+          <div className={`text-lg font-neo font-black ${getFearGreedColor(sentiment.indicators.fearGreedIndex)}`}>
             {sentiment.indicators.fearGreedIndex.toFixed(0)}
           </div>
           <div className="text-xs font-neo text-neo-text/60">
@@ -145,137 +150,122 @@ export const MarketSentimentWidget: React.FC<MarketSentimentWidgetProps> = ({
           </div>
         </div>
 
-        {/* Altcoin Season */}
-        <div className="text-center p-4 bg-neo-surface/50 dark:bg-neo-surface-dark/50 border-neo border-neo-border rounded-neo">
-          <div className="text-lg font-neo font-bold mb-1 text-neo-text">Altcoin Season</div>
-          <div className={`text-2xl font-neo font-black ${sentiment.signals.isAltcoinSeason ? 'text-green-600 dark:text-green-400' : 'text-neo-text/60'}`}>
-            {sentiment.signals.isAltcoinSeason ? '🌱' : '❄️'}
-          </div>
-          <div className="text-xs font-neo text-neo-text/60">
-            {sentiment.signals.isAltcoinSeason ? 'Active' : 'Inactive'}
-          </div>
-        </div>
-      </div>
-
-      {/* Key Indicators */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        {/* BTC Dominance */}
         <div className="text-center p-3 bg-neo-surface/50 dark:bg-neo-surface-dark/50 border-neo border-neo-border rounded-neo">
           <div className="text-xs font-neo text-neo-text/60 mb-1">BTC Dominance</div>
-          <div className="text-sm font-neo font-bold text-neo-text">
+          <div className="text-lg font-neo font-bold text-neo-text">
             {sentiment.indicators.bitcoinDominance.toFixed(1)}%
           </div>
-        </div>
-        <div className="text-center p-3 bg-neo-surface/50 dark:bg-neo-surface-dark/50 border-neo border-neo-border rounded-neo">
-          <div className="text-xs font-neo text-neo-text/60 mb-1">Altcoin Index</div>
-          <div className="text-sm font-neo font-bold text-neo-text">
-            {sentiment.indicators.altcoinSeasonIndex.toFixed(0)}
+          <div className="text-xs font-neo text-neo-text/60">
+            Altcoin Index: {sentiment.indicators.altcoinSeasonIndex.toFixed(0)}
           </div>
         </div>
+
+        {/* Momentum & Volatility */}
         <div className="text-center p-3 bg-neo-surface/50 dark:bg-neo-surface-dark/50 border-neo border-neo-border rounded-neo">
           <div className="text-xs font-neo text-neo-text/60 mb-1">Momentum</div>
-          <div className={`text-sm font-neo font-bold ${sentiment.indicators.marketMomentum > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+          <div className={`text-lg font-neo font-bold ${sentiment.indicators.marketMomentum > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
             {sentiment.indicators.marketMomentum > 0 ? '+' : ''}{sentiment.indicators.marketMomentum.toFixed(1)}
           </div>
-        </div>
-        <div className="text-center p-3 bg-neo-surface/50 dark:bg-neo-surface-dark/50 border-neo border-neo-border rounded-neo">
-          <div className="text-xs font-neo text-neo-text/60 mb-1">Volatility</div>
-          <div className="text-sm font-neo font-bold text-neo-text">
-            {sentiment.indicators.volatilityIndex.toFixed(0)}
+          <div className="text-xs font-neo text-neo-text/60">
+            Vol: {sentiment.indicators.volatilityIndex.toFixed(0)}
           </div>
         </div>
       </div>
 
-      {/* Market Signals */}
-      <div className="mb-6">
-        <h4 className="text-sm font-neo font-bold text-neo-text mb-3">Market Signals</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          {[
-            { label: 'Bull Market', value: sentiment.signals.isBullMarket, color: 'green' },
-            { label: 'Bear Market', value: sentiment.signals.isBearMarket, color: 'red' },
-            { label: 'Altcoin Season', value: sentiment.signals.isAltcoinSeason, color: 'purple' },
-            { label: 'High Risk', value: sentiment.signals.riskLevel === 'high', color: 'orange' }
-          ].map((signal, index) => (
-            <div key={index} className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-neo ${signal.value ? `bg-${signal.color}-500` : 'bg-neo-text/30'}`}></div>
-              <span className="text-xs font-neo text-neo-text/60">{signal.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Summary */}
-      <div className="mb-4">
-        <h4 className="text-sm font-neo font-bold text-neo-text mb-2">Market Summary</h4>
-        <p className="text-sm font-neo text-neo-text/80 leading-relaxed">
-          {sentiment.analysis.summary}
-        </p>
-      </div>
-
-      {/* Recommendations */}
-      {showDetails && (
+      {/* Active Signals Only - Show only if there are active signals */}
+      {activeSignals.length > 0 && (
         <div className="mb-4">
-          <h4 className="text-sm font-neo font-bold text-neo-text mb-2">Recommendations</h4>
-          <div className="space-y-1">
-            {sentiment.analysis.recommendations.slice(0, showFullAnalysis ? undefined : 3).map((rec, index) => (
-              <div key={index} className="flex items-start space-x-2">
-                <span className="text-neo-primary dark:text-neo-primary-dark text-xs mt-1">•</span>
-                <span className="text-xs font-neo text-neo-text/80">{rec}</span>
+          <h4 className="text-xs font-neo font-bold text-neo-text mb-2">ACTIVE SIGNALS</h4>
+          <div className="flex flex-wrap gap-2">
+            {activeSignals.map((signal, index) => (
+              <div 
+                key={index} 
+                className={`px-3 py-2 rounded-neo border text-xs font-neo font-bold ${
+                  `bg-${signal.color}-100 dark:bg-${signal.color}-900 border-${signal.color}-300 dark:border-${signal.color}-700 text-${signal.color}-700 dark:text-${signal.color}-300`
+                }`}
+              >
+                <span className="mr-1">{signal.icon}</span>
+                {signal.label}
               </div>
             ))}
-            {sentiment.analysis.recommendations.length > 3 && !showFullAnalysis && (
-              <button
-                onClick={() => setShowFullAnalysis(true)}
-                className="text-xs font-neo text-neo-primary dark:text-neo-primary-dark hover:text-neo-primary/80"
-              >
-                Show {sentiment.analysis.recommendations.length - 3} more...
-              </button>
-            )}
-            {showFullAnalysis && (
-              <button
-                onClick={() => setShowFullAnalysis(false)}
-                className="text-xs font-neo text-neo-primary dark:text-neo-primary-dark hover:text-neo-primary/80"
-              >
-                Show less
-              </button>
-            )}
           </div>
         </div>
       )}
 
-      {/* Key Metrics */}
-      {showDetails && (
-        <div className="border-t border-neo-border pt-4">
-          <h4 className="text-sm font-neo font-bold text-neo-text mb-3">Key Metrics</h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-            <div>
-              <div className="font-neo text-neo-text/60">Total Market Cap</div>
-              <div className="font-neo font-bold text-neo-text">${formatNumber(sentiment.analysis.keyMetrics.totalMarketCap)}</div>
+      {/* Compact Summary & Recommendations */}
+      <div className="space-y-3">
+        <div>
+          <h4 className="text-xs font-neo font-bold text-neo-text mb-1">SUMMARY</h4>
+          <p className="text-xs font-neo text-neo-text/80 leading-relaxed">
+            {sentiment.analysis.summary}
+          </p>
+        </div>
+
+        {showDetails && (
+          <div>
+            <h4 className="text-xs font-neo font-bold text-neo-text mb-1">RECOMMENDATIONS</h4>
+            <div className="space-y-1">
+              {sentiment.analysis.recommendations.slice(0, showFullAnalysis ? undefined : 2).map((rec, index) => (
+                <div key={index} className="flex items-start space-x-2">
+                  <span className="text-neo-primary dark:text-neo-primary-dark text-xs mt-0.5">•</span>
+                  <span className="text-xs font-neo text-neo-text/80">{rec}</span>
+                </div>
+              ))}
+              {sentiment.analysis.recommendations.length > 2 && !showFullAnalysis && (
+                <Button
+                  onClick={() => setShowFullAnalysis(true)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-6 px-2"
+                >
+                  +{sentiment.analysis.recommendations.length - 2} more
+                </Button>
+              )}
+              {showFullAnalysis && (
+                <Button
+                  onClick={() => setShowFullAnalysis(false)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-6 px-2"
+                >
+                  Show less
+                </Button>
+              )}
             </div>
-            <div>
-              <div className="font-neo text-neo-text/60">24h Volume</div>
-              <div className="font-neo font-bold text-neo-text">${formatNumber(sentiment.analysis.keyMetrics.totalVolume24h)}</div>
-            </div>
-            <div>
-              <div className="font-neo text-neo-text/60">Avg 24h Change</div>
-              <div className={`font-neo font-bold ${sentiment.analysis.keyMetrics.averagePriceChange24h > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                {sentiment.analysis.keyMetrics.averagePriceChange24h > 0 ? '+' : ''}{sentiment.analysis.keyMetrics.averagePriceChange24h.toFixed(2)}%
+          </div>
+        )}
+
+        {/* Key Metrics - Compact */}
+        {showDetails && (
+          <div className="border-t border-neo-border pt-3">
+            <h4 className="text-xs font-neo font-bold text-neo-text mb-2">KEY METRICS</h4>
+            <div className="grid grid-cols-3 gap-3 text-xs">
+              <div>
+                <div className="font-neo text-neo-text/60">Market Cap</div>
+                <div className="font-neo font-bold text-neo-text">${formatNumber(sentiment.analysis.keyMetrics.totalMarketCap)}</div>
+              </div>
+              <div>
+                <div className="font-neo text-neo-text/60">24h Volume</div>
+                <div className="font-neo font-bold text-neo-text">${formatNumber(sentiment.analysis.keyMetrics.totalVolume24h)}</div>
+              </div>
+              <div>
+                <div className="font-neo text-neo-text/60">24h Change</div>
+                <div className={`font-neo font-bold ${sentiment.analysis.keyMetrics.averagePriceChange24h > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {sentiment.analysis.keyMetrics.averagePriceChange24h > 0 ? '+' : ''}{sentiment.analysis.keyMetrics.averagePriceChange24h.toFixed(2)}%
+                </div>
               </div>
             </div>
+            
+            {/* Top Performers - Compact */}
+            {sentiment.analysis.keyMetrics.topPerformers.length > 0 && (
+              <div className="mt-2">
+                <div className="font-neo text-neo-text/60 text-xs mb-1">Top: {sentiment.analysis.keyMetrics.topPerformers.slice(0, 3).join(', ')}</div>
+              </div>
+            )}
           </div>
-          
-          {/* Top Performers */}
-          <div className="mt-3">
-            <div className="font-neo text-neo-text/60 text-xs mb-1">Top Performers</div>
-            <div className="flex flex-wrap gap-1">
-              {sentiment.analysis.keyMetrics.topPerformers.map((symbol, index) => (
-                <span key={index} className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs rounded-neo font-neo">
-                  {symbol}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 } 

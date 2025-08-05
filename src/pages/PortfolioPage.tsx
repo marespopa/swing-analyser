@@ -9,6 +9,9 @@ import Button from '../components/ui/Button'
 import LoadingOverlay from '../components/ui/LoadingOverlay'
 import ProgressBar from '../components/ui/ProgressBar'
 import { PortfolioEducation } from '../components/PortfolioEducation'
+import { DynamicAllocationWidget } from '../components/DynamicAllocationWidget'
+import { MarketSentimentService } from '../services/marketSentiment'
+import type { MarketSentiment } from '../services/marketSentiment'
 
 const PortfolioPage: React.FC = () => {
   const [userPreferences] = useAtom(userPreferencesAtom)
@@ -20,6 +23,7 @@ const PortfolioPage: React.FC = () => {
   const [progress, setProgress] = useState(0)
   const [progressMessage, setProgressMessage] = useState('Initializing...')
   const [showProgress, setShowProgress] = useState(false)
+  const [marketSentiment, setMarketSentiment] = useState<MarketSentiment | null>(null)
   const navigate = useNavigate()
 
   const generatePortfolio = useCallback(async () => {
@@ -44,7 +48,7 @@ const PortfolioPage: React.FC = () => {
       setProgressMessage('Calculating allocations...')
       
       // Calculate allocations
-      const allocations = PortfolioService.calculateAllocations(
+      const allocations = await PortfolioService.calculateAllocations(
         assets,
         userPreferences.riskProfile
       )
@@ -100,6 +104,14 @@ const PortfolioPage: React.FC = () => {
       
       // Generate suggestions for additional coins
       await generateSuggestions(portfolioAssets)
+      
+      // Fetch market sentiment for dynamic allocation
+      try {
+        const sentiment = await MarketSentimentService.getMarketSentiment()
+        setMarketSentiment(sentiment)
+      } catch (error) {
+        console.warn('Failed to fetch market sentiment:', error)
+      }
       
       // Complete
       setProgress(100)
@@ -357,6 +369,23 @@ const PortfolioPage: React.FC = () => {
                 selectedRiskProfile={userPreferences.riskProfile}
               />
             </div>
+
+            {/* Dynamic Allocation Section */}
+            {generatedPortfolio && (
+              <div className="bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-8 rounded-neo-lg mb-8">
+                <h2 className="text-2xl font-neo font-black text-neo-text mb-6">
+                  🎯 MARKET-ADAPTIVE ALLOCATION
+                </h2>
+                <p className="text-lg font-neo text-neo-text/80 mb-6">
+                  Your portfolio allocation has been dynamically adjusted based on current market sentiment and volatility analysis.
+                </p>
+                <DynamicAllocationWidget 
+                  assets={generatedPortfolio.assets}
+                  riskProfile={userPreferences.riskProfile}
+                  sentiment={marketSentiment}
+                />
+              </div>
+            )}
 
             {/* Suggestions Section */}
             {suggestions.length > 0 && (

@@ -3,7 +3,7 @@ import { PortfolioEducationService } from '../services/portfolioEducation'
 import type { PortfolioStrategy } from '../services/portfolioEducation'
 
 interface PortfolioEducationProps {
-  selectedRiskProfile?: 'conservative' | 'balanced' | 'aggressive'
+  selectedRiskProfile?: 'conservative' | 'balanced' | 'aggressive' | 'degen'
   onStrategySelect?: (strategy: PortfolioStrategy) => void
 }
 
@@ -20,39 +20,39 @@ export const PortfolioEducation: React.FC<PortfolioEducationProps> = ({
 
   const getRiskProfileColor = (profile: string) => {
     switch (profile.toLowerCase()) {
-      case 'conservative': return 'bg-emerald-100 text-emerald-800 border-emerald-200'
-      case 'balanced': return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'aggressive': return 'bg-orange-100 text-orange-800 border-orange-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+      case 'conservative': return 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700'
+      case 'balanced': return 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700'
+      case 'aggressive': return 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700'
+      default: return 'bg-neo-text/10 text-neo-text/80 border-neo-text/20'
     }
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-800 mb-4">
-          Crypto Portfolio Strategies
+    <div className="max-w-6xl mx-auto space-y-4">
+      <div className="text-center mb-4">
+        <h2 className="text-2xl font-neo font-black text-neo-text mb-2">
+          CRYPTO PORTFOLIO STRATEGIES
         </h2>
-        <p className="text-gray-600 max-w-2xl mx-auto">
+        <p className="text-sm font-neo text-neo-text/80 max-w-2xl mx-auto">
           Learn about different portfolio allocation strategies based on your risk tolerance and investment goals.
         </p>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex justify-center mb-8">
-        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+      <div className="flex justify-center mb-4">
+        <div className="flex space-x-1 bg-neo-surface/50 dark:bg-neo-surface-dark/50 p-1 rounded-neo border-neo border-neo-border">
           {[
-            { id: 'strategies', label: 'Strategies' },
-            { id: 'principles', label: 'Principles' },
-            { id: 'tips', label: 'Tips' }
+            { id: 'strategies', label: 'STRATEGIES' },
+            { id: 'principles', label: 'PRINCIPLES' },
+            { id: 'tips', label: 'TIPS' }
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as 'strategies' | 'principles' | 'tips')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-neo text-sm font-neo font-bold transition-colors ${
                 activeTab === tab.id
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-neo-primary dark:bg-neo-primary-dark text-white shadow-neo'
+                  : 'text-neo-text/60 hover:text-neo-text'
               }`}
             >
               {tab.label}
@@ -63,110 +63,97 @@ export const PortfolioEducation: React.FC<PortfolioEducationProps> = ({
 
       {/* Content */}
       {activeTab === 'strategies' && (
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {education.strategies.map((strategy) => (
             <div
               key={strategy.name}
-              className={`bg-white rounded-xl border-2 p-6 shadow-sm hover:shadow-md transition-all cursor-pointer ${
+              className={`bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border p-4 shadow-neo hover:shadow-neo-lg transition-all cursor-pointer ${
                 selectedRiskProfile === strategy.name.toLowerCase()
-                  ? 'border-blue-500 ring-2 ring-blue-100'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-neo-primary dark:border-neo-primary-dark ring-2 ring-neo-primary/20'
+                  : 'hover:border-neo-text/30'
               }`}
               onClick={() => handleStrategyClick(strategy)}
             >
               {/* Header */}
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold text-gray-900">{strategy.name}</h3>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getRiskProfileColor(strategy.name)}`}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-neo font-black text-neo-text">{strategy.name}</h3>
+                <span className={`px-2 py-1 rounded-neo text-xs font-neo font-bold border ${getRiskProfileColor(strategy.name)}`}>
                   {strategy.name}
                 </span>
               </div>
 
               {/* Description */}
-              <p className="text-gray-600 text-sm mb-4">{strategy.description}</p>
+              <p className="font-neo text-neo-text/80 text-xs mb-3 leading-tight">{strategy.description}</p>
 
               {/* Allocations */}
-              <div className="mb-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Target Allocations</h4>
-                <div className="space-y-1">
+              <div className="mb-3">
+                <h4 className="text-xs font-neo font-bold text-neo-text mb-1">Allocations</h4>
+                <div className="space-y-0.5">
                   {strategy.allocations.bitcoin > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Bitcoin</span>
-                      <span className="font-medium">{strategy.allocations.bitcoin}%</span>
+                    <div className="flex justify-between text-xs">
+                      <span className="font-neo text-neo-text/60">BTC</span>
+                      <span className="font-neo font-bold text-neo-text">{strategy.allocations.bitcoin}%</span>
                     </div>
                   )}
                   {strategy.allocations.ethereum > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Ethereum</span>
-                      <span className="font-medium">{strategy.allocations.ethereum}%</span>
+                    <div className="flex justify-between text-xs">
+                      <span className="font-neo text-neo-text/60">ETH</span>
+                      <span className="font-neo font-bold text-neo-text">{strategy.allocations.ethereum}%</span>
                     </div>
                   )}
                   {strategy.allocations.altcoins > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Altcoins</span>
-                      <span className="font-medium">{strategy.allocations.altcoins}%</span>
+                    <div className="flex justify-between text-xs">
+                      <span className="font-neo text-neo-text/60">Altcoins</span>
+                      <span className="font-neo font-bold text-neo-text">{strategy.allocations.altcoins}%</span>
                     </div>
                   )}
                   {strategy.allocations.stablecoins > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Stablecoins</span>
-                      <span className="font-medium">{strategy.allocations.stablecoins}%</span>
+                    <div className="flex justify-between text-xs">
+                      <span className="font-neo text-neo-text/60">Stable</span>
+                      <span className="font-neo font-bold text-neo-text">{strategy.allocations.stablecoins}%</span>
                     </div>
                   )}
                   {strategy.allocations.speculative > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Speculative</span>
-                      <span className="font-medium">{strategy.allocations.speculative}%</span>
+                    <div className="flex justify-between text-xs">
+                      <span className="font-neo text-neo-text/60">Spec</span>
+                      <span className="font-neo font-bold text-neo-text">{strategy.allocations.speculative}%</span>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Characteristics */}
-              <div className="mb-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Key Characteristics</h4>
-                <ul className="space-y-1">
-                  {strategy.characteristics.slice(0, 3).map((char, index) => (
-                    <li key={index} className="text-xs text-gray-600 flex items-start">
-                      <span className="text-blue-500 mr-2">•</span>
+              <div className="mb-3">
+                <h4 className="text-xs font-neo font-bold text-neo-text mb-1">Key Points</h4>
+                <ul className="space-y-0.5">
+                  {strategy.characteristics.slice(0, 2).map((char, index) => (
+                    <li key={index} className="text-xs font-neo text-neo-text/80 flex items-start">
+                      <span className="text-neo-primary dark:text-neo-primary-dark mr-1">•</span>
                       {char}
                     </li>
                   ))}
                 </ul>
               </div>
 
-              {/* Suitable For */}
-              <div className="mb-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Suitable For</h4>
-                <ul className="space-y-1">
-                  {strategy.suitableFor.slice(0, 2).map((item, index) => (
-                    <li key={index} className="text-xs text-gray-600 flex items-start">
-                      <span className="text-green-500 mr-2">✓</span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
               {/* Risks and Benefits */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <h4 className="text-sm font-medium text-red-700 mb-2">Risks</h4>
-                  <ul className="space-y-1">
-                    {strategy.risks.slice(0, 2).map((risk, index) => (
-                      <li key={index} className="text-xs text-gray-600 flex items-start">
-                        <span className="text-red-500 mr-2">⚠</span>
+                  <h4 className="text-xs font-neo font-bold text-red-600 dark:text-red-400 mb-1">Risks</h4>
+                  <ul className="space-y-0.5">
+                    {strategy.risks.slice(0, 1).map((risk, index) => (
+                      <li key={index} className="text-xs font-neo text-neo-text/80 flex items-start">
+                        <span className="text-red-600 dark:text-red-400 mr-1">⚠</span>
                         {risk}
                       </li>
                     ))}
                   </ul>
                 </div>
                 <div>
-                  <h4 className="text-sm font-medium text-green-700 mb-2">Benefits</h4>
-                  <ul className="space-y-1">
-                    {strategy.benefits.slice(0, 2).map((benefit, index) => (
-                      <li key={index} className="text-xs text-gray-600 flex items-start">
-                        <span className="text-green-500 mr-2">✓</span>
+                  <h4 className="text-xs font-neo font-bold text-green-600 dark:text-green-400 mb-1">Benefits</h4>
+                  <ul className="space-y-0.5">
+                    {strategy.benefits.slice(0, 1).map((benefit, index) => (
+                      <li key={index} className="text-xs font-neo text-neo-text/80 flex items-start">
+                        <span className="text-green-600 dark:text-green-400 mr-1">✓</span>
                         {benefit}
                       </li>
                     ))}
@@ -179,15 +166,15 @@ export const PortfolioEducation: React.FC<PortfolioEducationProps> = ({
       )}
 
       {activeTab === 'principles' && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">Portfolio Principles</h3>
-          <div className="grid md:grid-cols-2 gap-4">
+        <div className="bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-4 rounded-neo-lg">
+          <h3 className="text-lg font-neo font-black text-neo-text mb-3">PORTFOLIO PRINCIPLES</h3>
+          <div className="grid md:grid-cols-2 gap-3">
             {education.principles.map((principle, index) => (
-              <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                <div className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-medium">
+              <div key={index} className="flex items-start space-x-2 p-2 bg-neo-surface/50 dark:bg-neo-surface-dark/50 border-neo border-neo-border rounded-neo">
+                <div className="flex-shrink-0 w-5 h-5 bg-neo-primary dark:bg-neo-primary-dark text-white rounded-neo flex items-center justify-center text-xs font-neo font-bold">
                   {index + 1}
                 </div>
-                <p className="text-sm text-gray-700">{principle}</p>
+                <p className="text-xs font-neo text-neo-text/80">{principle}</p>
               </div>
             ))}
           </div>
@@ -195,15 +182,15 @@ export const PortfolioEducation: React.FC<PortfolioEducationProps> = ({
       )}
 
       {activeTab === 'tips' && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">Investment Tips</h3>
-          <div className="space-y-3">
+        <div className="bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-4 rounded-neo-lg">
+          <h3 className="text-lg font-neo font-black text-neo-text mb-3">INVESTMENT TIPS</h3>
+          <div className="space-y-2">
             {education.tips.map((tip, index) => (
-              <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                <div className="flex-shrink-0 w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-medium">
+              <div key={index} className="flex items-start space-x-2 p-2 bg-neo-surface/50 dark:bg-neo-surface-dark/50 border-neo border-neo-border rounded-neo">
+                <div className="flex-shrink-0 w-5 h-5 bg-green-600 dark:bg-green-400 text-white rounded-neo flex items-center justify-center text-xs font-neo font-bold">
                   {index + 1}
                 </div>
-                <p className="text-sm text-gray-700">{tip}</p>
+                <p className="text-xs font-neo text-neo-text/80">{tip}</p>
               </div>
             ))}
           </div>

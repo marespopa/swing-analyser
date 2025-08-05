@@ -6,7 +6,7 @@ import type { SwingTradeOpportunity } from '../types'
 import { CoinGeckoAPI } from '../services/api'
 import { RebalancingService } from '../services/rebalancing'
 import { TechnicalAnalysisService } from '../services/technicalAnalysis'
-import { PredictionService } from '../services/prediction'
+import { StopLossService } from '../services/stopLoss'
 import Button from '../components/ui/Button'
 import LoadingOverlay from '../components/ui/LoadingOverlay'
 import Dialog from '../components/ui/Dialog'
@@ -24,9 +24,10 @@ const DashboardPage: React.FC = () => {
   const [rebalancingRecommendation, setRebalancingRecommendation] = useState(() => {
     return portfolio ? RebalancingService.analyzePortfolio(portfolio) : null
   })
-  const [portfolioPrediction, setPortfolioPrediction] = useState(() => {
-    return portfolio ? PredictionService.calculatePortfolioPrediction(portfolio) : null
+  const [stopLossAnalysis, setStopLossAnalysis] = useState(() => {
+    return portfolio ? StopLossService.analyzePortfolio(portfolio) : null
   })
+
   const [showResetDialog, setShowResetDialog] = useState(false)
 
   // Update timestamp when data is refreshed
@@ -54,14 +55,13 @@ const DashboardPage: React.FC = () => {
     }
   }, [portfolio, setPortfolio])
 
-  // Recalculate rebalancing recommendation and predictions when portfolio changes
+  // Recalculate rebalancing recommendation and stop loss analysis when portfolio changes
   useEffect(() => {
     if (portfolio) {
-      console.log('Dashboard - Recalculating recommendations and predictions for portfolio:', portfolio.assets.map(a => a.symbol))
       const newRecommendation = RebalancingService.analyzePortfolio(portfolio)
-      const newPrediction = PredictionService.calculatePortfolioPrediction(portfolio)
+      const newStopLossAnalysis = StopLossService.analyzePortfolio(portfolio)
       setRebalancingRecommendation(newRecommendation)
-      setPortfolioPrediction(newPrediction)
+      setStopLossAnalysis(newStopLossAnalysis)
     }
   }, [portfolio])
 
@@ -378,6 +378,86 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Portfolio Assets with Stop Loss Recommendations */}
+        <div className="bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-8 rounded-neo-lg mb-8">
+          <h2 className="text-2xl font-neo font-black text-neo-text mb-6">
+            YOUR HOLDINGS
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {portfolio.assets.map((asset) => {
+              const stopLossRec = stopLossAnalysis?.recommendations.find(rec => rec.asset.id === asset.id)
+              return (
+                <div
+                  key={asset.id}
+                  className="p-4 border-neo border-neo-border rounded-neo-lg bg-neo-surface/50 dark:bg-neo-surface-dark/50"
+                >
+                  <div className="flex items-center space-x-3 mb-3">
+                    <img
+                      src={asset.image}
+                      alt={asset.name}
+                      className="w-10 h-10 rounded-neo"
+                    />
+                    <div>
+                      <h3 className="font-neo font-bold text-neo-text">
+                        {asset.symbol}
+                      </h3>
+                      <p className="text-sm font-neo text-neo-text/60">
+                        {asset.name}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-neo text-neo-text/60">Price</span>
+                      <span className="font-neo font-bold text-neo-text">
+                        {formatCurrency(asset.value)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-neo text-neo-text/60">Allocation</span>
+                      <span className="font-neo font-bold text-neo-text">
+                        {asset.allocation.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-neo text-neo-text/60">24h Change</span>
+                      <span className={`font-neo font-bold ${
+                        asset.price_change_percentage_24h >= 0 
+                          ? 'text-green-600 dark:text-green-400' 
+                          : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {formatPercentage(asset.price_change_percentage_24h)}
+                      </span>
+                    </div>
+                    
+                    {/* Stop Loss Recommendation */}
+                    {stopLossRec && (
+                      <div className="mt-3 pt-3 border-t border-neo-border">
+                        <div className="text-xs space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-neo-text/60">Stop Loss:</span>
+                            <span className="font-neo font-bold text-red-600 dark:text-red-400">
+                              ${stopLossRec.recommendedStopLoss.toFixed(4)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-neo-text/60">Target:</span>
+                            <span className="font-neo font-bold text-green-600 dark:text-green-400">
+                              ${(asset.current_price * 1.1).toFixed(4)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
         {/* Market Sentiment Widget */}
         <div className="mb-8">
           <MarketSentimentWidget />
@@ -468,141 +548,6 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Portfolio Growth Predictions */}
-        {portfolioPrediction && (
-          <div className="bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-8 rounded-neo-lg mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-neo font-black text-neo-text">
-                PORTFOLIO GROWTH PREDICTIONS
-              </h2>
-              <div className={`px-3 py-1 rounded-neo text-sm font-neo font-bold ${
-                portfolioPrediction.riskAssessment.riskLevel === 'high' 
-                  ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
-                  : portfolioPrediction.riskAssessment.riskLevel === 'medium'
-                  ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
-                  : 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-              }`}>
-                {portfolioPrediction.riskAssessment.riskLevel.toUpperCase()} RISK
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Risk Assessment */}
-              <div>
-                <h3 className="text-xl font-neo font-black text-neo-text mb-4">
-                  RISK ASSESSMENT
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-sm font-neo text-neo-text/60">Volatility</span>
-                    <span className="font-neo font-bold text-neo-text">
-                      {(portfolioPrediction.riskAssessment.volatility * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm font-neo text-neo-text/60">Max Drawdown</span>
-                    <span className="font-neo font-bold text-neo-text">
-                      {(portfolioPrediction.riskAssessment.maxDrawdown * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm font-neo text-neo-text/60">Sharpe Ratio</span>
-                    <span className={`font-neo font-bold ${
-                      portfolioPrediction.riskAssessment.sharpeRatio > 1 
-                        ? 'text-green-600 dark:text-green-400'
-                        : portfolioPrediction.riskAssessment.sharpeRatio > 0
-                        ? 'text-yellow-600 dark:text-yellow-400'
-                        : 'text-red-600 dark:text-red-400'
-                    }`}>
-                      {portfolioPrediction.riskAssessment.sharpeRatio.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Recommendations */}
-                <div className="mt-6">
-                  <h4 className="font-neo font-bold text-neo-text mb-3">Recommendations</h4>
-                  <ul className="space-y-2">
-                    {portfolioPrediction.recommendations.map((rec, index) => (
-                      <li key={index} className="flex items-start space-x-2">
-                        <span className="text-neo-primary dark:text-neo-primary-dark mt-1">•</span>
-                        <span className="font-neo text-neo-text/80 text-sm">{rec}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              {/* Growth Predictions */}
-              <div>
-                <h3 className="text-xl font-neo font-black text-neo-text mb-4">
-                  GROWTH PROJECTIONS
-                </h3>
-                <div className="space-y-4">
-                  {portfolioPrediction.predictions.map((prediction) => (
-                    <div key={prediction.timeframe} className="p-4 border-neo border-neo-border rounded-neo bg-neo-surface/50 dark:bg-neo-surface-dark/50">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-neo font-bold text-neo-text">
-                          {prediction.timeframe === '1week' ? '1 Week' :
-                           prediction.timeframe === '1month' ? '1 Month' :
-                           prediction.timeframe === '3months' ? '3 Months' :
-                           prediction.timeframe === '6months' ? '6 Months' : '1 Year'}
-                        </h4>
-                        <span className="text-sm font-neo text-neo-text/60">
-                          {prediction.confidence}% confidence
-                        </span>
-                      </div>
-                      
-                      <div className="grid grid-cols-3 gap-3 text-sm">
-                        <div>
-                          <p className="text-neo-text/60">Optimistic</p>
-                          <p className="font-neo font-bold text-green-600 dark:text-green-400">
-                            {formatCurrency(prediction.scenarios.optimistic.value)}
-                          </p>
-                          <p className="text-xs text-green-600 dark:text-green-400">
-                            +{prediction.scenarios.optimistic.growth.toFixed(1)}%
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-neo-text/60">Realistic</p>
-                          <p className="font-neo font-bold text-neo-text">
-                            {formatCurrency(prediction.scenarios.realistic.value)}
-                          </p>
-                          <p className="text-xs text-neo-text">
-                            +{prediction.scenarios.realistic.growth.toFixed(1)}%
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-neo-text/60">Pessimistic</p>
-                          <p className="font-neo font-bold text-red-600 dark:text-red-400">
-                            {formatCurrency(prediction.scenarios.pessimistic.value)}
-                          </p>
-                          <p className="text-xs text-red-600 dark:text-red-400">
-                            +{prediction.scenarios.pessimistic.growth.toFixed(1)}%
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Prediction Factors */}
-            <div className="mt-6 p-4 bg-neo-surface/30 dark:bg-neo-surface-dark/30 border-neo border-neo-border rounded-neo">
-              <h4 className="font-neo font-bold text-neo-text mb-3">Factors Affecting Predictions</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {portfolioPrediction.predictions[0]?.factors.map((factor, index) => (
-                  <div key={index} className="flex items-start space-x-2">
-                    <span className="text-neo-text/60 mt-1">•</span>
-                    <span className="font-neo text-neo-text/80 text-sm">{factor}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Portfolio Rebalancing */}
         {rebalancingRecommendation && (
@@ -918,61 +863,6 @@ const DashboardPage: React.FC = () => {
           )}
         </div>
 
-        {/* Portfolio Assets */}
-        <div className="bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-8 rounded-neo-lg">
-          <h2 className="text-2xl font-neo font-black text-neo-text mb-6">
-            YOUR HOLDINGS
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {portfolio.assets.map((asset) => (
-              <div
-                key={asset.id}
-                className="p-4 border-neo border-neo-border rounded-neo-lg bg-neo-surface/50 dark:bg-neo-surface-dark/50"
-              >
-                <div className="flex items-center space-x-3 mb-3">
-                  <img
-                    src={asset.image}
-                    alt={asset.name}
-                    className="w-10 h-10 rounded-neo"
-                  />
-                  <div>
-                    <h3 className="font-neo font-bold text-neo-text">
-                      {asset.symbol}
-                    </h3>
-                    <p className="text-sm font-neo text-neo-text/60">
-                      {asset.name}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm font-neo text-neo-text/60">Value</span>
-                    <span className="font-neo font-bold text-neo-text">
-                      {formatCurrency(asset.value)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm font-neo text-neo-text/60">Allocation</span>
-                    <span className="font-neo font-bold text-neo-text">
-                      {asset.allocation.toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm font-neo text-neo-text/60">24h Change</span>
-                    <span className={`font-neo font-bold ${
-                      asset.price_change_percentage_24h >= 0 
-                        ? 'text-green-600 dark:text-green-400' 
-                        : 'text-red-600 dark:text-red-400'
-                    }`}>
-                      {formatPercentage(asset.price_change_percentage_24h)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Reset Portfolio Dialog */}

@@ -7,6 +7,7 @@ import SetupPage from './pages/SetupPage'
 import PortfolioPage from './pages/PortfolioPage'
 import DashboardPage from './pages/DashboardPage'
 import ComponentsPage from './pages/ComponentsPage'
+import DisclaimerPage from './pages/DisclaimerPage'
 
 function App() {
   const [portfolio] = useAtom(portfolioAtom)
@@ -32,6 +33,7 @@ function App() {
             (portfolio || checkPortfolioExists()) ? <DashboardPage /> : <Navigate to="/setup" replace />
           } />
           <Route path="components" element={<ComponentsPage />} />
+          <Route path="disclaimer" element={<DisclaimerPage />} />
         </Route>
       </Routes>
     </Router>

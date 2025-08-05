@@ -17,7 +17,7 @@ export interface RebalancingRecommendation {
 }
 
 export interface RebalancingSettings {
-  frequency: 'monthly' | 'quarterly' | 'semi-annually' | 'annually'
+  frequency: 'weekly' | 'monthly' | 'quarterly' | 'semi-annually' | 'annually'
   threshold: number // percentage drift before rebalancing
   lastRebalance: Date | null
   autoRebalance: boolean
@@ -45,6 +45,13 @@ export class RebalancingService {
         return {
           frequency: 'monthly',
           threshold: 12, // 12% drift threshold
+          lastRebalance: null,
+          autoRebalance: false
+        }
+      case 'degen':
+        return {
+          frequency: 'monthly', // Changed from weekly to monthly for degen
+          threshold: 35, // Increased from 20% to 35% for ultra-high risk tolerance
           lastRebalance: null,
           autoRebalance: false
         }
@@ -88,70 +95,131 @@ export class RebalancingService {
     // Calculate average drift instead of sum
     totalDrift = totalDrift / portfolio.assets.length
 
-    // Determine rebalancing type and urgency
+    // Determine rebalancing type and urgency with degen-specific leniency
     let type: RebalancingRecommendation['type'] = 'hold'
     let urgency: RebalancingRecommendation['urgency'] = 'low'
     let reason = ''
     let suggestedActions: string[] = []
 
-    if (totalDrift > 15) {
-      type = 'rebalance'
-      urgency = 'high'
-      reason = 'Significant portfolio drift detected. Major rebalancing recommended to maintain risk profile.'
-      suggestedActions = [
-        'Review all asset allocations',
-        'Consider selling over-weighted positions',
-        'Add to under-weighted positions',
-        'Monitor for 1-2 weeks before executing'
-      ]
-    } else if (totalDrift > 10) {
-      type = 'rebalance'
-      urgency = 'medium'
-      reason = 'Moderate portfolio drift. Rebalancing recommended to optimize allocation.'
-      suggestedActions = [
-        'Focus on largest allocation drifts',
-        'Consider dollar-cost averaging',
-        'Review within 1 week'
-      ]
-    } else if (totalDrift > 5) {
-      type = 'partial-rebalance'
-      urgency = 'medium'
-      reason = 'Minor portfolio drift. Consider selective rebalancing.'
-      suggestedActions = [
-        'Focus on assets with >5% drift',
-        'Consider gradual adjustments',
-        'Monitor for 2-3 weeks'
-      ]
+    // Much more lenient thresholds for degen mode
+    if (portfolio.riskProfile === 'degen') {
+      if (totalDrift > 40) {
+        type = 'rebalance'
+        urgency = 'medium' // Reduced from 'high' to 'medium'
+        reason = 'Significant drift in degen portfolio. Consider rebalancing but maintain high-risk tolerance.'
+        suggestedActions = [
+          'Review only the most extreme allocation drifts',
+          'Consider letting winners run longer',
+          'Focus on momentum rather than strict allocation targets',
+          'Monitor for 2-3 weeks before any major changes'
+        ]
+      } else if (totalDrift > 25) {
+        type = 'partial-rebalance'
+        urgency = 'low' // Reduced from 'medium' to 'low'
+        reason = 'Moderate drift in degen portfolio. Minor adjustments may be considered.'
+        suggestedActions = [
+          'Focus only on assets with >25% drift',
+          'Consider gradual adjustments over time',
+          'Prioritize momentum over allocation targets',
+          'Monitor for 3-4 weeks before acting'
+        ]
+      } else if (totalDrift > 15) {
+        type = 'hold'
+        urgency = 'low'
+        reason = 'Minor drift in degen portfolio. Let positions run and focus on momentum.'
+        suggestedActions = [
+          'Let winners continue running',
+          'Focus on swing trade opportunities',
+          'Monitor for major trend changes',
+          'Consider adding to strong performers'
+        ]
+      } else {
+        type = 'hold'
+        urgency = 'low'
+        reason = 'Degen portfolio is performing well. Continue aggressive strategy.'
+        suggestedActions = [
+          'Maintain aggressive positioning',
+          'Look for new momentum opportunities',
+          'Consider increasing position sizes on winners',
+          'Monitor for market-wide trend changes'
+        ]
+      }
     } else {
-      type = 'hold'
-      urgency = 'low'
-      reason = 'Portfolio is well-balanced. No immediate rebalancing needed.'
-      suggestedActions = [
-        'Continue monitoring monthly',
-        'Review quarterly as scheduled',
-        'Focus on swing trade opportunities'
-      ]
+      // Standard logic for other risk profiles
+      if (totalDrift > 15) {
+        type = 'rebalance'
+        urgency = 'high'
+        reason = 'Significant portfolio drift detected. Major rebalancing recommended to maintain risk profile.'
+        suggestedActions = [
+          'Review all asset allocations',
+          'Consider selling over-weighted positions',
+          'Add to under-weighted positions',
+          'Monitor for 1-2 weeks before executing'
+        ]
+      } else if (totalDrift > 10) {
+        type = 'rebalance'
+        urgency = 'medium'
+        reason = 'Moderate portfolio drift. Rebalancing recommended to optimize allocation.'
+        suggestedActions = [
+          'Focus on largest allocation drifts',
+          'Consider dollar-cost averaging',
+          'Review within 1 week'
+        ]
+      } else if (totalDrift > 5) {
+        type = 'partial-rebalance'
+        urgency = 'medium'
+        reason = 'Minor portfolio drift. Consider selective rebalancing.'
+        suggestedActions = [
+          'Focus on assets with >5% drift',
+          'Consider gradual adjustments',
+          'Monitor for 2-3 weeks'
+        ]
+      } else {
+        type = 'hold'
+        urgency = 'low'
+        reason = 'Portfolio is well-balanced. No immediate rebalancing needed.'
+        suggestedActions = [
+          'Continue monitoring monthly',
+          'Review quarterly as scheduled',
+          'Focus on swing trade opportunities'
+        ]
+      }
     }
 
-    // Add stablecoin recommendation if missing (always prioritize this)
+    // Add stablecoin recommendation if missing (but be more lenient for degen)
     if (!hasStablecoin) {
       const stablecoinRecommendation = this.getStablecoinRecommendation(portfolio.riskProfile)
       console.log('Rebalancing - Adding stablecoin recommendation:', stablecoinRecommendation)
-      suggestedActions.unshift(stablecoinRecommendation)
       
-      // Increase urgency if no stablecoin
-      if (urgency === 'low') {
-        urgency = 'medium'
+      // For degen mode, make stablecoin recommendation less urgent
+      if (portfolio.riskProfile === 'degen') {
+        suggestedActions.push(stablecoinRecommendation) // Add to end instead of beginning
+      } else {
+        suggestedActions.unshift(stablecoinRecommendation)
+        
+        // Increase urgency if no stablecoin (but not for degen)
+        if (urgency === 'low') {
+          urgency = 'medium'
+        }
       }
     }
 
     // If no specific rebalancing actions needed and has stablecoin, add general guidance
     if (assetsToRebalance.length === 0 && hasStablecoin) {
-      suggestedActions = [
-        'Portfolio is well-balanced - no specific rebalancing actions needed',
-        'Continue monitoring for market opportunities',
-        'Focus on swing trade opportunities for active management'
-      ]
+      if (portfolio.riskProfile === 'degen') {
+        suggestedActions = [
+          'Degen portfolio is running well - let winners continue',
+          'Focus on momentum and trend following',
+          'Look for new high-risk opportunities',
+          'Consider increasing position sizes on strong performers'
+        ]
+      } else {
+        suggestedActions = [
+          'Portfolio is well-balanced - no specific rebalancing actions needed',
+          'Continue monitoring for market opportunities',
+          'Focus on swing trade opportunities for active management'
+        ]
+      }
     }
 
     // Calculate next review date based on frequency
@@ -185,6 +253,7 @@ export class RebalancingService {
         case 'conservative': return 20
         case 'balanced': return 15
         case 'aggressive': return 10
+        case 'degen': return 5 // Reduced stablecoin allocation for degen
       }
     }
     
@@ -210,6 +279,12 @@ export class RebalancingService {
         if (marketCapRank <= 10) return 13
         if (marketCapRank <= 20) return 10
         return 8
+      case 'degen':
+        // Ultra-high risk with focus on microcaps and momentum
+        if (marketCapRank <= 5) return 18
+        if (marketCapRank <= 10) return 15
+        if (marketCapRank <= 20) return 12
+        return 10 // Higher allocation for smaller coins in degen mode
     }
   }
 
@@ -231,6 +306,9 @@ export class RebalancingService {
     const next = new Date(fromDate)
     
     switch (frequency) {
+      case 'weekly':
+        next.setDate(next.getDate() + 7)
+        break
       case 'monthly':
         next.setMonth(next.getMonth() + 1)
         break
@@ -257,6 +335,8 @@ export class RebalancingService {
         return 'Quarterly rebalancing strikes the right balance between maintaining allocation targets and minimizing transaction costs.'
       case 'aggressive':
         return 'Monthly rebalancing may be appropriate for aggressive portfolios, but monitor trading costs and consider threshold-based rebalancing.'
+      case 'degen':
+        return 'Monthly rebalancing for degen portfolios with high drift tolerance. Focus on momentum over strict allocation targets. Let winners run longer.'
     }
   }
 
@@ -269,6 +349,8 @@ export class RebalancingService {
         return 'Medium-term holding (3-6 months) with periodic rebalancing. Consider swing trading with 10-20% of portfolio.'
       case 'aggressive':
         return 'Short to medium-term holding (1-3 months) with active swing trading opportunities. Monitor for major trend changes.'
+      case 'degen':
+        return 'Ultra-short term holding (hours to days) with momentum-based decisions. Let strong performers run and cut losses quickly.'
     }
   }
 
@@ -281,6 +363,8 @@ export class RebalancingService {
         return 'Consider adding 10-15% USDC stablecoin position for liquidity and swing trading flexibility'
       case 'aggressive':
         return 'Consider adding 5-10% USDC stablecoin position for quick entry/exit opportunities'
+      case 'degen':
+        return 'Consider adding 3-5% USDC stablecoin position for rapid re-entry during momentum shifts (optional for degen)'
     }
   }
 } 
