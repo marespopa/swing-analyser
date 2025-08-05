@@ -370,7 +370,8 @@ export class TechnicalAnalysisService {
     let riskScore = 0
 
     // Check if asset is in portfolio for sell signals
-    const isInPortfolio = portfolioAssets?.some(portfolioAsset => portfolioAsset.id === asset.id) ?? false
+    // USDC is always considered "in portfolio" since it's our stablecoin position
+    const isInPortfolio = asset.id === 'usd-coin' || (portfolioAssets?.some(portfolioAsset => portfolioAsset.id === asset.id) ?? false)
 
     // RSI Analysis
     if (indicators.rsi < 30) {

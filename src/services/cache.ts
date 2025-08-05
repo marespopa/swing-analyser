@@ -4,6 +4,7 @@ interface CoinCacheData {
   topCoins: CryptoAsset[]
   trendingCoins: CryptoAsset[]
   volatileCoins: CryptoAsset[]
+  lowerCapCoins: CryptoAsset[]
   individualCoins: { [id: string]: CryptoAsset }
 }
 
@@ -51,6 +52,7 @@ export class CacheService {
         topCoins: [],
         trendingCoins: [],
         volatileCoins: [],
+        lowerCapCoins: [],
         individualCoins: {}
       }
     } catch {
@@ -58,6 +60,7 @@ export class CacheService {
         topCoins: [],
         trendingCoins: [],
         volatileCoins: [],
+        lowerCapCoins: [],
         individualCoins: {}
       }
     }
@@ -143,6 +146,29 @@ export class CacheService {
 
     const cacheData = this.getCacheData()
     cacheData.volatileCoins = coins
+    this.setCacheData(cacheData)
+  }
+
+  static getLowerCapCoins(): CryptoAsset[] | null {
+    if (!this.isEnabled()) return null
+    
+    const cacheData = this.getCacheData()
+    if (!cacheData.lowerCapCoins.length) return null
+
+    // Check if cache is expired
+    const cacheEntry = cacheData.lowerCapCoins as unknown as { timestamp?: number }
+    if (cacheEntry.timestamp && this.isExpired(cacheEntry.timestamp)) {
+      return null
+    }
+
+    return cacheData.lowerCapCoins
+  }
+
+  static setLowerCapCoins(coins: CryptoAsset[]) {
+    if (!this.isEnabled()) return
+
+    const cacheData = this.getCacheData()
+    cacheData.lowerCapCoins = coins
     this.setCacheData(cacheData)
   }
 

@@ -30,21 +30,21 @@ export class RebalancingService {
       case 'conservative':
         return {
           frequency: 'quarterly',
-          threshold: 5, // 5% drift threshold
+          threshold: 8, // 8% drift threshold
           lastRebalance: null,
           autoRebalance: false
         }
       case 'balanced':
         return {
           frequency: 'quarterly',
-          threshold: 7, // 7% drift threshold
+          threshold: 10, // 10% drift threshold
           lastRebalance: null,
           autoRebalance: false
         }
       case 'aggressive':
         return {
           frequency: 'monthly',
-          threshold: 10, // 10% drift threshold
+          threshold: 12, // 12% drift threshold
           lastRebalance: null,
           autoRebalance: false
         }
@@ -55,6 +55,11 @@ export class RebalancingService {
   static analyzePortfolio(portfolio: Portfolio): RebalancingRecommendation {
     const settings = this.getDefaultSettings(portfolio.riskProfile)
     const now = new Date()
+    
+    // Check if portfolio has a stablecoin position
+    const hasStablecoin = portfolio.assets.some(asset => asset.id === 'usd-coin')
+    console.log('Rebalancing - Portfolio assets:', portfolio.assets.map(a => a.symbol))
+    console.log('Rebalancing - Has stablecoin:', hasStablecoin)
     
     // Calculate total drift (average of individual drifts, not sum)
     let totalDrift = 0
@@ -89,7 +94,7 @@ export class RebalancingService {
     let reason = ''
     let suggestedActions: string[] = []
 
-    if (totalDrift > 8) {
+    if (totalDrift > 15) {
       type = 'rebalance'
       urgency = 'high'
       reason = 'Significant portfolio drift detected. Major rebalancing recommended to maintain risk profile.'
@@ -99,7 +104,7 @@ export class RebalancingService {
         'Add to under-weighted positions',
         'Monitor for 1-2 weeks before executing'
       ]
-    } else if (totalDrift > 5) {
+    } else if (totalDrift > 10) {
       type = 'rebalance'
       urgency = 'medium'
       reason = 'Moderate portfolio drift. Rebalancing recommended to optimize allocation.'
@@ -108,12 +113,12 @@ export class RebalancingService {
         'Consider dollar-cost averaging',
         'Review within 1 week'
       ]
-    } else if (totalDrift > 3) {
+    } else if (totalDrift > 5) {
       type = 'partial-rebalance'
       urgency = 'medium'
       reason = 'Minor portfolio drift. Consider selective rebalancing.'
       suggestedActions = [
-        'Focus on assets with >3% drift',
+        'Focus on assets with >5% drift',
         'Consider gradual adjustments',
         'Monitor for 2-3 weeks'
       ]
@@ -125,6 +130,27 @@ export class RebalancingService {
         'Continue monitoring monthly',
         'Review quarterly as scheduled',
         'Focus on swing trade opportunities'
+      ]
+    }
+
+    // Add stablecoin recommendation if missing (always prioritize this)
+    if (!hasStablecoin) {
+      const stablecoinRecommendation = this.getStablecoinRecommendation(portfolio.riskProfile)
+      console.log('Rebalancing - Adding stablecoin recommendation:', stablecoinRecommendation)
+      suggestedActions.unshift(stablecoinRecommendation)
+      
+      // Increase urgency if no stablecoin
+      if (urgency === 'low') {
+        urgency = 'medium'
+      }
+    }
+
+    // If no specific rebalancing actions needed and has stablecoin, add general guidance
+    if (assetsToRebalance.length === 0 && hasStablecoin) {
+      suggestedActions = [
+        'Portfolio is well-balanced - no specific rebalancing actions needed',
+        'Continue monitoring for market opportunities',
+        'Focus on swing trade opportunities for active management'
       ]
     }
 
@@ -153,28 +179,37 @@ export class RebalancingService {
 
   // Get base allocation based on asset characteristics
   private static getBaseAllocation(asset: PortfolioAsset, riskProfile: RiskProfile): number {
+    // Handle USDC stablecoin
+    if (asset.id === 'usd-coin') {
+      switch (riskProfile) {
+        case 'conservative': return 20
+        case 'balanced': return 15
+        case 'aggressive': return 10
+      }
+    }
+    
     // Simplified allocation logic - in a real app, this would be more sophisticated
     const marketCapRank = this.getMarketCapRank(asset.market_cap)
     
     switch (riskProfile) {
       case 'conservative':
         // Focus on top 10 coins with higher allocations
-        if (marketCapRank <= 5) return 25
-        if (marketCapRank <= 10) return 20
-        if (marketCapRank <= 20) return 15
-        return 10
-      case 'balanced':
-        // More diversified with moderate allocations
         if (marketCapRank <= 5) return 20
-        if (marketCapRank <= 10) return 15
+        if (marketCapRank <= 10) return 16
         if (marketCapRank <= 20) return 12
         return 8
+      case 'balanced':
+        // More diversified with moderate allocations
+        if (marketCapRank <= 5) return 17
+        if (marketCapRank <= 10) return 13
+        if (marketCapRank <= 20) return 10
+        return 7
       case 'aggressive':
         // More weight on smaller, volatile coins
-        if (marketCapRank <= 5) return 18
-        if (marketCapRank <= 10) return 15
-        if (marketCapRank <= 20) return 12
-        return 10
+        if (marketCapRank <= 5) return 16
+        if (marketCapRank <= 10) return 13
+        if (marketCapRank <= 20) return 10
+        return 8
     }
   }
 
@@ -234,6 +269,18 @@ export class RebalancingService {
         return 'Medium-term holding (3-6 months) with periodic rebalancing. Consider swing trading with 10-20% of portfolio.'
       case 'aggressive':
         return 'Short to medium-term holding (1-3 months) with active swing trading opportunities. Monitor for major trend changes.'
+    }
+  }
+
+  // Get stablecoin recommendation based on risk profile
+  private static getStablecoinRecommendation(riskProfile: RiskProfile): string {
+    switch (riskProfile) {
+      case 'conservative':
+        return 'Consider adding 15-20% USDC stablecoin position for risk management and swing trading opportunities'
+      case 'balanced':
+        return 'Consider adding 10-15% USDC stablecoin position for liquidity and swing trading flexibility'
+      case 'aggressive':
+        return 'Consider adding 5-10% USDC stablecoin position for quick entry/exit opportunities'
     }
   }
 } 

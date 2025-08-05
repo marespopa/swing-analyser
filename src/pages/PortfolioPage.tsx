@@ -4,8 +4,11 @@ import { useNavigate } from 'react-router-dom'
 import { userPreferencesAtom, setPortfolioAtom, setLoadingAtom, setErrorAtom } from '../store'
 import type { Portfolio, PortfolioAsset, CryptoAsset } from '../types'
 import { PortfolioService, CoinGeckoAPI } from '../services/api'
+import { rateLimiter } from '../services/rateLimiter'
 import Button from '../components/ui/Button'
 import LoadingOverlay from '../components/ui/LoadingOverlay'
+import ProgressBar from '../components/ui/ProgressBar'
+import { PortfolioEducation } from '../components/PortfolioEducation'
 
 const PortfolioPage: React.FC = () => {
   const [userPreferences] = useAtom(userPreferencesAtom)
@@ -14,24 +17,42 @@ const PortfolioPage: React.FC = () => {
   const [error, setError] = useAtom(setErrorAtom)
   const [generatedPortfolio, setGeneratedPortfolio] = useState<Portfolio | null>(null)
   const [suggestions, setSuggestions] = useState<CryptoAsset[]>([])
+  const [progress, setProgress] = useState(0)
+  const [progressMessage, setProgressMessage] = useState('Initializing...')
+  const [showProgress, setShowProgress] = useState(false)
   const navigate = useNavigate()
 
   const generatePortfolio = useCallback(async () => {
     setIsLoading(true)
     setError(null)
+    setShowProgress(true)
+    setProgress(0)
+    setProgressMessage('Initializing portfolio generation...')
     
     try {
+      // Update progress
+      setProgress(10)
+      setProgressMessage('Fetching market data...')
+      
       // Generate portfolio assets
       const assets = await PortfolioService.generatePortfolio(
         userPreferences.riskProfile
       )
 
+      // Update progress
+      setProgress(50)
+      setProgressMessage('Calculating allocations...')
+      
       // Calculate allocations
       const allocations = PortfolioService.calculateAllocations(
         assets,
         userPreferences.riskProfile
       )
 
+      // Update progress
+      setProgress(70)
+      setProgressMessage('Creating portfolio assets...')
+      
       // Create portfolio assets with calculated values
       const portfolioAssets: PortfolioAsset[] = assets.map(asset => {
         const allocation = allocations[asset.id]
@@ -62,6 +83,10 @@ const PortfolioPage: React.FC = () => {
         updatedAt: new Date()
       }
 
+      // Update progress
+      setProgress(90)
+      setProgressMessage('Saving portfolio...')
+      
       setGeneratedPortfolio(portfolio)
       setPortfolio(portfolio)
       
@@ -69,16 +94,31 @@ const PortfolioPage: React.FC = () => {
       console.log('PortfolioPage - Saving portfolio:', portfolio)
       console.log('PortfolioPage - Portfolio saved to localStorage:', localStorage.getItem('crypto-portfolio'))
 
+      // Update progress
+      setProgress(95)
+      setProgressMessage('Generating suggestions...')
+      
       // Generate suggestions for additional coins
       await generateSuggestions(portfolioAssets)
+      
+      // Complete
+      setProgress(100)
+      setProgressMessage('Portfolio ready!')
+      
+      // Hide progress after a short delay
+      setTimeout(() => {
+        setShowProgress(false)
+      }, 1000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate portfolio')
     } finally {
       setIsLoading(false)
+      setShowProgress(false)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userPreferences, setIsLoading, setError, setPortfolio])
 
-  const generateSuggestions = async (currentAssets: PortfolioAsset[]) => {
+  const generateSuggestions = useCallback(async (currentAssets: PortfolioAsset[]) => {
     try {
       // Get additional coins that complement the current portfolio
       const allCoins = await CoinGeckoAPI.getTopCryptocurrencies(50)
@@ -97,12 +137,13 @@ const PortfolioPage: React.FC = () => {
             .filter(coin => Math.abs(coin.price_change_percentage_24h) < 10)
             .slice(0, 3)
           break
-        case 'balanced':
+        case 'balanced': {
           // Mix of stable and trending coins
           const stableCoins = availableCoins.filter(coin => Math.abs(coin.price_change_percentage_24h) < 15)
           const trendingCoins = availableCoins.filter(coin => Math.abs(coin.price_change_percentage_24h) >= 15)
           suggestedCoins = [...stableCoins.slice(0, 2), ...trendingCoins.slice(0, 2)]
           break
+        }
         case 'aggressive':
           // Suggest high-potential coins
           suggestedCoins = availableCoins
@@ -115,7 +156,7 @@ const PortfolioPage: React.FC = () => {
     } catch (error) {
       console.error('Error generating suggestions:', error)
     }
-  }
+  }, [userPreferences.riskProfile, setSuggestions])
 
   useEffect(() => {
     generatePortfolio()
@@ -169,6 +210,16 @@ const PortfolioPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-neo-background dark:bg-neo-background-dark p-4">
       <LoadingOverlay isVisible={Boolean(isLoading)} message="GENERATING YOUR PORTFOLIO..." />
+      
+      {/* Progress Bar */}
+      {showProgress && (
+        <ProgressBar
+          progress={progress}
+          message={progressMessage}
+          showRateLimit={true}
+          rateLimitInfo={rateLimiter.getUsageInfo()}
+        />
+      )}
       
       <div className="max-w-6xl mx-auto">
         {/* Header */}
@@ -292,6 +343,19 @@ const PortfolioPage: React.FC = () => {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Portfolio Education Section */}
+            <div className="bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-8 rounded-neo-lg mb-8">
+              <h2 className="text-2xl font-neo font-black text-neo-text mb-6">
+                📚 PORTFOLIO STRATEGY GUIDE
+              </h2>
+              <p className="text-lg font-neo text-neo-text/80 mb-6">
+                Learn about the strategy behind your {userPreferences.riskProfile} portfolio allocation and best practices for crypto investing.
+              </p>
+              <PortfolioEducation 
+                selectedRiskProfile={userPreferences.riskProfile}
+              />
             </div>
 
             {/* Suggestions Section */}

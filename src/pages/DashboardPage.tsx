@@ -4,12 +4,13 @@ import { useNavigate } from 'react-router-dom'
 import { portfolioAtom, swingTradeOpportunitiesAtom, addSwingTradeOpportunityAtom, removeSwingTradeOpportunityAtom, setLoadingAtom, setPortfolioAtom } from '../store'
 import type { SwingTradeOpportunity } from '../types'
 import { CoinGeckoAPI } from '../services/api'
-import { CacheService } from '../services/cache'
 import { RebalancingService } from '../services/rebalancing'
 import { TechnicalAnalysisService } from '../services/technicalAnalysis'
+import { PredictionService } from '../services/prediction'
 import Button from '../components/ui/Button'
 import LoadingOverlay from '../components/ui/LoadingOverlay'
 import Dialog from '../components/ui/Dialog'
+import { MarketSentimentWidget } from '../components/MarketSentimentWidget'
 
 const DashboardPage: React.FC = () => {
   const [portfolio] = useAtom(portfolioAtom)
@@ -19,12 +20,21 @@ const DashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useAtom(setLoadingAtom)
   const [, setPortfolio] = useAtom(setPortfolioAtom)
   const navigate = useNavigate()
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
-  const [cacheInfo] = useState(CacheService.getCacheInfo())
-  const [rebalancingRecommendation] = useState(() => {
+  const [lastUpdated, setLastUpdated] = useState<Date>(() => new Date())
+  const [rebalancingRecommendation, setRebalancingRecommendation] = useState(() => {
     return portfolio ? RebalancingService.analyzePortfolio(portfolio) : null
   })
+  const [portfolioPrediction, setPortfolioPrediction] = useState(() => {
+    return portfolio ? PredictionService.calculatePortfolioPrediction(portfolio) : null
+  })
   const [showResetDialog, setShowResetDialog] = useState(false)
+
+  // Update timestamp when data is refreshed
+  const updateTimestamp = useCallback(() => {
+    const now = new Date()
+    console.log('Updating timestamp to:', now.toLocaleString())
+    setLastUpdated(now)
+  }, [])
 
   // Debug: Log portfolio state
   console.log('Dashboard - Portfolio state:', portfolio)
@@ -43,6 +53,114 @@ const DashboardPage: React.FC = () => {
       }
     }
   }, [portfolio, setPortfolio])
+
+  // Recalculate rebalancing recommendation and predictions when portfolio changes
+  useEffect(() => {
+    if (portfolio) {
+      console.log('Dashboard - Recalculating recommendations and predictions for portfolio:', portfolio.assets.map(a => a.symbol))
+      const newRecommendation = RebalancingService.analyzePortfolio(portfolio)
+      const newPrediction = PredictionService.calculatePortfolioPrediction(portfolio)
+      setRebalancingRecommendation(newRecommendation)
+      setPortfolioPrediction(newPrediction)
+    }
+  }, [portfolio])
+
+  // Update portfolio with real-time prices (efficient batch request)
+  const updatePortfolioPrices = useCallback(async () => {
+    if (!portfolio) return
+
+    // Prevent multiple simultaneous requests
+    if (isLoading) {
+      console.log('Dashboard - Skipping price update, already loading...')
+      return
+    }
+
+    // Check if we recently updated (within last 2 minutes)
+    const lastUpdate = portfolio.updatedAt ? new Date(portfolio.updatedAt) : null
+    const now = new Date()
+    if (lastUpdate && (now.getTime() - lastUpdate.getTime()) < 120000) {
+      console.log('Dashboard - Skipping price update, data is recent (< 2 minutes)')
+      return
+    }
+
+    try {
+      console.log('Dashboard - Updating portfolio prices...')
+      
+      // Filter out USDC and get unique coin IDs
+      const cryptoAssets = portfolio.assets.filter(asset => asset.id !== 'usd-coin')
+      
+      if (cryptoAssets.length > 0) {
+        // Get batch price data for specific portfolio assets
+        const cryptoIds = cryptoAssets.map(asset => asset.id)
+        const batchData = await CoinGeckoAPI.getCryptocurrenciesByIds(cryptoIds)
+        const priceMap = new Map(batchData.map(coin => [coin.id, coin]))
+        
+        // Update assets with batch data
+        const updatedAssets = portfolio.assets.map(asset => {
+          if (asset.id === 'usd-coin') {
+            return {
+              ...asset,
+              current_price: 1.00,
+              price_change_percentage_24h: 0.00,
+              price_change_percentage_7d: 0.00
+            }
+          }
+
+          const currentData = priceMap.get(asset.id)
+          if (currentData) {
+            // Calculate new value and profit/loss
+            const newValue = asset.quantity * currentData.current_price
+            const profitLoss = newValue - (asset.quantity * asset.current_price)
+            const profitLossPercentage = ((newValue - (asset.quantity * asset.current_price)) / (asset.quantity * asset.current_price)) * 100
+
+            return {
+              ...asset,
+              current_price: currentData.current_price,
+              price_change_percentage_24h: currentData.price_change_percentage_24h,
+              price_change_percentage_7d: currentData.price_change_percentage_7d,
+              value: newValue,
+              profitLoss,
+              profitLossPercentage
+            }
+          }
+          
+          // Return original asset if no update data found
+          return asset
+        })
+
+        // Calculate new portfolio totals
+        const newTotalValue = updatedAssets.reduce((sum, asset) => sum + asset.value, 0)
+        const newTotalProfitLoss = updatedAssets.reduce((sum, asset) => sum + asset.profitLoss, 0)
+        const newTotalProfitLossPercentage = ((newTotalValue - portfolio.startingAmount) / portfolio.startingAmount) * 100
+
+        // Update portfolio allocations
+        const updatedAssetsWithAllocation = updatedAssets.map(asset => ({
+          ...asset,
+          allocation: (asset.value / newTotalValue) * 100
+        }))
+
+        const updatedPortfolio = {
+          ...portfolio,
+          totalValue: newTotalValue,
+          totalProfitLoss: newTotalProfitLoss,
+          totalProfitLossPercentage: newTotalProfitLossPercentage,
+          assets: updatedAssetsWithAllocation,
+          updatedAt: new Date()
+        }
+
+        console.log('Dashboard - Updated portfolio:', {
+          totalValue: newTotalValue,
+          totalProfitLoss: newTotalProfitLoss,
+          totalProfitLossPercentage: newTotalProfitLossPercentage
+        })
+
+        setPortfolio(updatedPortfolio)
+        updateTimestamp()
+      }
+    } catch (error) {
+      console.error('Error updating portfolio prices:', error)
+    }
+  }, [portfolio, setPortfolio, updateTimestamp, isLoading])
 
   const analyzeForSwingTrades = useCallback(async () => {
     if (!portfolio) return
@@ -114,24 +232,51 @@ const DashboardPage: React.FC = () => {
         addSwingTradeOpportunity(opportunity)
       })
 
-      setLastUpdated(new Date())
+      updateTimestamp()
     } catch (error) {
       console.error('Error analyzing for swing trades:', error)
     } finally {
       setIsLoading(false)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [portfolio, setIsLoading, addSwingTradeOpportunity, removeSwingTradeOpportunity, swingTradeOpportunities])
 
   useEffect(() => {
     if (portfolio) {
+      // Update timestamp when portfolio loads
+      updateTimestamp()
+      
       // Simulate periodic analysis for swing trade opportunities
       const interval = setInterval(() => {
         analyzeForSwingTrades()
-      }, 30000) // Check every 30 seconds for demo purposes
+      }, 300000) // Check every 5 minutes instead of 30 seconds
 
       return () => clearInterval(interval)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [portfolio, analyzeForSwingTrades])
+
+  // Update portfolio prices and timestamp every 5 minutes
+  useEffect(() => {
+    if (!portfolio) return
+
+    const interval = setInterval(() => {
+      updatePortfolioPrices()
+    }, 300000) // Update every 5 minutes instead of 2 minutes
+
+    return () => clearInterval(interval)
+  }, [portfolio, updatePortfolioPrices])
+
+  // Update timestamp every 30 seconds to show current time
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date()
+      console.log('Periodic timestamp update:', now.toLocaleString())
+      setLastUpdated(now)
+    }, 30000) // Update every 30 seconds
+
+    return () => clearInterval(interval)
+  }, [setLastUpdated])
 
   const handleResetPortfolio = () => {
     setShowResetDialog(true)
@@ -207,18 +352,16 @@ const DashboardPage: React.FC = () => {
                 PORTFOLIO DASHBOARD
               </h1>
               <div className="flex items-center gap-4 text-sm font-neo text-neo-text/80">
-                <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
-                {cacheInfo.enabled && (
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                    Cache: {cacheInfo.topCoinsCount + cacheInfo.trendingCoinsCount + cacheInfo.volatileCoinsCount + cacheInfo.individualCoinsCount} items
-                  </span>
-                )}
+                <span>Last updated: {lastUpdated.toLocaleString()}</span>
               </div>
             </div>
             <div className="flex gap-4 mt-4 md:mt-0">
               <Button
-                onClick={analyzeForSwingTrades}
+                onClick={() => {
+                  console.log('Refresh button clicked at:', new Date().toLocaleString())
+                  updatePortfolioPrices()
+                  analyzeForSwingTrades()
+                }}
                 variant="primary"
                 size="lg"
               >
@@ -233,6 +376,11 @@ const DashboardPage: React.FC = () => {
               </Button>
             </div>
           </div>
+        </div>
+
+        {/* Market Sentiment Widget */}
+        <div className="mb-8">
+          <MarketSentimentWidget />
         </div>
 
         {/* Portfolio Performance */}
@@ -320,6 +468,141 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Portfolio Growth Predictions */}
+        {portfolioPrediction && (
+          <div className="bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-8 rounded-neo-lg mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-neo font-black text-neo-text">
+                PORTFOLIO GROWTH PREDICTIONS
+              </h2>
+              <div className={`px-3 py-1 rounded-neo text-sm font-neo font-bold ${
+                portfolioPrediction.riskAssessment.riskLevel === 'high' 
+                  ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                  : portfolioPrediction.riskAssessment.riskLevel === 'medium'
+                  ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+                  : 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+              }`}>
+                {portfolioPrediction.riskAssessment.riskLevel.toUpperCase()} RISK
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Risk Assessment */}
+              <div>
+                <h3 className="text-xl font-neo font-black text-neo-text mb-4">
+                  RISK ASSESSMENT
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span className="text-sm font-neo text-neo-text/60">Volatility</span>
+                    <span className="font-neo font-bold text-neo-text">
+                      {(portfolioPrediction.riskAssessment.volatility * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm font-neo text-neo-text/60">Max Drawdown</span>
+                    <span className="font-neo font-bold text-neo-text">
+                      {(portfolioPrediction.riskAssessment.maxDrawdown * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm font-neo text-neo-text/60">Sharpe Ratio</span>
+                    <span className={`font-neo font-bold ${
+                      portfolioPrediction.riskAssessment.sharpeRatio > 1 
+                        ? 'text-green-600 dark:text-green-400'
+                        : portfolioPrediction.riskAssessment.sharpeRatio > 0
+                        ? 'text-yellow-600 dark:text-yellow-400'
+                        : 'text-red-600 dark:text-red-400'
+                    }`}>
+                      {portfolioPrediction.riskAssessment.sharpeRatio.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Recommendations */}
+                <div className="mt-6">
+                  <h4 className="font-neo font-bold text-neo-text mb-3">Recommendations</h4>
+                  <ul className="space-y-2">
+                    {portfolioPrediction.recommendations.map((rec, index) => (
+                      <li key={index} className="flex items-start space-x-2">
+                        <span className="text-neo-primary dark:text-neo-primary-dark mt-1">•</span>
+                        <span className="font-neo text-neo-text/80 text-sm">{rec}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Growth Predictions */}
+              <div>
+                <h3 className="text-xl font-neo font-black text-neo-text mb-4">
+                  GROWTH PROJECTIONS
+                </h3>
+                <div className="space-y-4">
+                  {portfolioPrediction.predictions.map((prediction) => (
+                    <div key={prediction.timeframe} className="p-4 border-neo border-neo-border rounded-neo bg-neo-surface/50 dark:bg-neo-surface-dark/50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-neo font-bold text-neo-text">
+                          {prediction.timeframe === '1week' ? '1 Week' :
+                           prediction.timeframe === '1month' ? '1 Month' :
+                           prediction.timeframe === '3months' ? '3 Months' :
+                           prediction.timeframe === '6months' ? '6 Months' : '1 Year'}
+                        </h4>
+                        <span className="text-sm font-neo text-neo-text/60">
+                          {prediction.confidence}% confidence
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-3 text-sm">
+                        <div>
+                          <p className="text-neo-text/60">Optimistic</p>
+                          <p className="font-neo font-bold text-green-600 dark:text-green-400">
+                            {formatCurrency(prediction.scenarios.optimistic.value)}
+                          </p>
+                          <p className="text-xs text-green-600 dark:text-green-400">
+                            +{prediction.scenarios.optimistic.growth.toFixed(1)}%
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-neo-text/60">Realistic</p>
+                          <p className="font-neo font-bold text-neo-text">
+                            {formatCurrency(prediction.scenarios.realistic.value)}
+                          </p>
+                          <p className="text-xs text-neo-text">
+                            +{prediction.scenarios.realistic.growth.toFixed(1)}%
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-neo-text/60">Pessimistic</p>
+                          <p className="font-neo font-bold text-red-600 dark:text-red-400">
+                            {formatCurrency(prediction.scenarios.pessimistic.value)}
+                          </p>
+                          <p className="text-xs text-red-600 dark:text-red-400">
+                            +{prediction.scenarios.pessimistic.growth.toFixed(1)}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Prediction Factors */}
+            <div className="mt-6 p-4 bg-neo-surface/30 dark:bg-neo-surface-dark/30 border-neo border-neo-border rounded-neo">
+              <h4 className="font-neo font-bold text-neo-text mb-3">Factors Affecting Predictions</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {portfolioPrediction.predictions[0]?.factors.map((factor, index) => (
+                  <div key={index} className="flex items-start space-x-2">
+                    <span className="text-neo-text/60 mt-1">•</span>
+                    <span className="font-neo text-neo-text/80 text-sm">{factor}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Portfolio Rebalancing */}
         {rebalancingRecommendation && (
@@ -411,11 +694,11 @@ const DashboardPage: React.FC = () => {
             </div>
 
             {/* Assets to Rebalance */}
-            {rebalancingRecommendation.assetsToRebalance.length > 0 && (
-              <div className="mt-8">
-                <h3 className="text-xl font-neo font-black text-neo-text mb-4">
-                  ASSETS TO REBALANCE
-                </h3>
+            <div className="mt-8">
+              <h3 className="text-xl font-neo font-black text-neo-text mb-4">
+                ASSETS TO REBALANCE
+              </h3>
+              {rebalancingRecommendation.assetsToRebalance.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {rebalancingRecommendation.assetsToRebalance.map((item) => (
                     <div
@@ -471,8 +754,17 @@ const DashboardPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="text-center py-8 bg-neo-surface/30 dark:bg-neo-surface-dark/30 border-neo border-neo-border rounded-neo">
+                  <p className="text-lg font-neo text-neo-text/60 mb-2">
+                    No specific rebalancing actions needed
+                  </p>
+                  <p className="font-neo text-neo-text/40">
+                    Your portfolio allocations are within acceptable ranges
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

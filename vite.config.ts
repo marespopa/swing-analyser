@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // Add Node.js types for console
 declare const console: {
-  log: (...args: any[]) => void
+  log: (...args: unknown[]) => void
 }
 
 // https://vite.dev/config/
@@ -16,14 +16,19 @@ export default defineConfig({
         target: 'https://api.coingecko.com/api/v3',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/coingecko/, ''),
-        configure: (proxy, _options) => {
-          proxy.on('error', (err, _req, _res) => {
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
             console.log('proxy error', err);
           });
-          proxy.on('proxyReq', (_proxyReq, req, _res) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
             console.log('Sending Request to the Target:', req.method, req.url);
+            // Forward API key header if present
+            const apiKey = req.headers['x-cg-api-key'];
+            if (apiKey) {
+              proxyReq.setHeader('X-CG-API-KEY', apiKey);
+            }
           });
-          proxy.on('proxyRes', (proxyRes, req, _res) => {
+          proxy.on('proxyRes', (proxyRes, req) => {
             console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
           });
         },

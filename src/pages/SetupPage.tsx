@@ -13,6 +13,7 @@ const SetupPage: React.FC = () => {
   const navigate = useNavigate()
   const [startingAmount, setStartingAmount] = useState(userPreferences.startingAmount.toString())
   const [riskProfile, setRiskProfile] = useState<RiskProfile>(userPreferences.riskProfile)
+  const [showApiKey, setShowApiKey] = useState<boolean>(false)
   const [cacheInfo, setCacheInfo] = useState(CacheService.getCacheInfo())
   const [cacheEnabled, setCacheEnabled] = useState(CacheService.isEnabled())
 
@@ -168,13 +169,23 @@ const SetupPage: React.FC = () => {
               <label className="block font-neo font-bold text-neo-text mb-2">
                 API KEY
               </label>
-              <Input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Enter API key for premium features"
-                className="font-mono w-full"
-              />
+              <div className="relative">
+                <Input
+                  type={showApiKey ? "text" : "password"}
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="Enter API key for premium features"
+                  className="font-mono w-full pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowApiKey(!showApiKey)}
+                  className="cursor-pointer absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  title={showApiKey ? "Hide API key" : "Show API key"}
+                >
+                  {showApiKey ? "👁️" : "👁️‍🗨️"}
+                </button>
+              </div>
               {apiKey && (
                 <Button
                   onClick={() => setApiKey('')}
