@@ -65,8 +65,15 @@ export class RebalancingService {
     
     // Check if portfolio has a stablecoin position
     const hasStablecoin = portfolio.assets.some(asset => asset.id === 'usd-coin')
+    const cryptoAssets = portfolio.assets.filter(asset => asset.id !== 'usd-coin')
     console.log('Rebalancing - Portfolio assets:', portfolio.assets.map(a => a.symbol))
     console.log('Rebalancing - Has stablecoin:', hasStablecoin)
+    console.log('Rebalancing - Crypto assets count:', cryptoAssets.length)
+    
+    // Special handling for single-asset portfolios (common in degen mode)
+    if (cryptoAssets.length === 1) {
+      return this.getSingleAssetRecommendation(portfolio, hasStablecoin, now)
+    }
     
     // Calculate total drift (average of individual drifts, not sum)
     let totalDrift = 0
@@ -324,6 +331,89 @@ export class RebalancingService {
     }
     
     return next
+  }
+
+  // Special recommendation for single-asset portfolios (common in degen mode)
+  private static getSingleAssetRecommendation(portfolio: Portfolio, hasStablecoin: boolean, now: Date): RebalancingRecommendation {
+    const cryptoAsset = portfolio.assets.find(asset => asset.id !== 'usd-coin')
+    
+    if (!cryptoAsset) {
+      // Only stablecoin - suggest adding crypto
+      return {
+        type: 'hold',
+        reason: 'Portfolio contains only stablecoin. Consider adding crypto assets for growth.',
+        urgency: 'low',
+        suggestedActions: [
+          'Add crypto assets to your portfolio',
+          'Consider starting with Bitcoin or Ethereum',
+          'Monitor market conditions for entry points'
+        ],
+        nextReviewDate: this.getNextReviewDate('monthly', now),
+        driftPercentage: 0,
+        assetsToRebalance: []
+      }
+    }
+
+    // Single crypto asset - typical degen scenario
+    const priceChange = cryptoAsset.price_change_percentage_24h
+    const isPerformingWell = priceChange > 0
+    
+    let type: RebalancingRecommendation['type'] = 'hold'
+    let urgency: RebalancingRecommendation['urgency'] = 'low'
+    let reason = ''
+    let suggestedActions: string[] = []
+
+    if (portfolio.riskProfile === 'degen') {
+      if (isPerformingWell) {
+        type = 'hold'
+        urgency = 'low'
+        reason = 'Degen portfolio with single asset performing well. Let it run and focus on momentum.'
+        suggestedActions = [
+          'Let your position continue running',
+          'Monitor for trend changes or exhaustion signals',
+          'Consider adding to position if momentum continues',
+          'Set trailing stop-loss to protect gains',
+          'Look for new opportunities while maintaining current position'
+        ]
+      } else {
+        type = 'partial-rebalance'
+        urgency = 'medium'
+        reason = 'Single asset underperforming. Consider position management or new opportunities.'
+        suggestedActions = [
+          'Review your position and market conditions',
+          'Consider cutting losses if trend is broken',
+          'Look for new momentum opportunities',
+          'Consider diversifying into 2-3 assets',
+          'Set tighter stop-loss to limit downside'
+        ]
+      }
+    } else {
+      // Non-degen with single asset - suggest diversification
+      type = 'partial-rebalance'
+      urgency = 'medium'
+      reason = 'Single asset portfolio detected. Consider diversifying for risk management.'
+      suggestedActions = [
+        'Consider diversifying into multiple assets',
+        'Add Bitcoin and Ethereum as core holdings',
+        'Consider adding stablecoin for liquidity',
+        'Review your risk tolerance and strategy'
+      ]
+    }
+
+    // Add stablecoin recommendation if missing
+    if (!hasStablecoin && portfolio.riskProfile !== 'degen') {
+      suggestedActions.unshift('Consider adding 5-10% USDC for liquidity and swing trading')
+    }
+
+    return {
+      type,
+      reason,
+      urgency,
+      suggestedActions,
+      nextReviewDate: this.getNextReviewDate('monthly', now),
+      driftPercentage: 0, // No meaningful drift for single asset
+      assetsToRebalance: []
+    }
   }
 
   // Get rebalancing frequency recommendation

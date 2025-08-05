@@ -300,6 +300,7 @@ const DashboardPage: React.FC = () => {
         <PortfolioHoldings
           portfolio={portfolio}
           stopLossAnalysis={stopLossAnalysis}
+          onPortfolioUpdate={setPortfolio}
         />
 
         {/* Market Sentiment Widget */}
@@ -314,6 +315,7 @@ const DashboardPage: React.FC = () => {
         <PortfolioRebalancing
           portfolio={portfolio}
           rebalancingRecommendation={rebalancingRecommendation}
+          onPortfolioUpdate={setPortfolio}
         />
 
         {/* Potential Coins */}

@@ -39,7 +39,7 @@ export type RiskProfile = 'conservative' | 'balanced' | 'aggressive' | 'degen'
 export interface PotentialCoin {
   id: string
   asset: CryptoAsset
-  category: 'gem' | 'replacement' | 'oversold' | 'trending' | 'degen'
+  category: 'gem' | 'replacement' | 'oversold' | 'trending' | 'degen' | 'wait-and-watch'
   reason: string
   confidence: number // 0-100
   suggestedAllocation: number

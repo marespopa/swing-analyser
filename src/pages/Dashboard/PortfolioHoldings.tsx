@@ -1,22 +1,37 @@
-import React from 'react'
-import type { Portfolio, StopLossAnalysis } from '../../types'
+import React, { useState } from 'react'
+import type { Portfolio } from '../../types'
+import type { StopLossAnalysis } from '../../services/stopLoss'
 import { formatCurrency, formatPercentage } from './utils'
+import Button from '../../components/ui/Button'
+import EditHoldingsModal from './EditHoldingsModal'
 
 interface PortfolioHoldingsProps {
   portfolio: Portfolio
   stopLossAnalysis: StopLossAnalysis | null
+  onPortfolioUpdate: (updatedPortfolio: Portfolio) => void
 }
 
 const PortfolioHoldings: React.FC<PortfolioHoldingsProps> = ({
   portfolio,
-  stopLossAnalysis
+  stopLossAnalysis,
+  onPortfolioUpdate
 }) => {
+  const [showEditModal, setShowEditModal] = useState(false)
 
   return (
     <div className="bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-8 rounded-neo-lg mb-8">
-      <h2 className="text-2xl font-neo font-black text-neo-text mb-6">
-        YOUR HOLDINGS
-      </h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-neo font-black text-neo-text">
+          YOUR HOLDINGS
+        </h2>
+        <Button
+          onClick={() => setShowEditModal(true)}
+          variant="secondary"
+          size="sm"
+        >
+          Edit Holdings
+        </Button>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {portfolio.assets.map((asset) => {
@@ -44,9 +59,21 @@ const PortfolioHoldings: React.FC<PortfolioHoldingsProps> = ({
               
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-sm font-neo text-neo-text/60">Price</span>
+                  <span className="text-sm font-neo text-neo-text/60">Current Price</span>
+                  <span className="font-neo font-bold text-neo-text">
+                    {formatCurrency(asset.current_price)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm font-neo text-neo-text/60">Holding Amount</span>
                   <span className="font-neo font-bold text-neo-text">
                     {formatCurrency(asset.value)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm font-neo text-neo-text/60">Quantity</span>
+                  <span className="font-neo font-bold text-neo-text">
+                    {asset.quantity.toFixed(4)}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -90,6 +117,14 @@ const PortfolioHoldings: React.FC<PortfolioHoldingsProps> = ({
           )
         })}
       </div>
+
+      {/* Edit Holdings Modal */}
+      <EditHoldingsModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSave={onPortfolioUpdate}
+        portfolio={portfolio}
+      />
     </div>
   )
 }

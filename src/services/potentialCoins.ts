@@ -33,8 +33,24 @@ export class PotentialCoinsService {
       const degen = this.analyzeDegenPlays(lowMarketCap, portfolio)
       potentialCoins.push(...degen)
 
-      // Sort by confidence and return top 3 results
-      return potentialCoins
+      // Find Wait & Watch opportunities (overbought but interesting)
+      const waitAndWatch = this.analyzeWaitAndWatch(lowMarketCap, trendingCoins, portfolio)
+      potentialCoins.push(...waitAndWatch)
+
+      // Remove duplicates and sort by confidence, then return top 3 results
+      const uniqueCoins = potentialCoins.reduce((acc, coin) => {
+        const existingCoin = acc.find(c => c.asset.id === coin.asset.id)
+        if (existingCoin) {
+          // Keep the one with higher confidence
+          if (coin.confidence > existingCoin.confidence) {
+            return acc.map(c => c.asset.id === coin.asset.id ? coin : c)
+          }
+          return acc
+        }
+        return [...acc, coin]
+      }, [] as PotentialCoin[])
+
+      return uniqueCoins
         .sort((a, b) => b.confidence - a.confidence)
         .slice(0, 3) // Limit to top 3 potential coins
 
@@ -56,26 +72,50 @@ export class PotentialCoinsService {
       const volume = coin.total_volume
       const priceChange = coin.price_change_percentage_24h
 
-      // Criteria for gems: low market cap, increasing volume, positive momentum
+      // More conservative criteria for gems with overbought protection
+      const isOverbought = priceChange > 25 // 25%+ in 24h for low caps is concerning
+      const isExtremelyOverbought = priceChange > 40 // 40%+ is very dangerous for low caps
+      
       if (marketCap < 100000000 && // Under $100M market cap
           volume > marketCap * 0.1 && // Good volume relative to market cap
-          priceChange > 5) { // Positive price movement
+          priceChange > 5 && priceChange <= 20 && // Positive but not extreme movement
+          !isExtremelyOverbought) { // Exclude extremely overbought
 
-        const confidence = Math.min(85, 50 + (priceChange * 2) + (volume / marketCap * 10))
-        const expectedReturn = Math.min(200, 50 + priceChange * 3)
-        const riskLevel = marketCap < 50000000 ? 'high' : 'medium'
+        // Reduce confidence for overbought conditions
+        let confidence = Math.min(85, 50 + (priceChange * 1.5) + (volume / marketCap * 10))
+        if (isOverbought) {
+          confidence = Math.max(25, confidence - 30) // Significantly reduce confidence
+        }
+        
+        // More conservative expected returns
+        const expectedReturn = isOverbought 
+          ? Math.min(100, 30 + priceChange * 1.5) // Lower expectations for overbought
+          : Math.min(150, 40 + priceChange * 2.5)
+        
+        const riskLevel = isOverbought || marketCap < 50000000 ? 'high' : 'medium'
+
+        // Adjust reason and market signal based on overbought status
+        let reason = 'Low market cap gem with strong volume and momentum'
+        let marketSignal = 'Strong volume and momentum in low cap'
+        
+        if (isOverbought) {
+          reason = 'Low cap gem but overbought - consider waiting for pullback'
+          marketSignal = 'Strong momentum but overbought - wait for better entry'
+        }
 
         gems.push({
           id: `gem-${coin.id}`,
           asset: coin,
           category: 'gem',
-          reason: `Low market cap gem with strong volume and momentum`,
+          reason,
           confidence: Math.round(confidence),
-          suggestedAllocation: 3,
+          suggestedAllocation: isOverbought ? 2 : 3, // Lower allocation for overbought
           expectedReturn,
           riskLevel,
-          marketSignal: 'Strong volume and momentum in low cap',
-          technicalScore: priceChange + (volume / marketCap * 100),
+          marketSignal,
+          technicalScore: isOverbought 
+            ? Math.max(15, priceChange * 0.6 + (volume / marketCap * 60)) // Penalize overbought
+            : priceChange + (volume / marketCap * 100),
           timestamp: new Date()
         })
       }
@@ -96,23 +136,50 @@ export class PotentialCoinsService {
       const volume = coin.total_volume
       const marketCap = coin.market_cap
 
-      // Criteria: strong performance, good volume, reasonable market cap
-      if (priceChange > 10 && volume > 10000000 && marketCap > 50000000) {
-        const confidence = Math.min(80, 60 + priceChange)
-        const expectedReturn = Math.min(100, 30 + priceChange * 2)
-        const riskLevel = marketCap < 100000000 ? 'medium' : 'low'
+      // More conservative criteria with overbought protection
+      const isOverbought = priceChange > 25 // 25%+ in 24h is concerning
+      const isExtremelyOverbought = priceChange > 40 // 40%+ is very dangerous
+      
+      if (priceChange > 8 && priceChange <= 20 && // Moderate gains, not extreme
+          volume > 10000000 && 
+          marketCap > 50000000 &&
+          !isExtremelyOverbought) { // Exclude extremely overbought
+        
+        // Reduce confidence for overbought conditions
+        let confidence = Math.min(80, 60 + priceChange)
+        if (isOverbought) {
+          confidence = Math.max(35, confidence - 25) // Reduce confidence for overbought
+        }
+        
+        // More conservative expected returns
+        const expectedReturn = isOverbought 
+          ? Math.min(60, 20 + priceChange * 1.2) // Lower expectations for overbought
+          : Math.min(80, 25 + priceChange * 1.8)
+        
+        const riskLevel = isOverbought || marketCap < 100000000 ? 'medium' : 'low'
+
+        // Adjust reason and market signal based on overbought status
+        let reason = 'Strong trending alternative to current holdings'
+        let marketSignal = 'High momentum with strong fundamentals'
+        
+        if (isOverbought) {
+          reason = 'Good alternative but overbought - consider waiting for pullback'
+          marketSignal = 'Strong fundamentals but overbought - wait for better entry'
+        }
 
         replacements.push({
           id: `replacement-${coin.id}`,
           asset: coin,
           category: 'replacement',
-          reason: `Strong trending alternative to current holdings`,
+          reason,
           confidence: Math.round(confidence),
-          suggestedAllocation: 5,
+          suggestedAllocation: isOverbought ? 3 : 5, // Lower allocation for overbought
           expectedReturn,
           riskLevel,
-          marketSignal: 'High momentum with strong fundamentals',
-          technicalScore: priceChange + (volume / marketCap * 50),
+          marketSignal,
+          technicalScore: isOverbought 
+            ? Math.max(25, priceChange * 0.7 + (volume / marketCap * 35)) // Penalize overbought
+            : priceChange + (volume / marketCap * 50),
           timestamp: new Date()
         })
       }
@@ -161,36 +228,63 @@ export class PotentialCoinsService {
     const trending: PotentialCoin[] = []
     const existingIds = new Set(portfolio.assets.map(asset => asset.id))
 
-    for (const coin of trendingCoins.slice(0, 10)) {
+    for (const coin of trendingCoins.slice(0, 15)) {
       if (existingIds.has(coin.id)) continue
 
       const priceChange = coin.price_change_percentage_24h
       const volume = coin.total_volume
       const marketCap = coin.market_cap
 
-      // Criteria: strong momentum with good fundamentals
-      if (priceChange > 20 && volume > 20000000 && marketCap > 100000000) {
-        const confidence = Math.min(90, 70 + priceChange)
-        const expectedReturn = Math.min(150, 40 + priceChange * 2)
-        const riskLevel = priceChange > 50 ? 'high' : 'medium'
+      // Calculate RSI-like overbought indicator
+      const isOverbought = priceChange > 30 // 30%+ in 24h is concerning
+      const isExtremelyOverbought = priceChange > 50 // 50%+ is very dangerous
+      
+      // More conservative criteria with overbought protection
+      if (priceChange > 10 && priceChange <= 25 && // Moderate gains, not extreme
+          volume > 20000000 && 
+          marketCap > 100000000 &&
+          !isExtremelyOverbought) { // Exclude extremely overbought coins
+        
+        // Reduce confidence for overbought conditions
+        let confidence = Math.min(85, 60 + priceChange)
+        if (isOverbought) {
+          confidence = Math.max(30, confidence - 40) // Significantly reduce confidence
+        }
+        
+        // More conservative expected returns
+        const expectedReturn = isOverbought 
+          ? Math.min(50, 20 + priceChange * 0.5) // Lower expectations for overbought
+          : Math.min(100, 30 + priceChange * 1.5)
+        
+        const riskLevel = isOverbought ? 'high' : 'medium'
+        
+        // Adjust reason based on overbought status
+        let reason = 'Strong momentum and trending upward'
+        if (isOverbought) {
+          reason = 'Trending but overbought - consider waiting for pullback'
+        }
 
         trending.push({
           id: `trending-${coin.id}`,
           asset: coin,
           category: 'trending',
-          reason: `Strong momentum and trending upward`,
+          reason,
           confidence: Math.round(confidence),
-          suggestedAllocation: 6,
+          suggestedAllocation: isOverbought ? 3 : 6, // Lower allocation for overbought
           expectedReturn,
           riskLevel,
-          marketSignal: 'High momentum with strong volume',
-          technicalScore: priceChange + (volume / marketCap * 30),
+          marketSignal: isOverbought 
+            ? 'High momentum but overbought - wait for pullback'
+            : 'Strong momentum with good fundamentals',
+          technicalScore: isOverbought 
+            ? Math.max(20, priceChange * 0.5 + (volume / marketCap * 15)) // Penalize overbought
+            : priceChange + (volume / marketCap * 30),
           timestamp: new Date()
         })
       }
     }
 
-    return trending.slice(0, 1) // Return top 1 trending (already correct)
+    return trending.slice(0, 1) // Return top 1 trending
   }
 
   private static analyzeDegenPlays(lowMarketCap: CryptoAsset[], portfolio: Portfolio): PotentialCoin[] {
@@ -232,6 +326,47 @@ export class PotentialCoinsService {
     return degen.slice(0, 1) // Return top 1 degen play (already correct)
   }
 
+  private static analyzeWaitAndWatch(lowMarketCap: CryptoAsset[], trendingCoins: CryptoAsset[], portfolio: Portfolio): PotentialCoin[] {
+    const waitAndWatch: PotentialCoin[] = []
+    const existingIds = new Set(portfolio.assets.map(asset => asset.id))
+    const allCoins = [...lowMarketCap, ...trendingCoins]
+
+    for (const coin of allCoins.slice(0, 20)) {
+      if (existingIds.has(coin.id)) continue
+
+      const priceChange = coin.price_change_percentage_24h
+      const volume = coin.total_volume
+      const marketCap = coin.market_cap
+
+      // Find coins that are overbought but have strong fundamentals
+      const isOverbought = priceChange > 30
+      const hasGoodVolume = volume > marketCap * 0.05
+      const hasReasonableMarketCap = marketCap > 10000000 && marketCap < 1000000000
+
+      if (isOverbought && hasGoodVolume && hasReasonableMarketCap) {
+        const confidence = Math.max(20, 50 - priceChange) // Lower confidence for more overbought
+        const expectedReturn = Math.min(80, Math.abs(priceChange) * 0.8) // Conservative expectations
+        const riskLevel = 'high'
+
+        waitAndWatch.push({
+          id: `wait-${coin.id}`,
+          asset: coin,
+          category: 'wait-and-watch',
+          reason: `Overbought but strong fundamentals - wait for pullback`,
+          confidence: Math.round(confidence),
+          suggestedAllocation: 0, // Don't allocate now
+          expectedReturn,
+          riskLevel,
+          marketSignal: `Overbought by ${priceChange.toFixed(1)}% - wait for 20-30% pullback`,
+          technicalScore: Math.max(10, 50 - priceChange), // Lower score for overbought
+          timestamp: new Date()
+        })
+      }
+    }
+
+    return waitAndWatch.slice(0, 1) // Return top 1 wait & watch
+  }
+
   static getCategoryColor(category: PotentialCoin['category']): string {
     switch (category) {
       case 'gem':
@@ -244,6 +379,8 @@ export class PotentialCoinsService {
         return 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
       case 'degen':
         return 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+      case 'wait-and-watch':
+        return 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
       default:
         return 'bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200'
     }
@@ -261,6 +398,8 @@ export class PotentialCoinsService {
         return 'Strong momentum and trending'
       case 'degen':
         return 'High risk, high reward play'
+      case 'wait-and-watch':
+        return 'Overbought but interesting - wait for pullback'
       default:
         return 'Market opportunity'
     }
