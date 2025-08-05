@@ -1,6 +1,6 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
-import type { UserPreferences, Portfolio, SwingTradeOpportunity } from '../types'
+import type { UserPreferences, Portfolio, SwingTradeOpportunity, PotentialCoin } from '../types'
 
 // Default user preferences
 const defaultPreferences: UserPreferences = {
@@ -17,6 +17,8 @@ export const portfolioAtom = atomWithStorage<Portfolio | null>('crypto-portfolio
 
 export const swingTradeOpportunitiesAtom = atom<SwingTradeOpportunity[]>([])
 
+export const potentialCoinsAtom = atom<PotentialCoin[]>([])
+
 export const isLoadingAtom = atom<boolean>(false)
 
 export const errorAtom = atom<string | null>(null)
@@ -28,6 +30,7 @@ export const appStateAtom = atom((get) => ({
   userPreferences: get(userPreferencesAtom),
   portfolio: get(portfolioAtom),
   swingTradeOpportunities: get(swingTradeOpportunitiesAtom),
+  potentialCoins: get(potentialCoinsAtom),
   isLoading: get(isLoadingAtom),
   error: get(errorAtom)
 }))
@@ -60,6 +63,22 @@ export const removeSwingTradeOpportunityAtom = atom(
   (get, set, opportunityId: string) => {
     const current = get(swingTradeOpportunitiesAtom)
     set(swingTradeOpportunitiesAtom, current.filter(o => o.id !== opportunityId))
+  }
+)
+
+export const addPotentialCoinAtom = atom(
+  null,
+  (get, set, coin: PotentialCoin) => {
+    const current = get(potentialCoinsAtom)
+    set(potentialCoinsAtom, [coin, ...current])
+  }
+)
+
+export const removePotentialCoinAtom = atom(
+  null,
+  (get, set, coinId: string) => {
+    const current = get(potentialCoinsAtom)
+    set(potentialCoinsAtom, current.filter(c => c.id !== coinId))
   }
 )
 

@@ -434,6 +434,139 @@ export class CoinGeckoAPI {
       throw new Error('Failed to fetch lower cap data')
     }
   }
+
+  // Get top gainers (for potential coin analysis)
+  static async getTopGainers(): Promise<CryptoAsset[]> {
+    // Rate limiting - wait for available slot
+    await rateLimiter.waitForSlot()
+
+    try {
+      updateApiConfig() // Update config before each request
+      rateLimiter.recordRequest() // Record this request
+      
+      const response = await api.get(`/coins/markets`, {
+        params: {
+          vs_currency: 'usd',
+          order: 'price_change_percentage_24h_desc',
+          per_page: 50,
+          page: 1,
+          sparkline: true,
+          price_change_percentage: '24h,7d'
+        }
+      })
+
+      const coins = response.data.map((coin: CoinGeckoResponse) => ({
+        id: coin.id,
+        symbol: coin.symbol.toUpperCase(),
+        name: coin.name,
+        current_price: coin.current_price,
+        price_change_percentage_24h: coin.price_change_percentage_24h,
+        price_change_percentage_7d: 0,
+        market_cap: coin.market_cap,
+        total_volume: coin.total_volume,
+        image: coin.image,
+        sparkline_in_7d: coin.sparkline_in_7d
+      }))
+
+      console.log(`Fetched ${coins.length} top gainers`)
+      return coins
+    } catch (error) {
+      console.error('Error fetching top gainers:', error)
+      throw new Error('Failed to fetch top gainers data')
+    }
+  }
+
+  // Get top losers (for oversold analysis)
+  static async getTopLosers(): Promise<CryptoAsset[]> {
+    // Rate limiting - wait for available slot
+    await rateLimiter.waitForSlot()
+
+    try {
+      updateApiConfig() // Update config before each request
+      rateLimiter.recordRequest() // Record this request
+      
+      const response = await api.get(`/coins/markets`, {
+        params: {
+          vs_currency: 'usd',
+          order: 'price_change_percentage_24h_asc',
+          per_page: 50,
+          page: 1,
+          sparkline: true,
+          price_change_percentage: '24h,7d'
+        }
+      })
+
+      const coins = response.data.map((coin: CoinGeckoResponse) => ({
+        id: coin.id,
+        symbol: coin.symbol.toUpperCase(),
+        name: coin.name,
+        current_price: coin.current_price,
+        price_change_percentage_24h: coin.price_change_percentage_24h,
+        price_change_percentage_7d: 0,
+        market_cap: coin.market_cap,
+        total_volume: coin.total_volume,
+        image: coin.image,
+        sparkline_in_7d: coin.sparkline_in_7d
+      }))
+
+      console.log(`Fetched ${coins.length} top losers`)
+      return coins
+    } catch (error) {
+      console.error('Error fetching top losers:', error)
+      throw new Error('Failed to fetch top losers data')
+    }
+  }
+
+  // Get low market cap cryptocurrencies (for gem hunting)
+  static async getLowMarketCapCryptocurrencies(): Promise<CryptoAsset[]> {
+    // Rate limiting - wait for available slot
+    await rateLimiter.waitForSlot()
+
+    try {
+      updateApiConfig() // Update config before each request
+      rateLimiter.recordRequest() // Record this request
+      
+      // Get coins with lower market caps (rank 100-300)
+      const response = await api.get(`/coins/markets`, {
+        params: {
+          vs_currency: 'usd',
+          order: 'market_cap_desc',
+          per_page: 200,
+          page: 3, // Skip top 100, get next 200
+          sparkline: true,
+          price_change_percentage: '24h,7d'
+        }
+      })
+
+      // Filter for low market cap coins with some volume
+      const lowCapCoins = response.data.filter((coin: CoinGeckoResponse) => 
+        coin.id !== 'usd-coin' && 
+        coin.id !== 'tether' && 
+        coin.id !== 'dai' &&
+        coin.market_cap < 100000000 && // Under $100M market cap
+        coin.total_volume > 1000000 // At least $1M daily volume
+      )
+
+      const coins = lowCapCoins.map((coin: CoinGeckoResponse) => ({
+        id: coin.id,
+        symbol: coin.symbol.toUpperCase(),
+        name: coin.name,
+        current_price: coin.current_price,
+        price_change_percentage_24h: coin.price_change_percentage_24h,
+        price_change_percentage_7d: 0,
+        market_cap: coin.market_cap,
+        total_volume: coin.total_volume,
+        image: coin.image,
+        sparkline_in_7d: coin.sparkline_in_7d
+      }))
+
+      console.log(`Fetched ${coins.length} low market cap coins`)
+      return coins
+    } catch (error) {
+      console.error('Error fetching low market cap cryptocurrencies:', error)
+      throw new Error('Failed to fetch low market cap data')
+    }
+  }
 }
 
 // Portfolio generation service

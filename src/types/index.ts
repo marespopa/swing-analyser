@@ -36,6 +36,20 @@ export interface Portfolio {
 
 export type RiskProfile = 'conservative' | 'balanced' | 'aggressive' | 'degen'
 
+export interface PotentialCoin {
+  id: string
+  asset: CryptoAsset
+  category: 'gem' | 'replacement' | 'oversold' | 'trending' | 'degen'
+  reason: string
+  confidence: number // 0-100
+  suggestedAllocation: number
+  expectedReturn: number
+  riskLevel: 'low' | 'medium' | 'high'
+  marketSignal: string
+  technicalScore: number
+  timestamp: Date
+}
+
 export interface SwingTradeOpportunity {
   id: string
   type: 'buy' | 'sell' | 'rebalance'
@@ -61,6 +75,7 @@ export interface AppState {
   userPreferences: UserPreferences
   portfolio: Portfolio | null
   swingTradeOpportunities: SwingTradeOpportunity[]
+  potentialCoins: PotentialCoin[]
   isLoading: boolean
   error: string | null
 } 
