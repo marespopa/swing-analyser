@@ -23,9 +23,9 @@ const Input: React.FC<ExtendedInputProps> = ({
   }
   
   const sizeClasses = {
-    sm: 'px-3 py-2 text-sm',
-    md: 'px-3 py-2 text-base',
-    lg: 'px-4 py-3 text-lg'
+    sm: 'px-3 py-3 text-sm min-h-[44px]', // Increased touch target
+    md: 'px-3 py-3 text-base min-h-[48px]', // Increased touch target
+    lg: 'px-4 py-4 text-lg min-h-[52px]' // Increased touch target
   }
   
   const errorClasses = error ? 'border-red-500 focus:border-red-500 focus:ring-red-400' : ''

@@ -39,3 +39,38 @@ body {
 .dark body {
   background-color: #111827; /* gray-900 */
 }
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  /* Ensure proper touch targets */
+  button, input, select, textarea {
+    min-height: 44px;
+  }
+  
+  /* Improve text readability on mobile */
+  .text-xs {
+    font-size: 0.75rem;
+    line-height: 1.5;
+  }
+  
+  .text-sm {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  
+  /* Better spacing for mobile */
+  .space-y-4 > * + * {
+    margin-top: 1rem;
+  }
+  
+  /* Prevent horizontal scroll */
+  .overflow-x-hidden {
+    overflow-x: hidden;
+  }
+  
+  /* Improve chart responsiveness */
+  .recharts-wrapper {
+    width: 100% !important;
+    height: 100% !important;
+  }
+}

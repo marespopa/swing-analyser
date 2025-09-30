@@ -153,7 +153,7 @@ const AnalysisFibonacciLevels = ({ analysis }: AnalysisFibonacciLevelsProps) => 
       
       {/* Trend and Swing Info */}
       <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-        <div className="flex flex-wrap gap-4 text-sm">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 text-sm">
           <div>
             <span className="font-medium text-gray-600 dark:text-gray-400">Trend:</span>
             <span className={`ml-1 font-semibold ${

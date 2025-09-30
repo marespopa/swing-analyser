@@ -35,10 +35,12 @@ const AnalysisChart: React.FC<AnalysisChartProps> = ({
             </p>
           </div>
         ) : analysis ? (
-          <TechnicalAnalysisChart
-            data={analysis}
-            height={500}
-          />
+          <div className="h-[300px] md:h-[500px]">
+            <TechnicalAnalysisChart
+              data={analysis}
+              height={400}
+            />
+          </div>
         ) : (
           <div className="text-center py-12">
             <div className="text-gray-400 dark:text-gray-500 mb-4">
