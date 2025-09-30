@@ -137,6 +137,29 @@ export const generateSummary = ({
       story += `📉 **Volume**: Is not providing strong confirmation for the current move.\n\n`
     }
 
+    // 🎯 RISK MANAGEMENT (only for BUY signals)
+    if (action === 'BUY' && analysis.volatilityStops) {
+      const currentStopLoss = analysis.volatilityStops.stopLoss[analysis.volatilityStops.stopLoss.length - 1]
+      const currentTakeProfit = analysis.volatilityStops.takeProfit[analysis.volatilityStops.takeProfit.length - 1]
+      
+      if (!isNaN(currentStopLoss) && !isNaN(currentTakeProfit)) {
+        story += `## 🎯 Risk Management\n\n`
+        
+        // Stop Loss
+        const stopLossPercentage = ((currentPrice - currentStopLoss) / currentPrice * 100).toFixed(1)
+        story += `🛡️ **Stop Loss**: $${currentStopLoss.toFixed(2)} (${stopLossPercentage}%)\n\n`
+        
+        // Take Profit Levels
+        const tp1 = currentPrice + (currentPrice - currentStopLoss) * 1.5
+        const tp2 = currentPrice + (currentPrice - currentStopLoss) * 2.0
+        const tp3 = currentPrice + (currentPrice - currentStopLoss) * 3.0
+        
+        story += `🎯 **TP1**: $${tp1.toFixed(2)}\n`
+        story += `🎯 **TP2**: $${tp2.toFixed(2)}\n`
+        story += `🎯 **TP3**: $${tp3.toFixed(2)}\n\n`
+      }
+    }
+
     // 🔍 CHART PATTERNS
     if (patterns.length > 0) {
       story += `## 🔍 Chart Patterns Detected\n\n`

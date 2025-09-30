@@ -194,6 +194,136 @@ export class BaseTechnicalAnalysis {
   }
 
   /**
+   * Calculate Average True Range (ATR) for volatility-based stop-losses
+   */
+  static calculateATR(data: PriceDataPoint[], period: number = 14): number[] {
+    if (data.length < period + 1) {
+      return Array(data.length).fill(NaN)
+    }
+
+    const trueRanges: number[] = []
+    
+    for (let i = 1; i < data.length; i++) {
+      const current = data[i]
+      const previous = data[i - 1]
+      
+      // True Range = max(high-low, |high-prevClose|, |low-prevClose|)
+      // For daily data, we use price as both high and low
+      const high = current.price
+      const low = current.price
+      const prevClose = previous.price
+      
+      const tr1 = high - low
+      const tr2 = Math.abs(high - prevClose)
+      const tr3 = Math.abs(low - prevClose)
+      
+      const trueRange = Math.max(tr1, tr2, tr3)
+      trueRanges.push(trueRange)
+    }
+
+    // Calculate ATR as SMA of True Range
+    const atr: number[] = []
+    
+    // First ATR is average of first 'period' true ranges
+    const firstATR = trueRanges.slice(0, period).reduce((sum, tr) => sum + tr, 0) / period
+    atr.push(firstATR)
+
+    // Calculate ATR for remaining periods using smoothed average
+    for (let i = period; i < trueRanges.length; i++) {
+      const currentATR = ((atr[atr.length - 1] * (period - 1)) + trueRanges[i]) / period
+      atr.push(currentATR)
+    }
+
+    // Pad the beginning with the first available ATR value
+    return [...Array(period).fill(firstATR), ...atr]
+  }
+
+  /**
+   * Detect volatility regimes (normal vs high volatility)
+   */
+  static detectVolatilityRegime(atr: number[], lookbackPeriod: number = 20): {
+    regime: 'normal' | 'high' | 'low'
+    multiplier: number
+  }[] {
+    const regimes: { regime: 'normal' | 'high' | 'low'; multiplier: number }[] = []
+    
+    for (let i = lookbackPeriod - 1; i < atr.length; i++) {
+      const currentATR = atr[i]
+      const recentATR = atr.slice(i - lookbackPeriod + 1, i + 1)
+      const avgATR = recentATR.reduce((sum, val) => sum + val, 0) / recentATR.length
+      
+      // Determine regime based on current ATR vs historical average
+      const atrRatio = currentATR / avgATR
+      let regime: 'normal' | 'high' | 'low' = 'normal'
+      let multiplier = 1.5 // Default ATR multiplier
+      
+      if (atrRatio > 1.5) {
+        regime = 'high'
+        multiplier = 2.0 // Wider stops during high volatility
+      } else if (atrRatio < 0.7) {
+        regime = 'low'
+        multiplier = 1.2 // Tighter stops during low volatility
+      }
+      
+      regimes.push({ regime, multiplier })
+    }
+    
+    // Pad the beginning with normal regime
+    const firstRegime = regimes[0] || { regime: 'normal' as const, multiplier: 1.5 }
+    return [...Array(lookbackPeriod - 1).fill(firstRegime), ...regimes]
+  }
+
+  /**
+   * Calculate volatility-based stop-loss levels
+   */
+  static calculateVolatilityBasedStops(
+    data: PriceDataPoint[],
+    atr: number[],
+    volatilityRegimes: { regime: 'normal' | 'high' | 'low'; multiplier: number }[]
+  ): {
+    stopLoss: number[]
+    takeProfit: number[]
+    riskRewardRatio: number[]
+  } {
+    const stopLoss: number[] = []
+    const takeProfit: number[] = []
+    const riskRewardRatio: number[] = []
+    
+    for (let i = 0; i < data.length; i++) {
+      const currentPrice = data[i].price
+      const currentATR = atr[i]
+      const currentRegime = volatilityRegimes[i] || { regime: 'normal' as const, multiplier: 1.5 }
+      
+      if (isNaN(currentATR)) {
+        // Fallback to percentage-based stops if ATR not available
+        stopLoss.push(currentPrice * 0.95)
+        takeProfit.push(currentPrice * 1.10)
+        riskRewardRatio.push(2.0)
+        continue
+      }
+      
+      // Calculate ATR-based stop distance
+      const atrStopDistance = currentATR * currentRegime.multiplier
+      
+      // Set stop-loss below current price
+      const stopLossLevel = currentPrice - atrStopDistance
+      stopLoss.push(stopLossLevel)
+      
+      // Set take-profit with 2:1 risk-reward ratio
+      const risk = currentPrice - stopLossLevel
+      const takeProfitLevel = currentPrice + (risk * 2)
+      takeProfit.push(takeProfitLevel)
+      
+      // Calculate actual risk-reward ratio
+      const reward = takeProfitLevel - currentPrice
+      const ratio = risk > 0 ? reward / risk : 0
+      riskRewardRatio.push(ratio)
+    }
+    
+    return { stopLoss, takeProfit, riskRewardRatio }
+  }
+
+  /**
    * Calculate Risk Management Levels with realistic support/resistance
    */
   static calculateRiskLevels(prices: number[]): {

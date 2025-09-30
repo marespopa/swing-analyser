@@ -31,7 +31,9 @@ export class DoublePatterns {
     data: PriceDataPoint[],
     rsi: number[],
     sma20: number[],
-    sma50: number[]
+    sma50: number[],
+    atr?: number[],
+    volatilityRegimes?: Array<{ regime: 'normal' | 'high' | 'low'; multiplier: number }>
   ): DoublePattern[] {
     const patterns: DoublePattern[] = []
     const prices = data.map(d => d.price)
@@ -73,7 +75,7 @@ export class DoublePatterns {
       if (highs.length < 2) continue
       
       // Check for double top first
-      const doubleTop = this.detectDoubleTop(highs, i, prices, volumes, rsi, sma20, sma50)
+      const doubleTop = this.detectDoubleTop(highs, i, prices, volumes, rsi, sma20, sma50, atr, volatilityRegimes)
       
       if (lows.length < 2) {
         // If we have a double top but no lows, add it
@@ -82,7 +84,7 @@ export class DoublePatterns {
       }
       
       // Check for double bottom
-      const doubleBottom = this.detectDoubleBottom(lows, i, prices, volumes, rsi, sma20, sma50)
+      const doubleBottom = this.detectDoubleBottom(lows, i, prices, volumes, rsi, sma20, sma50, atr, volatilityRegimes)
       
       // Only add one pattern per time window to avoid contradictory signals
       if (doubleTop && doubleBottom) {
@@ -112,7 +114,9 @@ export class DoublePatterns {
     volumes: number[],
     rsi: number[],
     sma20: number[],
-    sma50: number[]
+    sma50: number[],
+    atr?: number[],
+    volatilityRegimes?: Array<{ regime: 'normal' | 'high' | 'low'; multiplier: number }>
   ): DoublePattern | null {
     if (highs.length < 2) return null
     
@@ -161,9 +165,28 @@ export class DoublePatterns {
       const strength = confidence >= 0.8 ? 'strong' : confidence >= 0.7 ? 'moderate' : 'weak'
       
       const entryPrice = currentPrice
-      const stopLoss = Math.max(firstPeak.price, secondPeak.price) * 1.02
-      const targetPrice = supportLevel - (Math.max(firstPeak.price, secondPeak.price) - supportLevel)
-      const takeProfit = targetPrice
+      
+      // Use ATR-based stop-loss if available, otherwise fallback to percentage
+      let stopLoss: number
+      let targetPrice: number
+      let takeProfit: number
+      
+      if (atr && volatilityRegimes && atr[currentIndex] && !isNaN(atr[currentIndex])) {
+        const currentATR = atr[currentIndex]
+        const currentRegime = volatilityRegimes[currentIndex] || { regime: 'normal' as const, multiplier: 1.5 }
+        const atrStopDistance = currentATR * currentRegime.multiplier
+        
+        // For double top, stop-loss above the higher peak
+        stopLoss = Math.max(firstPeak.price, secondPeak.price) + atrStopDistance
+        targetPrice = supportLevel - (Math.max(firstPeak.price, secondPeak.price) - supportLevel)
+        takeProfit = targetPrice
+      } else {
+        // Fallback to percentage-based stops
+        stopLoss = Math.max(firstPeak.price, secondPeak.price) * 1.02
+        targetPrice = supportLevel - (Math.max(firstPeak.price, secondPeak.price) - supportLevel)
+        takeProfit = targetPrice
+      }
+      
       const risk = stopLoss - entryPrice
       const reward = entryPrice - takeProfit
       const riskRewardRatio = risk > 0 ? reward / risk : 0
@@ -202,7 +225,9 @@ export class DoublePatterns {
     volumes: number[],
     rsi: number[],
     sma20: number[],
-    sma50: number[]
+    sma50: number[],
+    atr?: number[],
+    volatilityRegimes?: Array<{ regime: 'normal' | 'high' | 'low'; multiplier: number }>
   ): DoublePattern | null {
     if (lows.length < 2) return null
     
@@ -246,9 +271,28 @@ export class DoublePatterns {
       const strength = confidence >= 0.8 ? 'strong' : confidence >= 0.7 ? 'moderate' : 'weak'
       
       const entryPrice = currentPrice
-      const stopLoss = Math.min(firstBottom.price, secondBottom.price) * 0.98
-      const targetPrice = resistanceLevel + (resistanceLevel - Math.min(firstBottom.price, secondBottom.price))
-      const takeProfit = targetPrice
+      
+      // Use ATR-based stop-loss if available, otherwise fallback to percentage
+      let stopLoss: number
+      let targetPrice: number
+      let takeProfit: number
+      
+      if (atr && volatilityRegimes && atr[currentIndex] && !isNaN(atr[currentIndex])) {
+        const currentATR = atr[currentIndex]
+        const currentRegime = volatilityRegimes[currentIndex] || { regime: 'normal' as const, multiplier: 1.5 }
+        const atrStopDistance = currentATR * currentRegime.multiplier
+        
+        // For double bottom, stop-loss below the lower bottom
+        stopLoss = Math.min(firstBottom.price, secondBottom.price) - atrStopDistance
+        targetPrice = resistanceLevel + (resistanceLevel - Math.min(firstBottom.price, secondBottom.price))
+        takeProfit = targetPrice
+      } else {
+        // Fallback to percentage-based stops
+        stopLoss = Math.min(firstBottom.price, secondBottom.price) * 0.98
+        targetPrice = resistanceLevel + (resistanceLevel - Math.min(firstBottom.price, secondBottom.price))
+        takeProfit = targetPrice
+      }
+      
       const risk = entryPrice - stopLoss
       const reward = takeProfit - entryPrice
       const riskRewardRatio = risk > 0 ? reward / risk : 0

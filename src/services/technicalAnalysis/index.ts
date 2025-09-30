@@ -32,7 +32,12 @@ export class TechnicalAnalysis {
     const macd = BaseTechnicalAnalysis.calculateMACD(prices)
     const bollingerBands = BaseTechnicalAnalysis.calculateBollingerBands(prices)
     
-    // Calculate risk management levels
+    // Calculate ATR and volatility-based risk management
+    const atr = BaseTechnicalAnalysis.calculateATR(data, 14)
+    const volatilityRegimes = BaseTechnicalAnalysis.detectVolatilityRegime(atr, 20)
+    const volatilityStops = BaseTechnicalAnalysis.calculateVolatilityBasedStops(data, atr, volatilityRegimes)
+    
+    // Calculate traditional risk management levels (for comparison)
     const riskLevels = BaseTechnicalAnalysis.calculateRiskLevels(prices)
     
     // Calculate Fibonacci retracement levels
@@ -45,7 +50,7 @@ export class TechnicalAnalysis {
     const allPatterns = [
       ...TrianglePatterns.detectTrianglePatterns(data, rsi, sma20, sma50),
       ...HeadAndShouldersPatterns.detectHeadAndShouldersPatterns(data, rsi, sma20, sma50),
-      ...DoublePatterns.detectDoublePatterns(data, rsi, sma20, sma50),
+      ...DoublePatterns.detectDoublePatterns(data, rsi, sma20, sma50, atr, volatilityRegimes),
       ...CupAndHandlePatterns.detectCupAndHandlePatterns(data, rsi, sma20, sma50),
       ...FlagPatterns.detectFlagPatterns(data, rsi, sma20, sma50),
       ...WedgePatterns.detectWedgePatterns(data, rsi, sma20, sma50)
@@ -87,6 +92,9 @@ export class TechnicalAnalysis {
       rsi,
       macd,
       bollingerBands,
+      atr,
+      volatilityRegimes,
+      volatilityStops,
       riskLevels,
       fibonacciLevels,
       candlestickPatterns,

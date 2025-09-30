@@ -32,6 +32,16 @@ export interface TechnicalAnalysisData {
     middle: number[]
     lower: number[]
   }
+  atr?: number[]
+  volatilityRegimes?: Array<{
+    regime: 'normal' | 'high' | 'low'
+    multiplier: number
+  }>
+  volatilityStops?: {
+    stopLoss: number[]
+    takeProfit: number[]
+    riskRewardRatio: number[]
+  }
   riskLevels?: {
     support: number[]
     resistance: number[]
