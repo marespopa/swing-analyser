@@ -3,6 +3,7 @@ import React from 'react'
 interface ProgressBarProps {
   progress: number // 0-100
   message: string
+  title?: string // Optional title prop with default value
   showRateLimit?: boolean
   rateLimitInfo?: {
     current: number
@@ -14,6 +15,7 @@ interface ProgressBarProps {
 const ProgressBar: React.FC<ProgressBarProps> = ({
   progress,
   message,
+  title = "GENERATING PORTFOLIO", // Default value for backward compatibility
   showRateLimit = false,
   rateLimitInfo
 }) => {
@@ -23,12 +25,12 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neo-background dark:bg-neo-background-dark">
       <div className="bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo-xl rounded-neo-xl p-8 max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-6">
           <h2 className="text-2xl font-neo font-black text-neo-text mb-2">
-            GENERATING PORTFOLIO
+            {title}
           </h2>
           <p className="text-neo-text/80 font-neo">
             {message}

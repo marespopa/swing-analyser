@@ -7,40 +7,31 @@ interface ThemeToggleProps {
 
 const ThemeToggle: React.FC<ThemeToggleProps> = () => {
   const [isDark, setIsDark] = useState(() => {
-    // Initialize theme state immediately to prevent flash
+    // Check localStorage first, then system preference
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('theme')
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      
-      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-        document.documentElement.classList.add('dark')
-        return true
-      } else {
-        document.documentElement.classList.remove('dark')
-        return false
-      }
+      if (savedTheme === 'dark') return true
+      if (savedTheme === 'light') return false
+      // No saved preference, check system
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
     }
     return false
   })
 
   useEffect(() => {
-    // Ensure theme is applied on mount
+    // Apply theme on mount
     const savedTheme = localStorage.getItem('theme')
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    
-    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-      setIsDark(true)
-      document.documentElement.classList.add('dark')
-    } else {
-      setIsDark(false)
-      document.documentElement.classList.remove('dark')
-    }
+    const shouldBeDark = savedTheme === 'dark' ||
+      (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+
+    document.documentElement.classList.toggle('dark', shouldBeDark)
+    setIsDark(shouldBeDark)
   }, [])
 
   const toggleTheme = () => {
     const newTheme = !isDark
     setIsDark(newTheme)
-    
+
     if (newTheme) {
       document.documentElement.classList.add('dark')
       localStorage.setItem('theme', 'dark')
@@ -53,10 +44,11 @@ const ThemeToggle: React.FC<ThemeToggleProps> = () => {
   return (
     <Button
       onClick={toggleTheme}
-      variant="accent"
+      variant="outline"
+      className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
     >
-      {isDark ? 'DARK' : 'LIGHT'}
+      {isDark ? 'Switch to Light' : 'Switch to Dark'}
     </Button>
   )
 }

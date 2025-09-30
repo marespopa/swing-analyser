@@ -1,19 +1,19 @@
 import React from 'react'
 
 interface LoadingOverlayProps {
-  isVisible: boolean
+  isLoading: boolean
   message?: string
   variant?: 'default' | 'minimal' | 'fullscreen'
   className?: string
 }
 
 const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ 
-  isVisible, 
+  isLoading, 
   message = 'Loading...', 
   variant = 'default',
   className = '' 
 }) => {
-  if (!isVisible) return null
+  if (!isLoading) return null
 
   const baseClasses = 'fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm'
   const variantClasses = {

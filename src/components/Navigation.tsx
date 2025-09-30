@@ -1,41 +1,26 @@
-import React from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import ThemeToggle from './ui/ThemeToggle'
 
-const Navigation: React.FC = () => {
-  const location = useLocation()
-
-  const isActive = (path: string) => {
-    return location.pathname === path
-  }
-
+const Navigation = () => {
   return (
-    <nav className="mb-8 flex gap-4">
-      <Link
-        to="/"
-        className={`
-          px-6 py-3 font-neo font-bold border-neo shadow-neo hover-press focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all
-          ${isActive('/') 
-            ? 'bg-neo-accent text-white border-neo-border focus:ring-neo-accent' 
-            : 'bg-neo-secondary text-white border-neo-border hover:bg-teal-400 hover:border-teal-500 focus:ring-neo-secondary'
-          }
-        `}
-      >
-        MAIN APP
-      </Link>
-      <Link
-        to="/components"
-        className={`
-          px-6 py-3 font-neo font-bold border-neo shadow-neo hover-press focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all
-          ${isActive('/components') 
-            ? 'bg-neo-accent text-white border-neo-border focus:ring-neo-accent' 
-            : 'bg-neo-secondary text-white border-neo-border hover:bg-teal-400 hover:border-teal-500 focus:ring-neo-secondary'
-          }
-        `}
-      >
-        UI COMPONENTS
-      </Link>
+    <nav className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <Link to="/" className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <span className="text-xl font-bold text-gray-900 dark:text-white">SwingAnalyser</span>
+          </Link>
+          <div className="flex items-center">
+            <ThemeToggle />
+          </div>
+        </div>
+      </div>
     </nav>
   )
 }
 
-export default Navigation 
+export default Navigation

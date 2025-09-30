@@ -63,7 +63,7 @@ const Dropdown: React.FC<DropdownProps> = ({
             w-full font-neo font-bold border-neo shadow-neo transition-all focus:outline-none focus:ring-2 focus:ring-offset-2
             ${disabled 
               ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed' 
-              : 'bg-neo-surface dark:bg-neo-surface-dark text-neo-text border-neo-border hover:bg-neo-background dark:hover:bg-neo-background-dark hover-lift focus:ring-neo-accent'
+              : 'bg-neo-surface dark:bg-neo-surface-dark text-neo-text border-neo-border hover:bg-neo-background dark:hover:bg-neo-background-dark hover-lift focus:ring-neo-accent cursor-pointer'
             }
             px-4 py-3 text-left flex items-center justify-between
           `}
@@ -85,7 +85,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                 onClick={() => handleSelect(option.value)}
                 className={`
                   w-full font-neo text-left px-4 py-3 border-b border-neo-border last:border-b-0
-                  transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neo-accent
+                  transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neo-accent cursor-pointer
                   ${option.value === value 
                     ? 'bg-neo-accent text-white' 
                     : 'bg-neo-surface dark:bg-neo-surface-dark text-neo-text hover:bg-neo-background dark:hover:bg-neo-background-dark'

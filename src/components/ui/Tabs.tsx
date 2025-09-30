@@ -18,19 +18,18 @@ const Tabs: React.FC<TabsProps> = ({ tabs, defaultTab, className = '' }) => {
   const activeContent = tabs.find(tab => tab.id === activeTab)?.content
   
   return (
-    <div className={`space-y-4 ${className}`}>
+    <div className={`space-y-6 ${className}`}>
       {/* Tab Headers */}
-      <div className="flex border-b-neo border-neo-border">
+      <div className="flex bg-modern-surface rounded-lg p-1 border border-modern-border-light">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`
-              font-neo font-bold px-6 py-3 border-r-neo border-neo-border last:border-r-0
-              transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neo-accent
+              font-medium px-6 py-3 rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-modern-primary/20 cursor-pointer
               ${activeTab === tab.id 
-                ? 'bg-neo-accent text-white border-neo-accent shadow-neo-hover' 
-                : 'bg-neo-surface dark:bg-neo-surface-dark text-neo-text hover:bg-neo-background dark:hover:bg-neo-background-dark hover-lift'
+                ? 'bg-modern-primary text-white shadow-lg' 
+                : 'text-modern-secondary hover:text-modern-primary hover:bg-modern-surface'
               }
             `}
           >
@@ -40,7 +39,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, defaultTab, className = '' }) => {
       </div>
       
       {/* Tab Content */}
-      <div className="bg-neo-surface dark:bg-neo-surface-dark border-neo border-neo-border shadow-neo p-6">
+      <div className="card p-6">
         {activeContent}
       </div>
     </div>

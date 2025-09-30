@@ -10,6 +10,7 @@ interface DialogProps {
   confirmText?: string
   cancelText?: string
   variant?: 'danger' | 'warning' | 'info'
+  children?: React.ReactNode
 }
 
 const Dialog: React.FC<DialogProps> = ({
@@ -20,7 +21,8 @@ const Dialog: React.FC<DialogProps> = ({
   message,
   confirmText = 'Confirm',
   cancelText = 'Cancel',
-  variant = 'info'
+  variant = 'info',
+  children
 }) => {
   if (!isOpen) return null
 
@@ -40,8 +42,8 @@ const Dialog: React.FC<DialogProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-pointer"
         onClick={onClose}
       />
       
@@ -75,6 +77,13 @@ const Dialog: React.FC<DialogProps> = ({
         <p className="text-neo-text/80 mb-6 leading-relaxed">
           {message}
         </p>
+        
+        {/* Children content */}
+        {children && (
+          <div className="mb-6">
+            {children}
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex gap-3 justify-end">

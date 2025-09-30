@@ -35,8 +35,8 @@ const Modal: React.FC<ModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-pointer"
         onClick={onClose}
       />
       
@@ -49,7 +49,7 @@ const Modal: React.FC<ModalProps> = ({
           </h2>
           <button
             onClick={onClose}
-            className="text-neo-text/60 hover:text-neo-text transition-colors"
+            className="text-neo-text/60 hover:text-neo-text transition-colors cursor-pointer"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

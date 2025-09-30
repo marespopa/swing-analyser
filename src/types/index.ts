@@ -1,81 +1,129 @@
-export interface CryptoAsset {
-  id: string
-  symbol: string
-  name: string
-  current_price: number
-  price_change_percentage_24h: number
-  price_change_percentage_7d: number
-  market_cap: number
-  total_volume: number
-  image: string
-  sparkline_in_7d?: {
-    price: number[]
+// Re-export all types from services
+export type {
+  TechnicalAnalysisData,
+  PriceDataPoint,
+  CoinGeckoResponse,
+  EntryPoint,
+  Trendline
+} from '../services/coingeckoApi'
+
+// Import EntryPoint for use in ChartDataPoint
+import type { EntryPoint } from '../services/coingeckoApi'
+
+// Chart-specific types
+export interface ChartDataPoint {
+  timestamp: number
+  time: string
+  price: number
+  open?: number
+  high?: number
+  low?: number
+  close?: number
+  sma20: number | null
+  sma50: number | null
+  rsi: number | null
+  macd?: number | null
+  signal?: number | null
+  histogram?: number | null
+  bbUpper?: number | null
+  bbMiddle?: number | null
+  bbLower?: number | null
+  support?: number | null
+  resistance?: number | null
+  stopLoss?: number | null
+  takeProfit?: number | null
+  entryPoint?: EntryPoint | null
+}
+
+export interface ToggleState {
+  showBollingerBands: boolean
+  showSMA20: boolean
+  showSMA50: boolean
+  showSupport: boolean
+  showResistance: boolean
+  chartType: 'line'
+}
+
+export type ChartType = 'line'
+
+// UI Component types
+export interface BaseComponentProps {
+  className?: string
+  children?: React.ReactNode
+}
+
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
+  size?: 'sm' | 'md' | 'lg'
+}
+
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: string
+  error?: string
+  helperText?: string
+}
+
+// Chart configuration types
+export interface ChartConfig {
+  colors: {
+    price: string
+    sma20: string
+    sma50: string
+    bbUpper: string
+    bbLower: string
+    support: string
+    resistance: string
+    macd: string
+    signal: string
+    rsi: string
+  }
+  strokeWidths: {
+    price: number
+    movingAverage: number
+    bollingerBand: number
+    supportResistance: number
+  }
+  opacities: {
+    movingAverage: number
+    bollingerBand: number
+    supportResistance: number
   }
 }
 
-export interface PortfolioAsset extends CryptoAsset {
-  allocation: number // percentage
+// API Response types
+export interface ApiResponse<T> {
+  data: T
+  success: boolean
+  error?: string
+}
+
+// Trade types
+export interface Trade {
+  id: string
+  coin: string
+  entryPrice: number
+  exitPrice?: number
   quantity: number
-  value: number
-  profitLoss: number
-  profitLossPercentage: number
+  side: 'long' | 'short'
+  status: 'open' | 'closed'
+  entryTime: Date
+  exitTime?: Date
+  pnl?: number
+  pnlPercentage?: number
 }
 
-export interface Portfolio {
-  id: string
-  name: string
-  totalValue: number
-  totalProfitLoss: number
-  totalProfitLossPercentage: number
-  assets: PortfolioAsset[]
-  riskProfile: RiskProfile
-  startingAmount: number
-  createdAt: Date
-  updatedAt: Date
+// Error types
+export interface AppError {
+  code: string
+  message: string
+  details?: any
 }
 
-export type RiskProfile = 'conservative' | 'balanced' | 'aggressive' | 'degen'
+// Theme types
+export type Theme = 'light' | 'dark'
 
-export interface PotentialCoin {
-  id: string
-  asset: CryptoAsset
-  category: 'gem' | 'replacement' | 'oversold' | 'trending' | 'degen' | 'wait-and-watch'
-  reason: string
-  confidence: number // 0-100
-  suggestedAllocation: number
-  expectedReturn: number
-  riskLevel: 'low' | 'medium' | 'high'
-  marketSignal: string
-  technicalScore: number
-  timestamp: Date
-}
-
-export interface SwingTradeOpportunity {
-  id: string
-  type: 'buy' | 'sell' | 'rebalance'
-  asset: CryptoAsset
-  reason: string
-  confidence: number // 0-100
-  suggestedAllocation: number
-  expectedReturn: number
-  riskLevel: 'low' | 'medium' | 'high'
-  timestamp: Date
-}
-
-export interface UserPreferences {
-  riskProfile: RiskProfile
-  startingAmount: number
-  apiKey?: string
-  notifications: boolean
-  autoRebalance: boolean
-}
-
-export interface AppState {
-  currentStep: 'welcome' | 'setup' | 'portfolio' | 'dashboard'
-  userPreferences: UserPreferences
-  portfolio: Portfolio | null
-  swingTradeOpportunities: SwingTradeOpportunity[]
-  potentialCoins: PotentialCoin[]
+// Loading states
+export interface LoadingState {
   isLoading: boolean
-  error: string | null
-} 
+  error?: string
+}

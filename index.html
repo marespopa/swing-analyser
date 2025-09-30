@@ -4,18 +4,28 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Swing Analyser - Automated Crypto Portfolio</title>
+    <title>SwingAnalyser</title>
     <script>
       // Apply theme immediately to prevent flash
       (function() {
         const savedTheme = localStorage.getItem('theme')
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        console.log('HTML script: savedTheme =', savedTheme)
         
-        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        // Only use saved theme, don't default to system preference
+        if (savedTheme === 'dark') {
           document.documentElement.classList.add('dark')
+          console.log('HTML script: Applied dark theme')
         } else {
+          // Default to light mode if no saved theme
           document.documentElement.classList.remove('dark')
+          if (!savedTheme) {
+            localStorage.setItem('theme', 'light')
+            console.log('HTML script: Set default theme to light')
+          }
+          console.log('HTML script: Applied light theme')
         }
+        
+        console.log('HTML script: Final classes =', document.documentElement.classList.toString())
       })()
     </script>
   </head>
