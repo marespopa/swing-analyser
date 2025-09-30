@@ -12,7 +12,7 @@ const AnalysisChart: React.FC<AnalysisChartProps> = ({
   error
 }) => {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hidden md:block relative z-20">
       <div className="p-6">
         <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
           Price Chart & Technical Indicators
@@ -35,10 +35,10 @@ const AnalysisChart: React.FC<AnalysisChartProps> = ({
             </p>
           </div>
         ) : analysis ? (
-          <div className="h-[300px] md:h-[500px]">
+          <div className="max-h-[800px] md:max-h-[1000px] overflow-y-auto">
             <TechnicalAnalysisChart
               data={analysis}
-              height={400}
+              height={300}
             />
           </div>
         ) : (

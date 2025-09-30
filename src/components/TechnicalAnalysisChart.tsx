@@ -24,7 +24,7 @@ const TechnicalAnalysisChart: React.FC<TechnicalAnalysisChartProps> = ({
   const { chartData } = useChartData(data, toggles)
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* Header */}
       <div className="text-center">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">

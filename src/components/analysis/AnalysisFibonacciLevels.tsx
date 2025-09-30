@@ -7,7 +7,7 @@ interface AnalysisFibonacciLevelsProps {
 const AnalysisFibonacciLevels = ({ analysis }: AnalysisFibonacciLevelsProps) => {
   if (!analysis?.fibonacciLevels) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 relative z-30">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           📊 Fibonacci Levels
         </h3>
@@ -146,7 +146,7 @@ const AnalysisFibonacciLevels = ({ analysis }: AnalysisFibonacciLevelsProps) => 
   const tradingInsight = generateTradingInsight()
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 relative z-30">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
         📊 Fibonacci Analysis
       </h3>

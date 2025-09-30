@@ -255,9 +255,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ results }) => {
   const analysisTimestamp = new Date().toLocaleString()
 
   return (
-    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 p-3 sm:p-4 min-h-screen">
+    <div className="max-w-6xl mx-auto space-y-6 p-3 sm:p-4 min-h-screen relative">
       {/* Combined Header and Summary Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 relative z-10">
         <AnalysisHeader
           coinInfo={coinInfo}
           currentPrice={currentPrice}

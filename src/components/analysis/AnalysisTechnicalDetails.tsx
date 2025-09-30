@@ -22,7 +22,7 @@ const AnalysisTechnicalDetails: React.FC<AnalysisTechnicalDetailsProps> = ({
   if (!analysis) return null
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 relative z-40">
       <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">
         Technical Indicators Breakdown
       </h3>
@@ -195,74 +195,6 @@ const AnalysisTechnicalDetails: React.FC<AnalysisTechnicalDetailsProps> = ({
 
       {/* Detailed Indicator Analysis */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-        {/* MACD Analysis */}
-        {analysis?.macd && (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2 mb-3">
-              <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">MACD Analysis</h4>
-              <div className="group relative">
-                <svg className="w-4 h-4 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                  MACD measures momentum by comparing two moving averages
-                </div>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">MACD Line:</span>
-                  <span className="font-mono text-gray-800 dark:text-white">
-                    {analysis.macd.macd[analysis.macd.macd.length - 1]?.toFixed(2) || 'N/A'}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  The difference between 12-day and 26-day exponential moving averages.
-                  {analysis.macd.macd[analysis.macd.macd.length - 1] > 0
-                    ? ` Currently ${analysis.macd.macd[analysis.macd.macd.length - 1].toFixed(2)}, indicating the short-term trend is stronger than the long-term trend for ${coinInfo?.name || 'this coin'}.`
-                    : ` Currently ${analysis.macd.macd[analysis.macd.macd.length - 1].toFixed(2)}, indicating the long-term trend is stronger than the short-term trend for ${coinInfo?.name || 'this coin'}.`
-                  }
-                </p>
-              </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">Signal Line:</span>
-                  <span className="font-mono text-gray-800 dark:text-white">
-                    {analysis.macd.signal[analysis.macd.signal.length - 1]?.toFixed(2) || 'N/A'}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  A 9-day exponential moving average of the MACD line.
-                  {analysis.macd.signal[analysis.macd.signal.length - 1] > analysis.macd.macd[analysis.macd.macd.length - 1]
-                    ? ` Currently ${analysis.macd.signal[analysis.macd.signal.length - 1].toFixed(2)} is above MACD (${analysis.macd.macd[analysis.macd.macd.length - 1].toFixed(2)}), suggesting a potential sell signal for ${coinInfo?.name || 'this coin'}.`
-                    : ` Currently ${analysis.macd.signal[analysis.macd.signal.length - 1].toFixed(2)} is below MACD (${analysis.macd.macd[analysis.macd.macd.length - 1].toFixed(2)}), suggesting a potential buy signal for ${coinInfo?.name || 'this coin'}.`
-                  }
-                </p>
-              </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">Histogram:</span>
-                  <span className={`font-mono font-medium ${(analysis.macd.histogram[analysis.macd.histogram.length - 1] || 0) > 0
-                    ? 'text-green-600 dark:text-green-400'
-                    : 'text-red-600 dark:text-red-400'
-                    }`}>
-                    {analysis.macd.histogram[analysis.macd.histogram.length - 1]?.toFixed(2) || 'N/A'}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  The difference between MACD and Signal lines.
-                  {analysis.macd.histogram[analysis.macd.histogram.length - 1] > 0
-                    ? ` Currently ${analysis.macd.histogram[analysis.macd.histogram.length - 1].toFixed(2)} (positive), indicating increasing bullish momentum for ${coinInfo?.name || 'this coin'}.`
-                    : ` Currently ${analysis.macd.histogram[analysis.macd.histogram.length - 1].toFixed(2)} (negative), indicating decreasing momentum for ${coinInfo?.name || 'this coin'}.`
-                  }
-                  {Math.abs(analysis.macd.histogram[analysis.macd.histogram.length - 1]) < 0.01 && ' This near-zero value suggests potential trend change.'}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* RSI Analysis */}
         {analysis?.rsi && (
           <div className="space-y-4">
@@ -329,6 +261,73 @@ const AnalysisTechnicalDetails: React.FC<AnalysisTechnicalDetailsProps> = ({
                     if (change < 0) return ` Falling from ${previousRSI.toFixed(0)} to ${currentRSI.toFixed(0)} (${change.toFixed(0)}), indicating increasing bearish momentum for ${coinInfo?.name || 'this coin'}.`
                     return ` Stable at ${currentRSI.toFixed(0)}, indicating momentum is stabilizing for ${coinInfo?.name || 'this coin'}.`
                   })()}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* MACD Analysis */}
+        {analysis?.macd && (
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2 mb-3">
+              <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">MACD Analysis</h4>
+              <div className="group relative">
+                <svg className="w-4 h-4 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                  MACD measures momentum by comparing two moving averages
+                </div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-gray-600 dark:text-gray-400">MACD Line:</span>
+                  <span className="font-mono text-gray-800 dark:text-white">
+                    {analysis.macd.macd[analysis.macd.macd.length - 1]?.toFixed(2) || 'N/A'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  The difference between 12-day and 26-day exponential moving averages.
+                  {analysis.macd.macd[analysis.macd.macd.length - 1] > 0
+                    ? ` Currently ${analysis.macd.macd[analysis.macd.macd.length - 1].toFixed(2)}, indicating the short-term trend is stronger than the long-term trend for ${coinInfo?.name || 'this coin'}.`
+                    : ` Currently ${analysis.macd.macd[analysis.macd.macd.length - 1].toFixed(2)}, indicating the long-term trend is stronger than the short-term trend for ${coinInfo?.name || 'this coin'}.`
+                  }
+                </p>
+              </div>
+              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-gray-600 dark:text-gray-400">Signal Line:</span>
+                  <span className="font-mono text-gray-800 dark:text-white">
+                    {analysis.macd.signal[analysis.macd.signal.length - 1]?.toFixed(2) || 'N/A'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  A 9-day exponential moving average of the MACD line.
+                  {analysis.macd.signal[analysis.macd.signal.length - 1] > analysis.macd.macd[analysis.macd.macd.length - 1]
+                    ? ` Currently ${analysis.macd.signal[analysis.macd.signal.length - 1].toFixed(2)} is above MACD (${analysis.macd.macd[analysis.macd.macd.length - 1].toFixed(2)}), suggesting a potential sell signal for ${coinInfo?.name || 'this coin'}.`
+                    : ` Currently ${analysis.macd.signal[analysis.macd.signal.length - 1].toFixed(2)} is below MACD (${analysis.macd.macd[analysis.macd.macd.length - 1].toFixed(2)}), suggesting a potential buy signal for ${coinInfo?.name || 'this coin'}.`
+                  }
+                </p>
+              </div>
+              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-gray-600 dark:text-gray-400">Histogram:</span>
+                  <span className={`font-mono font-medium ${(analysis.macd.histogram[analysis.macd.histogram.length - 1] || 0) > 0
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-red-600 dark:text-red-400'
+                    }`}>
+                    {analysis.macd.histogram[analysis.macd.histogram.length - 1]?.toFixed(2) || 'N/A'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  The difference between MACD and Signal lines.
+                  {analysis.macd.histogram[analysis.macd.histogram.length - 1] > 0
+                    ? ` Currently ${analysis.macd.histogram[analysis.macd.histogram.length - 1].toFixed(2)} (positive), indicating increasing bullish momentum for ${coinInfo?.name || 'this coin'}.`
+                    : ` Currently ${analysis.macd.histogram[analysis.macd.histogram.length - 1].toFixed(2)} (negative), indicating decreasing momentum for ${coinInfo?.name || 'this coin'}.`
+                  }
+                  {Math.abs(analysis.macd.histogram[analysis.macd.histogram.length - 1]) < 0.01 && ' This near-zero value suggests potential trend change.'}
                 </p>
               </div>
             </div>

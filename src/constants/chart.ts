@@ -41,9 +41,9 @@ export const CHART_MARGINS = {
 } as const
 
 export const CHART_HEIGHTS = {
-  main: 400,
-  rsi: 200,
-  macd: 200
+  main: 300,
+  rsi: 150,
+  macd: 150
 } as const
 
 export const RSI_LEVELS = {

@@ -40,6 +40,12 @@ body {
   background-color: #111827; /* gray-900 */
 }
 
+/* Ensure proper stacking context and prevent overlap issues */
+.analysis-section {
+  position: relative;
+  z-index: 1;
+}
+
 /* Mobile-specific improvements */
 @media (max-width: 768px) {
   /* Ensure proper touch targets */
@@ -72,5 +78,10 @@ body {
   .recharts-wrapper {
     width: 100% !important;
     height: 100% !important;
+  }
+  
+  /* Ensure proper spacing between sections on mobile */
+  .space-y-6 > * + * {
+    margin-top: 1.5rem;
   }
 }
