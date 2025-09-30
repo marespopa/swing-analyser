@@ -1,11 +1,10 @@
-import React from 'react'
 import type { TechnicalAnalysisData } from '../../services/coingeckoApi'
 
 interface AnalysisFibonacciLevelsProps {
   analysis: TechnicalAnalysisData | null
 }
 
-const AnalysisFibonacciLevels: React.FC<AnalysisFibonacciLevelsProps> = ({ analysis }) => {
+const AnalysisFibonacciLevels = ({ analysis }: AnalysisFibonacciLevelsProps) => {
   if (!analysis?.fibonacciLevels) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">

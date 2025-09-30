@@ -1,4 +1,3 @@
-import React from 'react'
 import Button from '../ui/Button'
 import FavouriteButton from '../FavouriteButton'
 
@@ -17,13 +16,13 @@ interface AnalysisHeaderProps {
   refreshMessage?: string | null
 }
 
-const AnalysisHeader: React.FC<AnalysisHeaderProps> = ({
+const AnalysisHeader = ({
   coinInfo,
   currentPrice,
   priceChange24h,
   onBack,
   refreshMessage
-}) => {
+}: AnalysisHeaderProps) => {
   return (
     <div className="mb-6">
       {coinInfo && (

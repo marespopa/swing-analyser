@@ -1,4 +1,3 @@
-import React from 'react'
 import { Button, Input } from './ui'
 
 interface Trade {
