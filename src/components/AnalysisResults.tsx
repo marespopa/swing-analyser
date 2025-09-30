@@ -282,12 +282,6 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ results }) => {
         </div>
       </div>
 
-      {/* Technical Analysis Chart */}
-      <AnalysisChart
-        analysis={processedResults['1d'] || null}
-        error={errors['1d'] || null}
-      />
-
       {/* Fibonacci Levels */}
       <AnalysisFibonacciLevels
         analysis={analysis || null}
@@ -298,6 +292,12 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ results }) => {
         analysis={analysis || null}
         coinInfo={coinInfo}
         currentPrice={currentPrice}
+      />
+
+      {/* Technical Analysis Chart */}
+      <AnalysisChart
+        analysis={processedResults['1d'] || null}
+        error={errors['1d'] || null}
       />
     </div>
   )
