@@ -106,7 +106,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ results }) => {
     const riskReward = potentialLoss > 0 ? potentialProfit / potentialLoss : 0
 
     // Determine action based on multiple factors with more nuanced logic
-    let action: 'BUY' | 'SELL' | 'HOLD' | 'WAIT' = 'WAIT'
+    let action: 'BUY' | 'SELL' | 'WAIT' = 'WAIT'
     let confidence: 'low' | 'medium' | 'high' = 'low'
     let signalColor: 'green' | 'amber' | 'red' = 'red'
 
@@ -117,6 +117,24 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ results }) => {
     const currentRSI = analysis.rsi[analysis.rsi.length - 1]
     const previousRSI = analysis.rsi[analysis.rsi.length - 2]
     const rsiTrend = currentRSI > previousRSI ? 'rising' : currentRSI < previousRSI ? 'falling' : 'flat'
+
+    // Extract detected patterns (already deduplicated and prioritized)
+    const detectedPatterns = analysis.patternDetection ? [
+      ...analysis.patternDetection.triangles,
+      ...analysis.patternDetection.headAndShoulders,
+      ...analysis.patternDetection.doublePatterns,
+      ...analysis.patternDetection.cupAndHandle,
+      ...analysis.patternDetection.flags,
+      ...analysis.patternDetection.wedges
+    ] : []
+
+    // Convert to the format expected by the trading recommendation
+    const recentPatterns = detectedPatterns.map(pattern => ({
+      name: pattern.pattern,
+      signal: pattern.signal,
+      confidence: pattern.strength,
+      description: pattern.description
+    }))
 
     if (trend === 'Bullish') {
       if (rsi < 70 && currentPrice > lowerBand) {
@@ -138,7 +156,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ results }) => {
           confidence = 'low'
           signalColor = 'green'
         } else {
-          action = 'HOLD'
+          action = 'WAIT'
           confidence = 'medium'
           signalColor = 'amber'
         }
@@ -149,12 +167,12 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ results }) => {
           confidence = 'low'
           signalColor = 'green'
         } else {
-          action = 'HOLD'
+          action = 'WAIT'
           confidence = 'medium'
           signalColor = 'amber'
         }
       } else {
-        action = 'HOLD'
+        action = 'WAIT'
         confidence = 'low'
         signalColor = 'amber'
       }
@@ -173,22 +191,22 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ results }) => {
           confidence = 'low'
           signalColor = 'red'
         } else {
-          action = 'HOLD'
+          action = 'WAIT'
           confidence = 'medium'
           signalColor = 'amber'
         }
       } else if (rsi <= 30) {
-        action = 'HOLD'
+        action = 'WAIT'
         confidence = 'medium'
         signalColor = 'amber'
       } else {
-        action = 'HOLD'
+        action = 'WAIT'
         confidence = 'low'
         signalColor = 'amber'
       }
     } else {
       // Sideways trend
-      action = 'HOLD'
+      action = 'WAIT'
       confidence = 'medium'
       signalColor = 'amber'
     }
@@ -208,7 +226,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ results }) => {
         macdSignal: 'Neutral',
         supportResistance: pricePosition === 'Below Lower Band' ? 'Near Support' : 
                           pricePosition === 'Above Upper Band' ? 'Near Resistance' : 'Middle Range',
-        patterns: [],
+        patterns: recentPatterns,
         hasGoodRiskReward: hasGoodRiskReward,
         riskReward: riskReward,
         hasVolumeConfirmation: false,

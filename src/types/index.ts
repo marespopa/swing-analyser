@@ -127,3 +127,66 @@ export interface LoadingState {
   isLoading: boolean
   error?: string
 }
+
+// Pattern Detection types
+export interface PatternDetection {
+  index: number
+  pattern: string
+  signal: 'bullish' | 'bearish' | 'neutral'
+  confidence: number
+  strength: 'weak' | 'moderate' | 'strong'
+  volumeConfirmation?: boolean
+  rsiConfirmation?: boolean
+  maConfirmation?: boolean
+  description: string
+  entryPrice?: number
+  stopLoss?: number
+  takeProfit?: number
+  riskRewardRatio?: number
+}
+
+export interface TrianglePattern extends PatternDetection {
+  resistanceLevel: number
+  supportLevel: number
+  breakoutDirection?: 'up' | 'down'
+  breakoutPrice?: number
+}
+
+export interface HeadAndShouldersPattern extends PatternDetection {
+  leftShoulder: { index: number; price: number }
+  head: { index: number; price: number }
+  rightShoulder: { index: number; price: number }
+  neckline: number
+  targetPrice?: number
+}
+
+export interface DoublePattern extends PatternDetection {
+  firstPeak: { index: number; price: number }
+  secondPeak: { index: number; price: number }
+  supportLevel: number
+  targetPrice?: number
+}
+
+export interface CupAndHandlePattern extends PatternDetection {
+  cupStart: { index: number; price: number }
+  cupBottom: { index: number; price: number }
+  cupEnd: { index: number; price: number }
+  handleStart: { index: number; price: number }
+  handleEnd: { index: number; price: number }
+  targetPrice?: number
+}
+
+export interface FlagPattern extends PatternDetection {
+  flagpoleStart: { index: number; price: number }
+  flagpoleEnd: { index: number; price: number }
+  flagStart: { index: number; price: number }
+  flagEnd: { index: number; price: number }
+  targetPrice?: number
+}
+
+export interface WedgePattern extends PatternDetection {
+  upperTrendline: { start: { index: number; price: number }; end: { index: number; price: number } }
+  lowerTrendline: { start: { index: number; price: number }; end: { index: number; price: number } }
+  apexIndex?: number
+  targetPrice?: number
+}

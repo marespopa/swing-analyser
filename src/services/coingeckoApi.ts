@@ -60,6 +60,126 @@ export interface TechnicalAnalysisData {
       confidence: number
     }>
   }
+  patternDetection?: {
+    triangles: Array<{
+      index: number
+      pattern: string
+      signal: 'bullish' | 'bearish' | 'neutral'
+      confidence: number
+      strength: 'weak' | 'moderate' | 'strong'
+      volumeConfirmation?: boolean
+      rsiConfirmation?: boolean
+      maConfirmation?: boolean
+      description: string
+      entryPrice?: number
+      stopLoss?: number
+      takeProfit?: number
+      riskRewardRatio?: number
+      resistanceLevel: number
+      supportLevel: number
+      breakoutDirection?: 'up' | 'down'
+      breakoutPrice?: number
+    }>
+    headAndShoulders: Array<{
+      index: number
+      pattern: string
+      signal: 'bullish' | 'bearish' | 'neutral'
+      confidence: number
+      strength: 'weak' | 'moderate' | 'strong'
+      volumeConfirmation?: boolean
+      rsiConfirmation?: boolean
+      maConfirmation?: boolean
+      description: string
+      entryPrice?: number
+      stopLoss?: number
+      takeProfit?: number
+      riskRewardRatio?: number
+      leftShoulder: { index: number; price: number }
+      head: { index: number; price: number }
+      rightShoulder: { index: number; price: number }
+      neckline: number
+      targetPrice?: number
+    }>
+    doublePatterns: Array<{
+      index: number
+      pattern: string
+      signal: 'bullish' | 'bearish' | 'neutral'
+      confidence: number
+      strength: 'weak' | 'moderate' | 'strong'
+      volumeConfirmation?: boolean
+      rsiConfirmation?: boolean
+      maConfirmation?: boolean
+      description: string
+      entryPrice?: number
+      stopLoss?: number
+      takeProfit?: number
+      riskRewardRatio?: number
+      firstPeak: { index: number; price: number }
+      secondPeak: { index: number; price: number }
+      supportLevel: number
+      targetPrice?: number
+    }>
+    cupAndHandle: Array<{
+      index: number
+      pattern: string
+      signal: 'bullish' | 'bearish' | 'neutral'
+      confidence: number
+      strength: 'weak' | 'moderate' | 'strong'
+      volumeConfirmation?: boolean
+      rsiConfirmation?: boolean
+      maConfirmation?: boolean
+      description: string
+      entryPrice?: number
+      stopLoss?: number
+      takeProfit?: number
+      riskRewardRatio?: number
+      cupStart: { index: number; price: number }
+      cupBottom: { index: number; price: number }
+      cupEnd: { index: number; price: number }
+      handleStart: { index: number; price: number }
+      handleEnd: { index: number; price: number }
+      targetPrice?: number
+    }>
+    flags: Array<{
+      index: number
+      pattern: string
+      signal: 'bullish' | 'bearish' | 'neutral'
+      confidence: number
+      strength: 'weak' | 'moderate' | 'strong'
+      volumeConfirmation?: boolean
+      rsiConfirmation?: boolean
+      maConfirmation?: boolean
+      description: string
+      entryPrice?: number
+      stopLoss?: number
+      takeProfit?: number
+      riskRewardRatio?: number
+      flagpoleStart: { index: number; price: number }
+      flagpoleEnd: { index: number; price: number }
+      flagStart: { index: number; price: number }
+      flagEnd: { index: number; price: number }
+      targetPrice?: number
+    }>
+    wedges: Array<{
+      index: number
+      pattern: string
+      signal: 'bullish' | 'bearish' | 'neutral'
+      confidence: number
+      strength: 'weak' | 'moderate' | 'strong'
+      volumeConfirmation?: boolean
+      rsiConfirmation?: boolean
+      maConfirmation?: boolean
+      description: string
+      entryPrice?: number
+      stopLoss?: number
+      takeProfit?: number
+      riskRewardRatio?: number
+      upperTrendline: { start: { index: number; price: number }; end: { index: number; price: number } }
+      lowerTrendline: { start: { index: number; price: number }; end: { index: number; price: number } }
+      apexIndex?: number
+      targetPrice?: number
+    }>
+  }
   trendlines: Trendline[]
   entryPoints: EntryPoint[]
 }

@@ -1,4 +1,5 @@
 import React from 'react'
+import ReactMarkdown from 'react-markdown'
 import Button from '../ui/Button'
 
 interface AnalysisSummaryProps {
@@ -25,10 +26,12 @@ const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
           📋 Copy
         </Button>
       </div>
-      <div className="bg-white dark:bg-gray-800 rounded-md p-3 border border-gray-200 dark:border-gray-600">
-        <pre className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono leading-relaxed">
-          {summary}
-        </pre>
+      <div className="bg-white dark:bg-gray-800 rounded-md p-4 border border-gray-200 dark:border-gray-600">
+        <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-gray-800 dark:prose-headings:text-gray-200 prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-ul:text-gray-700 dark:prose-ul:text-gray-300 prose-li:text-gray-700 dark:prose-li:text-gray-300">
+          <ReactMarkdown>
+            {summary}
+          </ReactMarkdown>
+        </div>
       </div>
     </div>
   )
