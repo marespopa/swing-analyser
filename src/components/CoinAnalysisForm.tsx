@@ -317,7 +317,7 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
             value={formData.coinQuery}
             onChange={handleInputChange}
             onKeyDown={handleKeyPress}
-            placeholder="Start typing to search coins (e.g., bitcoin, ethereum, BTC, ETH)"
+            placeholder="Start typing to search coins (e.g., bitcoin, ethereum, BTC, ETH, $BTC, #bitcoin)"
             required
             variant="default"
             inputSize="md"
@@ -373,7 +373,7 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
 
           {/* Helper text */}
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            💡 Start typing to automatically search for coins. Press Enter to select the first result.
+            💡 Start typing to automatically search for coins. Supports $ and # prefixes (e.g., $BTC, #bitcoin). Press Enter to select the first result.
           </p>
         </div>
 

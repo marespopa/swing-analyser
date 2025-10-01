@@ -258,9 +258,12 @@ class CoinGeckoAPI {
 
   async searchCoin(query: string) {
     try {
+      // Remove $ and # prefixes from the search query
+      const cleanQuery = query.replace(/^[$#]/, '').trim()
+      
       // Search endpoint doesn't require API key
       const response = await axios.get(`${this.baseURL}/search`, {
-        params: { query }
+        params: { query: cleanQuery }
       })
       const data = response.data
       return data.coins.map((coin: any) => ({
