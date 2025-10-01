@@ -212,7 +212,30 @@ class CoinGeckoAPI {
   private apiKey: string | null = null
 
   setApiKey(apiKey: string) {
-    this.apiKey = apiKey
+    this.apiKey = this.cleanApiKey(apiKey)
+  }
+
+  private getApiKey(): string | null {
+    if (this.apiKey && this.apiKey.trim()) {
+      return this.cleanApiKey(this.apiKey)
+    }
+    
+    try {
+      const storedKey = localStorage.getItem('coingecko-api-key')
+      if (storedKey && storedKey.trim()) {
+        const cleanedKey = this.cleanApiKey(storedKey)
+        this.apiKey = cleanedKey
+        return cleanedKey
+      }
+    } catch (error) {
+      console.warn('Failed to retrieve API key from localStorage:', error)
+    }
+    
+    return null
+  }
+
+  private cleanApiKey(apiKey: string): string {
+    return apiKey.replace(/^["']|["']$/g, '').replace(/\\[tnr]/g, '').trim()
   }
 
   private async makeRequest(endpoint: string, params: Record<string, any> = {}) {
@@ -223,9 +246,9 @@ class CoinGeckoAPI {
         }
       }
 
-      // Only add API key if it's provided (for paid tier)
-      if (this.apiKey && this.apiKey.trim()) {
-        config.params.x_cg_demo_api_key = this.apiKey
+      const apiKey = this.getApiKey()
+      if (apiKey) {
+        config.params.x_cg_demo_api_key = apiKey
       }
 
       const response = await axios.get(`${this.baseURL}${endpoint}`, config)

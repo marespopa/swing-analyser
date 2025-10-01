@@ -1,106 +1,71 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, useLocation, useParams } from 'react-router-dom'
-import { coinGeckoAPI } from '../services/coingeckoApi'
-import { useAtom } from 'jotai'
-import { apiKeyAtom } from '../store'
+import { useNavigate, useParams } from 'react-router-dom'
+import { usePriceData } from '../hooks/usePriceData'
 import AnalysisResults from '../components/AnalysisResults'
 
 const AnalysisResultsPage: React.FC = () => {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { coinId } = useParams<{ coinId: string }>()
-  const [apiKey] = useAtom(apiKeyAtom)
-  const [isLoading, setIsLoading] = useState(false)
+  console.log('AnalysisResultsPage component is rendering!')
   
-  // Get analysis results from navigation state or fetch from API
-  const [analysisResults, setAnalysisResults] = useState(location.state?.analysisResults)
+  const navigate = useNavigate()
+  const { coinId } = useParams<{ coinId: string }>()
+  
+  console.log('About to call usePriceData hook')
+  
+  // Use the price data hook
+  const { 
+    isLoading, 
+    error,
+    loadAllData,
+  } = usePriceData()
+  
+  console.log('usePriceData hook completed successfully')
+  
+  const [analysisResults, setAnalysisResults] = useState<any>(null)
 
+  console.log('coinId from useParams:', coinId);
   useEffect(() => {
-    // If no analysis results in state, fetch from API using coinId
-    if (!analysisResults && coinId) {
-      if (apiKey && apiKey.trim()) {
-        console.log('API key found, fetching data for:', coinId)
-        fetchAnalysisData()
-      } else {
-        // No API key, redirect to form with a message
-        console.log('No API key found, redirecting to form')
-        navigate('/', { state: { message: 'Please set your API key first' } })
-      }
-    } else if (!analysisResults) {
-      // No data and no way to fetch, redirect to form
+    console.log('useEffect running - coinId:', coinId);
+    if (!coinId) {
+      console.log('No coinId, navigating to home');
       navigate('/')
+      return
     }
-  }, [coinId, apiKey, analysisResults, navigate])
 
-  // Handle refresh data from navigation state
-  useEffect(() => {
-    if (location.state?.analysisResults) {
-      console.log('Received fresh analysis results from navigation state', location.state.timestamp)
-      setAnalysisResults(location.state.analysisResults)
-    }
-  }, [location.state?.analysisResults, location.state?.timestamp])
-
-  const fetchAnalysisData = async () => {
-    if (!coinId || !apiKey) return
-    
-    console.log('Fetching data for coinId:', coinId, 'with API key:', apiKey ? 'present' : 'missing')
-    setIsLoading(true)
-    try {
-      coinGeckoAPI.setApiKey(apiKey)
-      
-      // Fetch coin info and historical data
-      const [coinInfo, historicalData] = await Promise.all([
-        coinGeckoAPI.getCoinInfo(coinId),
-        coinGeckoAPI.getHistoricalData(coinId, '1d', 30)
-      ])
-
-      // Convert to our format
-      const priceData = historicalData.prices.map(([timestamp, price], index) => ({
-        timestamp,
-        price,
-        volume: historicalData.total_volumes[index] ? historicalData.total_volumes[index][1] : undefined
-      }))
-
-      const results = {
-        '1d': {
-          coin: { id: coinId, name: coinInfo.name, symbol: coinInfo.symbol },
-          interval: '1d',
-          priceData,
-          currentPriceData: coinInfo
+    console.log('AnalysisResultsPage: Fetching data for coinId:', coinId)
+    loadAllData(coinId).then(({ currentPrice, historicalData }) => {
+      if (currentPrice && historicalData) {
+        // Transform data to match the expected format for AnalysisResults
+        const results = {
+          '1d': {
+            coin: { 
+              id: currentPrice.id, 
+              name: currentPrice.name, 
+              symbol: currentPrice.symbol 
+            },
+            interval: '1d',
+            priceData: historicalData.prices,
+            currentPriceData: currentPrice
+          }
         }
-      }
-
-      setAnalysisResults(results)
-    } catch (error) {
-      console.error('Failed to fetch analysis data:', error)
-      
-      // Check if it's a rate limit error
-      if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
-        // Redirect to form with a specific message about rate limiting
-        navigate('/', { 
-          state: { 
-            message: 'API rate limit exceeded. Please wait a moment and try again, or check your API key settings.' 
-          } 
-        })
+        setAnalysisResults(results)
       } else {
-        // Other errors, redirect to form
         navigate('/', { 
           state: { 
-            message: 'Failed to fetch analysis data. Please check your API key and try again.' 
+            message: error || 'Failed to fetch analysis data. Please check your API key and try again.' 
           } 
         })
       }
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    })
+  }, [coinId, navigate, loadAllData, error])
 
-  if (isLoading) {
+  if (!analysisResults && isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading analysis data...</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            Loading analysis data...
+          </p>
         </div>
       </div>
     )
@@ -113,6 +78,8 @@ const AnalysisResultsPage: React.FC = () => {
   return (
     <AnalysisResults
       results={analysisResults}
+      isPriceLoading={isLoading}
+      isInitialLoading={isLoading}
     />
   )
 }

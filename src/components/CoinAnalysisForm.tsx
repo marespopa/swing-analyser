@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAtom } from 'jotai'
 import { Button, Input } from './ui'
 import { coinGeckoAPI } from '../services/coingeckoApi'
@@ -13,20 +14,17 @@ interface SearchResult {
 }
 
 interface CoinAnalysisFormProps {
-  onAnalysisComplete: (results: any) => void
-  onLoadingChange: (loading: boolean) => void
   onError: (error: string) => void
   preSelectedCoin?: any
   autoAnalyze?: boolean
 }
 
 const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
-  onAnalysisComplete,
-  onLoadingChange,
   onError,
   preSelectedCoin,
   autoAnalyze = false
 }) => {
+  const navigate = useNavigate()
   const [apiKey, setApiKey] = useAtom(apiKeyAtom)
   const [formData, setFormData] = useState({
     coinQuery: '',
@@ -34,11 +32,12 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
   })
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [selectedCoin, setSelectedCoin] = useState<SearchResult | null>(null)
-  const [currentPriceData, setCurrentPriceData] = useState<any>(null)
   const [isSearching, setIsSearching] = useState(false)
   const [showApiKey, setShowApiKey] = useState(false)
   const [showSearchResults, setShowSearchResults] = useState(false)
   const searchTimeoutRef = useRef<number | null>(null)
+  const searchCacheRef = useRef<Map<string, SearchResult[]>>(new Map())
+  const lastSearchQueryRef = useRef<string>('')
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -47,36 +46,43 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
       [name]: value
     }))
 
-    // Update stored API key when it changes
     if (name === 'apiKey') {
       setApiKey(value)
     }
 
-    // Handle coin search with debounced auto-search
     if (name === 'coinQuery') {
       setSelectedCoin(null)
       setShowSearchResults(true)
       
-      // Clear previous timeout
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current)
       }
 
-      // Auto-search after 500ms of no typing
-      if (value.trim().length >= 2) {
-        searchTimeoutRef.current = setTimeout(() => {
-          handleSearch(value.trim())
-        }, 500)
+      const trimmedValue = value.trim()
+      
+      // Check cache first for immediate results
+      if (trimmedValue.length >= 2) {
+        const cachedResults = searchCacheRef.current.get(trimmedValue.toLowerCase())
+        if (cachedResults) {
+          setSearchResults(cachedResults)
+          lastSearchQueryRef.current = trimmedValue
+        }
+        
+        // Only make API call if not cached or different from last search
+        if (!cachedResults && trimmedValue !== lastSearchQueryRef.current) {
+          searchTimeoutRef.current = setTimeout(() => {
+            handleSearch(trimmedValue)
+          }, 800) // Increased delay from 500ms to 800ms
+        }
       } else {
         setSearchResults([])
+        lastSearchQueryRef.current = ''
       }
     }
   }
 
-  // Handle pre-selected coin (for form selection only)
   useEffect(() => {
     if (preSelectedCoin && !autoAnalyze) {
-      console.log('Pre-selected coin received:', preSelectedCoin)
       const coin: SearchResult = {
         id: preSelectedCoin.id,
         name: preSelectedCoin.name,
@@ -84,32 +90,14 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
         marketCapRank: null
       }
       
-      console.log('Setting selected coin:', coin)
-      // Set the selected coin and form data
       setSelectedCoin(coin)
       setFormData(prev => ({
         ...prev,
         coinQuery: `${coin.name} (${coin.symbol})`
       }))
-      
-      // Fetch current price data if API key is available
-      if (apiKey) {
-        const fetchPriceData = async () => {
-          try {
-            coinGeckoAPI.setApiKey(apiKey)
-            const priceData = await coinGeckoAPI.getCoinInfo(coin.id)
-            setCurrentPriceData(priceData)
-          } catch (error) {
-            console.error('Failed to fetch current price:', error)
-            setCurrentPriceData(null)
-          }
-        }
-        fetchPriceData()
-      }
     }
   }, [preSelectedCoin, apiKey, autoAnalyze])
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (searchTimeoutRef.current) {
@@ -120,15 +108,35 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
 
   const handleSearch = async (query?: string) => {
     const searchQuery = query || formData.coinQuery.trim()
-    if (!searchQuery) {
-      onError('Please enter a coin name or symbol')
+    if (!searchQuery || searchQuery.length < 2) {
+      onError('Please enter at least 2 characters to search')
+      return
+    }
+
+    // Skip if this is the same query we just searched
+    if (searchQuery === lastSearchQueryRef.current) {
       return
     }
 
     setIsSearching(true)
+    lastSearchQueryRef.current = searchQuery
+    
     try {
       const results = await coinGeckoAPI.searchCoin(searchQuery)
-      setSearchResults(results.slice(0, 8)) // Limit to top 8 results
+      const limitedResults = results.slice(0, 8)
+      
+      // Cache the results
+      searchCacheRef.current.set(searchQuery.toLowerCase(), limitedResults)
+      
+      // Limit cache size to prevent memory issues
+      if (searchCacheRef.current.size > 50) {
+        const firstKey = searchCacheRef.current.keys().next().value
+        if (firstKey) {
+          searchCacheRef.current.delete(firstKey)
+        }
+      }
+      
+      setSearchResults(limitedResults)
     } catch (error) {
       onError(error instanceof Error ? error.message : 'Failed to search for coins')
     } finally {
@@ -145,17 +153,6 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
     setSearchResults([])
     setShowSearchResults(false)
     
-    // Fetch current price data
-    if (apiKey) {
-      try {
-        coinGeckoAPI.setApiKey(apiKey)
-        const priceData = await coinGeckoAPI.getCoinInfo(coin.id)
-        setCurrentPriceData(priceData)
-      } catch (error) {
-        console.error('Failed to fetch current price:', error)
-        setCurrentPriceData(null)
-      }
-    }
   }
 
   const handleFavouriteSelect = async (favourite: any) => {
@@ -169,8 +166,7 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
   }
 
 
-  const handleAnalyze = async () => {
-    console.log('handleAnalyze called, selectedCoin:', selectedCoin)
+  const handleContinue = () => {
     if (!selectedCoin) {
       onError('Please select a coin from the search results')
       return
@@ -181,52 +177,7 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
       return
     }
 
-    onLoadingChange(true)
-    
-    try {
-      // Set API key
-      coinGeckoAPI.setApiKey(apiKey.trim())
-
-      // Fetch data for 1d interval only
-      const results: Record<string, any> = {}
-
-      try {
-        const historicalData = await coinGeckoAPI.getHistoricalData(
-          selectedCoin.id,
-          '1d',
-          30 // 30 days of data
-        )
-
-        // Convert to our format
-        const priceData = historicalData.prices.map(([timestamp, price], index) => {
-          return {
-            timestamp,
-            price,
-            volume: historicalData.total_volumes[index] ? historicalData.total_volumes[index][1] : undefined
-          }
-        })
-
-        results['1d'] = {
-          coin: selectedCoin,
-          interval: '1d',
-          priceData,
-          currentPriceData
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error)
-        results['1d'] = {
-          coin: selectedCoin,
-          interval: '1d',
-          error: error instanceof Error ? error.message : 'Failed to fetch data'
-        }
-      }
-
-      onAnalysisComplete(results)
-    } catch (error) {
-      onError(error instanceof Error ? error.message : 'Analysis failed')
-    } finally {
-      onLoadingChange(false)
-    }
+    navigate(`/analysis/${selectedCoin.id}`)
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -248,8 +199,8 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
         Technical Analysis Setup
       </h2>
 
-
-      <div className="space-y-6">
+      <form onSubmit={(e) => e.preventDefault()}>
+        <div className="space-y-6">
         {/* API Key Input */}
         <div>
           <Input
@@ -317,7 +268,7 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
             value={formData.coinQuery}
             onChange={handleInputChange}
             onKeyDown={handleKeyPress}
-            placeholder="Start typing to search coins (e.g., bitcoin, ethereum, BTC, ETH, $BTC, #bitcoin)"
+            placeholder="Start typing to search..."
             required
             variant="default"
             inputSize="md"
@@ -373,7 +324,7 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
 
           {/* Helper text */}
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            💡 Start typing to automatically search for coins. Supports $ and # prefixes (e.g., $BTC, #bitcoin). Press Enter to select the first result.
+            💡 Start typing to automatically search for coins (minimum 2 characters). Press Enter to select the first result.
           </p>
         </div>
 
@@ -393,33 +344,10 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
                     Market Cap Rank: #{selectedCoin.marketCapRank}
                   </p>
                 )}
-                {currentPriceData && (
-                  <div className="mt-2 flex items-center space-x-4">
-                    <div>
-                      <span className="text-lg font-bold text-primary-800 dark:text-primary-200">
-                        ${currentPriceData.currentPrice?.toLocaleString(undefined, { 
-                          minimumFractionDigits: 2, 
-                          maximumFractionDigits: 6 
-                        }) || 'N/A'}
-                      </span>
-                    </div>
-                    {currentPriceData.priceChange24h && (
-                      <div className={`text-sm font-medium ${
-                        currentPriceData.priceChange24h >= 0 
-                          ? 'text-green-600 dark:text-green-400' 
-                          : 'text-red-600 dark:text-red-400'
-                      }`}>
-                        {currentPriceData.priceChange24h >= 0 ? '+' : ''}
-                        {currentPriceData.priceChange24h.toFixed(2)}%
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
               <Button
                 onClick={() => {
                   setSelectedCoin(null)
-                  setCurrentPriceData(null)
                   setFormData(prev => ({ ...prev, coinQuery: '' }))
                   setShowSearchResults(false)
                 }}
@@ -432,22 +360,23 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
           </div>
         )}
 
-        {/* Analyze Button */}
+        {/* Continue Button */}
         <div>
           <Button
-            onClick={handleAnalyze}
+            onClick={handleContinue}
             disabled={!selectedCoin || !apiKey.trim()}
             variant="primary"
             size="lg"
             className="w-full"
           >
-            Start Technical Analysis
+            Continue to Analysis
           </Button>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-            Analysis will be performed on 1-day interval (30 days of historical data)
+            Click to validate form and proceed to analysis page
           </p>
         </div>
-      </div>
+        </div>
+      </form>
     </div>
   )
 }

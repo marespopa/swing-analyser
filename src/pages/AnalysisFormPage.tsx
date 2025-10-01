@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { atom, useAtom } from 'jotai'
 import { LoadingOverlay } from '../components/ui'
 import CoinAnalysisForm from '../components/CoinAnalysisForm'
@@ -9,9 +9,8 @@ const isLoadingAtom = atom(false)
 const errorAtom = atom<string | null>(null)
 
 const AnalysisFormPage: React.FC = () => {
-  const navigate = useNavigate()
   const location = useLocation()
-  const [isLoading, setIsLoading] = useAtom(isLoadingAtom)
+  const [isLoading] = useAtom(isLoadingAtom)
   const [error, setError] = useAtom(errorAtom)
   const formRef = useRef<HTMLDivElement>(null)
 
@@ -24,25 +23,10 @@ const AnalysisFormPage: React.FC = () => {
     }
   }, [location.state, setError])
 
-  const handleAnalysisComplete = (results: any) => {
-    // Get the coin ID from the first result
-    const firstResult = Object.values(results)[0] as any
-    const coinId = firstResult?.coin?.id
-    if (coinId) {
-      // Navigate to results page with coin ID as parameter and analysis data
-      navigate(`/analysis/${coinId}`, { 
-        state: { analysisResults: results } 
-      })
-    }
-  }
-
-  const handleLoadingChange = (loading: boolean) => {
-    setIsLoading(loading)
-  }
+  // No need for handleAnalysisComplete since the form doesn't trigger analysis
 
   const handleError = (errorMessage: string) => {
     setError(errorMessage)
-    setIsLoading(false)
   }
 
   return (
@@ -83,8 +67,6 @@ const AnalysisFormPage: React.FC = () => {
         <div ref={formRef}>
           <div className="max-w-2xl mx-auto w-full">
             <CoinAnalysisForm
-              onAnalysisComplete={handleAnalysisComplete}
-              onLoadingChange={handleLoadingChange}
               onError={handleError}
               preSelectedCoin={location.state?.selectedCoin}
               autoAnalyze={location.state?.autoAnalyze}
@@ -92,11 +74,11 @@ const AnalysisFormPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Loading Overlay */}
+        {/* Loading Overlay - only show if there's a loading state from form */}
         {isLoading && (
           <LoadingOverlay 
             isLoading={isLoading}
-            message="Performing technical analysis..."
+            message="Processing form..."
           />
         )}
 

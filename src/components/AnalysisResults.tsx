@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TechnicalAnalysis } from '../services/technicalAnalysis'
 import type { TechnicalAnalysisData, PriceDataPoint } from '../services/coingeckoApi'
@@ -16,16 +16,21 @@ interface AnalysisResultsProps {
       coin: any
       interval: string
       priceData?: PriceDataPoint[]
+      currentPriceData?: any
       error?: string
     }
   }
+  isPriceLoading?: boolean
+  isInitialLoading?: boolean
 }
 
-const AnalysisResults: React.FC<AnalysisResultsProps> = ({ results }) => {
+const AnalysisResults: React.FC<AnalysisResultsProps> = ({ 
+  results, 
+  isPriceLoading = false, 
+  isInitialLoading = false,
+}) => {
   const navigate = useNavigate()
-  const [refreshMessage, setRefreshMessage] = useState<string | null>(null)
 
-  // Process analysis data
   const processedResults: { [key: string]: TechnicalAnalysisData | null } = {}
   const errors: { [key: string]: string } = {}
 
@@ -42,8 +47,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ results }) => {
   })
 
   const coinInfo = Object.values(results)[0]?.coin
-  const currentPrice = coinInfo?.currentPrice || Object.values(processedResults).find(result => result?.data?.length)?.data?.slice(-1)[0]?.price
-  const priceChange24h = coinInfo?.priceChange24h || null
+  const currentPriceData = Object.values(results)[0]?.currentPriceData
+  const currentPrice = currentPriceData?.currentPrice || Object.values(processedResults).find(result => result?.data?.length)?.data?.slice(-1)[0]?.price
+  const priceChange24h = currentPriceData?.priceChange24h || null
   const analysis = Object.values(processedResults).find(result => result !== null)
 
   // Generate trading recommendation
@@ -266,8 +272,6 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ results }) => {
 
   const handleCopySummary = () => {
     navigator.clipboard.writeText(summary)
-    setRefreshMessage('Summary copied to clipboard!')
-    setTimeout(() => setRefreshMessage(null), 3000)
   }
 
   const analysisTimestamp = new Date().toLocaleString()
@@ -281,7 +285,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ results }) => {
           currentPrice={currentPrice}
           priceChange24h={priceChange24h}
           onBack={handleBack}
-          refreshMessage={refreshMessage}
+          isPriceLoading={isPriceLoading || isInitialLoading}
         />
 
         <AnalysisSummary

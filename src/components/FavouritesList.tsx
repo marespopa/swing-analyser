@@ -50,16 +50,25 @@ const FavouritesList: React.FC<FavouritesListProps> = ({
             <span className="text-gray-500 dark:text-gray-400">
               ({favourite.symbol})
             </span>
-            <button
+            <span
               onClick={(e) => {
                 e.stopPropagation()
                 removeFromFavourites(favourite.id)
               }}
               className="text-gray-400 hover:text-red-500 transition-colors ml-1 cursor-pointer"
               title="Remove from favourites"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  removeFromFavourites(favourite.id)
+                }
+              }}
             >
               ×
-            </button>
+            </span>
           </button>
         ))}
       </div>
