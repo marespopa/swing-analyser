@@ -92,17 +92,6 @@ const ChartWithCrosshair: React.FC<ChartWithCrosshairProps> = ({
               opacity: 0.8
             }}
           />
-          
-          {/* Price label */}
-          <div 
-            className="absolute pointer-events-none z-20 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded px-2 py-1 text-xs font-mono shadow-lg"
-            style={{ 
-              top: `${mouseY - 12}px`,
-              right: '10px'
-            }}
-          >
-            ${hoveredPrice.toFixed(4)}
-          </div>
         </>
       )}
     </div>

@@ -25,6 +25,7 @@ interface TradingRecommendation {
     hasVolumeConfirmation: boolean
     isChoppyMarket: boolean
     strength: string
+    goldenCrossSignal?: 'Golden Cross' | 'Death Cross' | 'None'
   }
 }
 
@@ -78,8 +79,15 @@ export const generateSummary = ({
     
     // 📈 TREND ANALYSIS
     story += `## 📈 Trend Analysis\n\n`
+    
+    // Check for conflicting signals
+    const hasConflictingSignals = (trend === 'Bullish' && swingAnalysis.macdSignal === 'Bearish') || 
+                                 (trend === 'Bearish' && swingAnalysis.macdSignal === 'Bullish')
+    
     if (trend === 'Bullish') {
-      if (momentum === 'Oversold') {
+      if (hasConflictingSignals) {
+        story += `⚠️ The overall trend is bullish, but conflicting signals from MACD suggest momentum may be shifting. This creates uncertainty about the next move.\n\n`
+      } else if (momentum === 'Oversold') {
         story += `🟢 The overall trend is bullish, and RSI oversold conditions suggest a potential buying opportunity as selling pressure may be exhausted.\n\n`
       } else if (momentum === 'Overbought') {
         story += `⚠️ While the trend remains bullish, RSI overbought conditions suggest caution as a pullback may be due.\n\n`
@@ -89,7 +97,9 @@ export const generateSummary = ({
         story += `📊 The trend is bullish but momentum is showing neutral conditions, suggesting a potential consolidation phase.\n\n`
       }
     } else if (trend === 'Bearish') {
-      if (momentum === 'Overbought') {
+      if (hasConflictingSignals) {
+        story += `⚠️ The overall trend is bearish, but conflicting signals from MACD suggest momentum may be shifting. This creates uncertainty about the next move.\n\n`
+      } else if (momentum === 'Overbought') {
         story += `🔴 The trend has turned bearish, and RSI overbought conditions suggest a potential selling opportunity as buying pressure weakens.\n\n`
       } else if (momentum === 'Oversold') {
         story += `🔄 While the trend is bearish, RSI oversold conditions suggest a potential bounce or reversal may be forming.\n\n`
@@ -114,11 +124,26 @@ export const generateSummary = ({
     
     // Use actual MACD data
     if (swingAnalysis.macdSignal === 'Bullish') {
-      story += `✅ **MACD**: Shows a bullish crossover, confirming the positive momentum shift.\n\n`
+      if (hasConflictingSignals) {
+        story += `✅ **MACD**: Shows a bullish crossover, providing a positive signal that may counter the overall trend.\n\n`
+      } else {
+        story += `✅ **MACD**: Shows a bullish crossover, confirming the positive momentum shift.\n\n`
+      }
     } else if (swingAnalysis.macdSignal === 'Bearish') {
-      story += `❌ **MACD**: Indicates a bearish crossover, suggesting momentum is shifting to the downside.\n\n`
+      if (hasConflictingSignals) {
+        story += `❌ **MACD**: Indicates a bearish crossover, creating a conflicting signal with the overall trend.\n\n`
+      } else {
+        story += `❌ **MACD**: Indicates a bearish crossover, suggesting momentum is shifting to the downside.\n\n`
+      }
     } else {
       story += `➖ **MACD**: Signals are neutral at this time.\n\n`
+    }
+
+    // Add Golden Cross/Death Cross information
+    if (swingAnalysis.goldenCrossSignal === 'Golden Cross') {
+      story += `🌟 **Golden Cross**: SMA20 has crossed above SMA50, indicating a strong bullish signal and potential upward trend acceleration.\n\n`
+    } else if (swingAnalysis.goldenCrossSignal === 'Death Cross') {
+      story += `💀 **Death Cross**: SMA20 has crossed below SMA50, indicating a strong bearish signal and potential downward trend acceleration.\n\n`
     }
 
     // Use actual support/resistance data
@@ -135,6 +160,16 @@ export const generateSummary = ({
       story += `📈 **Volume**: Is confirming the current move, with increased trading activity supporting the direction.\n\n`
     } else {
       story += `📉 **Volume**: Is not providing strong confirmation for the current move.\n\n`
+    }
+
+    // Add conflicting signals guidance
+    if (hasConflictingSignals) {
+      story += `## ⚠️ Conflicting Signals Detected\n\n`
+      story += `The analysis shows mixed signals between trend direction and momentum indicators. In such cases:\n\n`
+      story += `- **Wait for confirmation** before making significant trades\n`
+      story += `- **Monitor price action** for breakout or breakdown patterns\n`
+      story += `- **Consider smaller position sizes** due to increased uncertainty\n`
+      story += `- **Set tighter stop losses** to limit risk exposure\n\n`
     }
 
     // 📊 VOLATILITY SCORE (only for BUY signals)

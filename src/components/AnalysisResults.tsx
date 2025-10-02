@@ -52,15 +52,12 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   const priceChange24h = currentPriceData?.priceChange24h || null
   const analysis = Object.values(processedResults).find(result => result !== null)
 
-  // Generate trading recommendation
   const generateTradingRecommendation = () => {
     if (!analysis || !currentPrice) return null
 
-    // Get recent price data for trend analysis
     const recentPrices = analysis.data.slice(-10).map(d => d.price)
     const priceChange = (recentPrices[recentPrices.length - 1] - recentPrices[0]) / recentPrices[0] * 100
 
-    // Calculate price position relative to Bollinger Bands
     const upperBand = analysis.bollingerBands?.upper[analysis.bollingerBands.upper.length - 1] || 0
     const lowerBand = analysis.bollingerBands?.lower[analysis.bollingerBands.lower.length - 1] || 0
 
@@ -72,10 +69,48 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
       pricePosition = 'Below Lower Band'
     }
 
-    // Calculate risk/reward ratio
     const sma20 = analysis.sma20?.[analysis.sma20.length - 1] || 0
     const sma50 = analysis.sma50?.[analysis.sma50.length - 1] || 0
     const rsi = analysis.rsi?.[analysis.rsi.length - 1] || 50
+
+    let macdSignal: 'Bullish' | 'Bearish' | 'Neutral' = 'Neutral'
+    if (analysis.macd && analysis.macd.macd.length >= 2 && analysis.macd.signal.length >= 2) {
+      const currentMACD = analysis.macd.macd[analysis.macd.macd.length - 1]
+      const previousMACD = analysis.macd.macd[analysis.macd.macd.length - 2]
+      const currentSignal = analysis.macd.signal[analysis.macd.signal.length - 1]
+      const previousSignal = analysis.macd.signal[analysis.macd.signal.length - 2]
+      
+      if (previousMACD <= previousSignal && currentMACD > currentSignal) {
+        macdSignal = 'Bullish'
+      }
+      else if (previousMACD >= previousSignal && currentMACD < currentSignal) {
+        macdSignal = 'Bearish'
+      }
+      else if (currentMACD > currentSignal) {
+        macdSignal = 'Bullish'
+      }
+      else if (currentMACD < currentSignal) {
+        macdSignal = 'Bearish'
+      }
+    }
+
+    // Detect Golden Cross (SMA20 crosses above SMA50) or Death Cross (SMA50 crosses above SMA20)
+    let goldenCrossSignal: 'Golden Cross' | 'Death Cross' | 'None' = 'None'
+    if (analysis.sma20.length >= 2 && analysis.sma50.length >= 2) {
+      const currentSMA20 = analysis.sma20[analysis.sma20.length - 1]
+      const previousSMA20 = analysis.sma20[analysis.sma20.length - 2]
+      const currentSMA50 = analysis.sma50[analysis.sma50.length - 1]
+      const previousSMA50 = analysis.sma50[analysis.sma50.length - 2]
+      
+      // Golden Cross: SMA20 crosses above SMA50
+      if (previousSMA20 <= previousSMA50 && currentSMA20 > currentSMA50) {
+        goldenCrossSignal = 'Golden Cross'
+      }
+      // Death Cross: SMA20 crosses below SMA50
+      else if (previousSMA20 >= previousSMA50 && currentSMA20 < currentSMA50) {
+        goldenCrossSignal = 'Death Cross'
+      }
+    }
 
     // Determine trend
     let trend = 'Sideways'
@@ -142,6 +177,10 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
       description: pattern.description
     }))
 
+    // Check for conflicting signals
+    const hasConflictingSignals = (trend === 'Bullish' && macdSignal === 'Bearish') || 
+                                 (trend === 'Bearish' && macdSignal === 'Bullish')
+
     if (trend === 'Bullish') {
       if (rsi < 70 && currentPrice > lowerBand) {
         if (hasGoodRiskReward) {
@@ -182,6 +221,36 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         confidence = 'low'
         signalColor = 'amber'
       }
+
+      // Handle conflicting signals - downgrade confidence or change to WAIT
+      if (hasConflictingSignals) {
+        if (action === 'BUY') {
+          // Downgrade confidence and potentially change to WAIT
+          if (confidence === 'high') {
+            confidence = 'medium'
+          } else if (confidence === 'medium') {
+            confidence = 'low'
+          } else {
+            // If already low confidence, consider changing to WAIT
+            if (strength !== 'Strong' || !hasDecentRiskReward) {
+              action = 'WAIT'
+              confidence = 'medium'
+              signalColor = 'amber'
+            }
+          }
+        }
+      }
+
+      // Boost confidence for Golden Cross or MACD bullish crossover (only if no conflicts)
+      if (!hasConflictingSignals) {
+        if ((goldenCrossSignal === 'Golden Cross' || macdSignal === 'Bullish') && action === 'BUY') {
+          confidence = 'high'
+        } else if (goldenCrossSignal === 'Golden Cross' && action === 'WAIT') {
+          action = 'BUY'
+          confidence = 'medium'
+          signalColor = 'green'
+        }
+      }
     } else if (trend === 'Bearish') {
       if (rsi > 30 && currentPrice < upperBand) {
         if (hasGoodRiskReward) {
@@ -210,6 +279,36 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         confidence = 'low'
         signalColor = 'amber'
       }
+
+      // Handle conflicting signals - downgrade confidence or change to WAIT
+      if (hasConflictingSignals) {
+        if (action === 'SELL') {
+          // Downgrade confidence and potentially change to WAIT
+          if (confidence === 'high') {
+            confidence = 'medium'
+          } else if (confidence === 'medium') {
+            confidence = 'low'
+          } else {
+            // If already low confidence, consider changing to WAIT
+            if (strength !== 'Strong' || !hasDecentRiskReward) {
+              action = 'WAIT'
+              confidence = 'medium'
+              signalColor = 'amber'
+            }
+          }
+        }
+      }
+
+      // Boost confidence for Death Cross or MACD bearish crossover (only if no conflicts)
+      if (!hasConflictingSignals) {
+        if ((goldenCrossSignal === 'Death Cross' || macdSignal === 'Bearish') && action === 'SELL') {
+          confidence = 'high'
+        } else if (goldenCrossSignal === 'Death Cross' && action === 'WAIT') {
+          action = 'SELL'
+          confidence = 'medium'
+          signalColor = 'red'
+        }
+      }
     } else {
       // Sideways trend
       action = 'WAIT'
@@ -229,7 +328,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
       swingAnalysis: {
         trend: trend as 'Bullish' | 'Bearish' | 'Sideways',
         momentum: rsi > 70 ? 'Overbought' : rsi < 30 ? 'Oversold' : 'Neutral',
-        macdSignal: 'Neutral',
+        macdSignal: macdSignal,
         supportResistance: pricePosition === 'Below Lower Band' ? 'Near Support' : 
                           pricePosition === 'Above Upper Band' ? 'Near Resistance' : 'Middle Range',
         patterns: recentPatterns,
@@ -237,7 +336,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         riskReward: riskReward,
         hasVolumeConfirmation: false,
         isChoppyMarket: false,
-        strength
+        strength,
+        goldenCrossSignal: goldenCrossSignal
       }
     }
   }

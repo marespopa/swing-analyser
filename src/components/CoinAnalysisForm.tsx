@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAtom } from 'jotai'
-import { Button, Input } from './ui'
+import { Button, Input, AutocompleteInput } from './ui'
 import { coinGeckoAPI } from '../services/coingeckoApi'
 import { apiKeyAtom } from '../store'
 import FavouritesList from './FavouritesList'
@@ -34,7 +34,6 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
   const [selectedCoin, setSelectedCoin] = useState<SearchResult | null>(null)
   const [isSearching, setIsSearching] = useState(false)
   const [showApiKey, setShowApiKey] = useState(false)
-  const [showSearchResults, setShowSearchResults] = useState(false)
   const searchTimeoutRef = useRef<number | null>(null)
   const searchCacheRef = useRef<Map<string, SearchResult[]>>(new Map())
   const lastSearchQueryRef = useRef<string>('')
@@ -48,36 +47,6 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
 
     if (name === 'apiKey') {
       setApiKey(value)
-    }
-
-    if (name === 'coinQuery') {
-      setSelectedCoin(null)
-      setShowSearchResults(true)
-      
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current)
-      }
-
-      const trimmedValue = value.trim()
-      
-      // Check cache first for immediate results
-      if (trimmedValue.length >= 2) {
-        const cachedResults = searchCacheRef.current.get(trimmedValue.toLowerCase())
-        if (cachedResults) {
-          setSearchResults(cachedResults)
-          lastSearchQueryRef.current = trimmedValue
-        }
-        
-        // Only make API call if not cached or different from last search
-        if (!cachedResults && trimmedValue !== lastSearchQueryRef.current) {
-          searchTimeoutRef.current = setTimeout(() => {
-            handleSearch(trimmedValue)
-          }, 800) // Increased delay from 500ms to 800ms
-        }
-      } else {
-        setSearchResults([])
-        lastSearchQueryRef.current = ''
-      }
     }
   }
 
@@ -151,8 +120,6 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
       coinQuery: `${coin.name} (${coin.symbol})`
     }))
     setSearchResults([])
-    setShowSearchResults(false)
-    
   }
 
   const handleFavouriteSelect = async (favourite: any) => {
@@ -180,18 +147,6 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
     navigate(`/analysis/${selectedCoin.id}`)
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      if (searchResults.length > 0) {
-        handleCoinSelect(searchResults[0])
-      } else if (formData.coinQuery.trim().length >= 2) {
-        handleSearch()
-      }
-    } else if (e.key === 'Escape') {
-      setShowSearchResults(false)
-      setSearchResults([])
-    }
-  }
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -260,73 +215,18 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
         />
 
         {/* Coin Search */}
-        <div className="relative">
-          <Input
-            label="Coin Name or Symbol"
-            name="coinQuery"
-            type="text"
-            value={formData.coinQuery}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyPress}
-            placeholder="Start typing to search..."
-            required
-            variant="default"
-            inputSize="md"
-          />
-          
-          {/* Search indicator */}
-          {isSearching && (
-            <div className="absolute right-3 top-8 flex items-center">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
-            </div>
-          )}
-
-          {/* Search Results */}
-          {showSearchResults && searchResults.length > 0 && (
-            <div className="absolute z-10 w-full mt-1 border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 shadow-lg max-h-64 overflow-y-auto">
-              <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-600">
-                Select a coin from the results:
-              </div>
-              {searchResults.map((coin) => (
-                <button
-                  key={coin.id}
-                  onClick={() => handleCoinSelect(coin)}
-                  className="w-full px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 transition-colors cursor-pointer"
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium text-gray-800 dark:text-white">
-                        {coin.name}
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {coin.symbol}
-                      </p>
-                    </div>
-                    {coin.marketCapRank && (
-                      <span className="text-xs bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 px-2 py-1 rounded">
-                        #{coin.marketCapRank}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* No results message */}
-          {showSearchResults && !isSearching && formData.coinQuery.trim().length >= 2 && searchResults.length === 0 && (
-            <div className="absolute z-10 w-full mt-1 border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 shadow-lg p-3">
-              <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-                No coins found. Try a different search term.
-              </p>
-            </div>
-          )}
-
-          {/* Helper text */}
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            💡 Start typing to automatically search for coins (minimum 2 characters). Press Enter to select the first result.
-          </p>
-        </div>
+        <AutocompleteInput
+          label="Coin Name or Symbol"
+          value={formData.coinQuery}
+          onChange={(value) => setFormData(prev => ({ ...prev, coinQuery: value }))}
+          onSelect={handleCoinSelect}
+          searchResults={searchResults}
+          isLoading={isSearching}
+          onSearch={handleSearch}
+          placeholder="Start typing to search for coins..."
+          minSearchLength={2}
+          maxResults={8}
+        />
 
         {/* Selected Coin Display */}
         {selectedCoin && (
@@ -349,7 +249,6 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
                 onClick={() => {
                   setSelectedCoin(null)
                   setFormData(prev => ({ ...prev, coinQuery: '' }))
-                  setShowSearchResults(false)
                 }}
                 variant="ghost"
                 size="sm"
