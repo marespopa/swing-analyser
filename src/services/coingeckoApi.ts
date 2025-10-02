@@ -192,6 +192,11 @@ export interface TechnicalAnalysisData {
   }
   trendlines: Trendline[]
   entryPoints: EntryPoint[]
+  volumeAnalysis?: {
+    volumeSMA: number[]
+    volumeRatio: number[]
+    volumeTrend: 'increasing' | 'decreasing' | 'stable'
+  }
 }
 
 export interface Trendline {

@@ -43,7 +43,8 @@ export const CHART_MARGINS = {
 export const CHART_HEIGHTS = {
   main: 300,
   rsi: 150,
-  macd: 150
+  macd: 150,
+  volume: 120
 } as const
 
 export const RSI_LEVELS = {

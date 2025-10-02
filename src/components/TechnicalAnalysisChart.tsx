@@ -7,6 +7,7 @@ import { useChartToggles } from '../hooks/useChartToggles'
 const PriceChart = lazy(() => import('./charts/PriceChart'))
 const RSIChart = lazy(() => import('./charts/RSIChart'))
 const MACDChart = lazy(() => import('./charts/MACDChart'))
+const VolumeChart = lazy(() => import('./charts/VolumeChart'))
 
 interface TechnicalAnalysisChartProps {
   data: TechnicalAnalysisData
@@ -56,6 +57,16 @@ const TechnicalAnalysisChart: React.FC<TechnicalAnalysisChartProps> = ({
           onToggleChange={handleToggleChange}
           height={height}
         />
+      </Suspense>
+
+      {/* Volume under Price */}
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-48 border border-gray-200 dark:border-gray-700 rounded-lg">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+          <span className="ml-2 text-gray-600 dark:text-gray-400">Loading Volume...</span>
+        </div>
+      }>
+        <VolumeChart chartData={chartData} />
       </Suspense>
 
       {/* Indicators Grid */}

@@ -35,6 +35,15 @@ const AnalysisResultsPage: React.FC = () => {
     loadAllData(coinId).then(({ currentPrice, historicalData }) => {
       if (currentPrice && historicalData) {
         // Transform data to match the expected format for AnalysisResults
+        // Merge price and volume data
+        const priceDataWithVolume = historicalData.prices.map((pricePoint, index) => {
+          const volumePoint = historicalData.volumes[index]
+          return {
+            ...pricePoint,
+            volume: volumePoint ? volumePoint.volume : undefined
+          }
+        })
+
         const results = {
           '1d': {
             coin: { 
@@ -43,7 +52,7 @@ const AnalysisResultsPage: React.FC = () => {
               symbol: currentPrice.symbol 
             },
             interval: '1d',
-            priceData: historicalData.prices,
+            priceData: priceDataWithVolume,
             currentPriceData: currentPrice
           }
         }

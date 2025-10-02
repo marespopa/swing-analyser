@@ -20,6 +20,7 @@ export const useChartData = (data: TechnicalAnalysisData, toggles: ToggleState) 
         timestamp: point.timestamp,
         time,
         price: point.price,
+        volume: typeof point.volume === 'number' ? point.volume : null,
         sma20: toggles.showSMA20 && !isNaN(data.sma20[index]) ? data.sma20[index] : null,
         sma50: toggles.showSMA50 && !isNaN(data.sma50[index]) ? data.sma50[index] : null,
         rsi: isNaN(data.rsi[index]) ? null : data.rsi[index],
@@ -33,7 +34,9 @@ export const useChartData = (data: TechnicalAnalysisData, toggles: ToggleState) 
         resistance: null, // Not used as line data anymore
         stopLoss: data.riskLevels ? (isNaN(data.riskLevels.stopLoss[index]) ? null : data.riskLevels.stopLoss[index]) : null,
         takeProfit: data.riskLevels ? (isNaN(data.riskLevels.takeProfit[index]) ? null : data.riskLevels.takeProfit[index]) : null,
-        entryPoint: entryPoint || null
+        entryPoint: entryPoint || null,
+        volumeSMA: data.volumeAnalysis ? (isNaN(data.volumeAnalysis.volumeSMA[index]) ? null : data.volumeAnalysis.volumeSMA[index]) : null,
+        volumeRatio: data.volumeAnalysis ? (isNaN(data.volumeAnalysis.volumeRatio[index]) ? null : data.volumeAnalysis.volumeRatio[index]) : null
       }
     })
   }, [data, toggles])

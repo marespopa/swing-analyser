@@ -22,11 +22,15 @@ export class TechnicalAnalysis {
     }
 
     const prices = data.map(d => d.price)
+    const volumes = data.map(d => d.volume || 0)
     
     // Calculate basic indicators
     const sma20 = BaseTechnicalAnalysis.calculateSMA(prices, 20)
     const sma50 = BaseTechnicalAnalysis.calculateSMA(prices, 50)
     const rsi = BaseTechnicalAnalysis.calculateRSI(prices, 14)
+    
+    // Calculate volume analysis
+    const volumeAnalysis = BaseTechnicalAnalysis.calculateVolumeAnalysis(volumes)
     
     // Calculate advanced indicators
     const macd = BaseTechnicalAnalysis.calculateMACD(prices)
@@ -107,7 +111,8 @@ export class TechnicalAnalysis {
         wedges
       },
       trendlines,
-      entryPoints
+      entryPoints,
+      volumeAnalysis
     }
   }
 }

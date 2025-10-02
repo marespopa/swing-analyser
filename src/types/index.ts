@@ -15,6 +15,7 @@ export interface ChartDataPoint {
   timestamp: number
   time: string
   price: number
+  volume?: number | null
   open?: number
   high?: number
   low?: number
@@ -33,6 +34,8 @@ export interface ChartDataPoint {
   stopLoss?: number | null
   takeProfit?: number | null
   entryPoint?: EntryPoint | null
+  volumeSMA?: number | null
+  volumeRatio?: number | null
 }
 
 export interface ToggleState {
