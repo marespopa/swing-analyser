@@ -264,6 +264,106 @@ export const generateSummary = ({
     }
 
 
+    // 📌 NEXT MOVES
+    story += `## 📌 Next Moves\n\n`
+    
+    // Get current technical levels
+    const latestPrice = analysis.data[analysis.data.length - 1]?.price || 0
+    const sma20 = analysis.sma20[analysis.sma20.length - 1] || 0
+    const sma50 = analysis.sma50[analysis.sma50.length - 1] || 0
+    const rsi = analysis.rsi[analysis.rsi.length - 1] || 50
+    const currentVolume = analysis.data[analysis.data.length - 1]?.volume || 0
+    const avgVolume = analysis.volumeAnalysis?.volumeSMA[analysis.volumeAnalysis.volumeSMA.length - 1] || 0
+    
+    // Calculate resistance and support levels
+    const recentHighs = analysis.data.slice(-20).map(d => d.price)
+    const recentLows = analysis.data.slice(-20).map(d => d.price)
+    const resistance = Math.max(...recentHighs)
+    const support = Math.min(...recentLows)
+    
+    // MACD analysis
+    let macdSignal = 'Neutral'
+    if (analysis.macd && analysis.macd.macd.length >= 2 && analysis.macd.signal.length >= 2) {
+      const currentMACD = analysis.macd.macd[analysis.macd.macd.length - 1]
+      const previousMACD = analysis.macd.macd[analysis.macd.macd.length - 2]
+      const currentSignal = analysis.macd.signal[analysis.macd.signal.length - 1]
+      const previousSignal = analysis.macd.signal[analysis.macd.signal.length - 2]
+      
+      if (previousMACD <= previousSignal && currentMACD > currentSignal) {
+        macdSignal = 'Bullish'
+      } else if (previousMACD >= previousSignal && currentMACD < currentSignal) {
+        macdSignal = 'Bearish'
+      } else if (currentMACD > currentSignal) {
+        macdSignal = 'Bullish'
+      } else if (currentMACD < currentSignal) {
+        macdSignal = 'Bearish'
+      }
+    }
+    
+    // Volume analysis
+    const volumeRatio = avgVolume > 0 ? currentVolume / avgVolume : 1
+    const isHighVolume = volumeRatio > 1.2
+    const isLowVolume = volumeRatio < 0.8
+    
+    // Generate bullish scenario
+    let bullishScenario = ''
+    if (resistance > latestPrice) {
+      const resistanceLevel = resistance.toFixed(2)
+      if (isHighVolume) {
+        bullishScenario = `Break above $${resistanceLevel} with strong volume (${(volumeRatio * 100).toFixed(0)}% above average)`
+      } else {
+        bullishScenario = `Break above $${resistanceLevel} with volume confirmation`
+      }
+    } else if (sma20 > latestPrice) {
+      const smaLevel = sma20.toFixed(2)
+      bullishScenario = `Break above $${smaLevel} (SMA 20) with strong volume`
+    } else {
+      bullishScenario = `Continue upward momentum with volume confirmation`
+    }
+    
+    // Add MACD confirmation to bullish scenario
+    if (macdSignal === 'Bullish') {
+      bullishScenario += ` and MACD bullish crossover`
+    }
+    
+    // Generate bearish scenario
+    let bearishScenario = ''
+    if (support < latestPrice) {
+      const supportLevel = support.toFixed(2)
+      const nextSupport = (support * 0.95).toFixed(2) // 5% below current support
+      bearishScenario = `Drop below $${supportLevel} support could trigger a pullback toward $${nextSupport}`
+    } else if (sma50 < latestPrice) {
+      const smaLevel = sma50.toFixed(2)
+      bearishScenario = `Break below $${smaLevel} (SMA 50) could signal trend reversal`
+    } else {
+      bearishScenario = `Break below current support levels could trigger selling pressure`
+    }
+    
+    // Add MACD confirmation to bearish scenario
+    if (macdSignal === 'Bearish') {
+      bearishScenario += ` with MACD bearish divergence`
+    }
+    
+    // Add volume context
+    if (isLowVolume) {
+      bearishScenario += ` (low volume weakness)`
+    }
+    
+    story += `**Bullish scenario**: ${bullishScenario}\n\n`
+    story += `**Bearish scenario**: ${bearishScenario}\n\n`
+    
+    // Add key levels
+    story += `**Key Levels**:\n`
+    story += `- Resistance: $${resistance.toFixed(2)}\n`
+    story += `- Support: $${support.toFixed(2)}\n`
+    story += `- SMA 20: $${sma20.toFixed(2)}\n`
+    story += `- SMA 50: $${sma50.toFixed(2)}\n\n`
+    
+    // Add volume and MACD status
+    story += `**Volume Status**: ${isHighVolume ? 'High' : isLowVolume ? 'Low' : 'Normal'} (${(volumeRatio * 100).toFixed(0)}% of average)\n`
+    story += `**MACD Signal**: ${macdSignal}\n`
+    story += `**RSI**: ${rsi.toFixed(1)} (${rsi > 70 ? 'Overbought' : rsi < 30 ? 'Oversold' : 'Neutral'})\n\n`
+
     return story
   }
 

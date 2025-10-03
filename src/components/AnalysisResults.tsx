@@ -407,6 +407,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
       {/* Fibonacci Levels */}
       <AnalysisFibonacciLevels
         analysis={analysis || null}
+        currentPrice={currentPrice}
       />
 
       {/* Detailed Technical Indicators */}

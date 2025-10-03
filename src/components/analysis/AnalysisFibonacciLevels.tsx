@@ -2,9 +2,10 @@ import type { TechnicalAnalysisData } from '../../services/coingeckoApi'
 
 interface AnalysisFibonacciLevelsProps {
   analysis: TechnicalAnalysisData | null
+  currentPrice?: number
 }
 
-const AnalysisFibonacciLevels = ({ analysis }: AnalysisFibonacciLevelsProps) => {
+const AnalysisFibonacciLevels = ({ analysis, currentPrice: propCurrentPrice }: AnalysisFibonacciLevelsProps) => {
   if (!analysis?.fibonacciLevels) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 relative z-30">
@@ -17,7 +18,7 @@ const AnalysisFibonacciLevels = ({ analysis }: AnalysisFibonacciLevelsProps) => 
   }
 
   const fib = analysis.fibonacciLevels
-  const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
+  const currentPrice = propCurrentPrice || analysis.data[analysis.data.length - 1]?.price || 0
 
   // Determine which is the actual swing high and low for proper labeling
   const actualSwingHigh = Math.max(fib.swingHigh, fib.swingLow)
