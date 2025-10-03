@@ -6,6 +6,7 @@ import { DoublePatterns } from './doublePatterns'
 import { CupAndHandlePatterns } from './cupAndHandlePatterns'
 import { FlagPatterns } from './flagPatterns'
 import { WedgePatterns } from './wedgePatterns'
+import { HighTrendlinePatterns } from './highTrendlinePatterns'
 import { deduplicateAndPrioritizePatterns, filterRecentPatterns } from './patternUtils'
 
 /**
@@ -57,7 +58,8 @@ export class TechnicalAnalysis {
       ...DoublePatterns.detectDoublePatterns(data, rsi, sma20, sma50, atr, volatilityRegimes),
       ...CupAndHandlePatterns.detectCupAndHandlePatterns(data, rsi, sma20, sma50),
       ...FlagPatterns.detectFlagPatterns(data, rsi, sma20, sma50),
-      ...WedgePatterns.detectWedgePatterns(data, rsi, sma20, sma50)
+      ...WedgePatterns.detectWedgePatterns(data, rsi, sma20, sma50),
+      ...HighTrendlinePatterns.detectHighTrendlinePatterns(data, rsi, sma20, sma50)
     ]
 
     // Filter to recent patterns and deduplicate
@@ -82,6 +84,9 @@ export class TechnicalAnalysis {
     ) as any[]
     const wedges = prioritizedPatterns.filter(p => 
       p.pattern.includes('Wedge')
+    ) as any[]
+    const highTrendlines = prioritizedPatterns.filter(p => 
+      p.pattern.includes('Trendline')
     ) as any[]
     
     // Identify trendlines and entry points
@@ -108,7 +113,8 @@ export class TechnicalAnalysis {
         doublePatterns,
         cupAndHandle,
         flags,
-        wedges
+        wedges,
+        highTrendlines
       },
       trendlines,
       entryPoints,
@@ -141,6 +147,10 @@ export type {
 export type {
   WedgePattern
 } from './wedgePatterns'
+
+export type {
+  HighTrendlinePattern
+} from './highTrendlinePatterns'
 
 // Re-export base utilities
 export { BaseTechnicalAnalysis }

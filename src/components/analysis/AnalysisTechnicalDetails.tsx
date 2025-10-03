@@ -1,5 +1,6 @@
 import React from 'react'
 import type { TechnicalAnalysisData } from '../../services/coingeckoApi'
+import { FaInfoCircle } from 'react-icons/fa'
 
 interface CoinInfo {
   id: string
@@ -11,13 +12,11 @@ interface CoinInfo {
 interface AnalysisTechnicalDetailsProps {
   analysis: TechnicalAnalysisData | null
   coinInfo: CoinInfo | null
-  currentPrice: number | null
 }
 
 const AnalysisTechnicalDetails: React.FC<AnalysisTechnicalDetailsProps> = ({
   analysis,
   coinInfo,
-  currentPrice
 }) => {
   if (!analysis) return null
 
@@ -27,172 +26,6 @@ const AnalysisTechnicalDetails: React.FC<AnalysisTechnicalDetailsProps> = ({
         Technical Indicators Breakdown
       </h3>
 
-      {/* Technical Indicators Summary */}
-      <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
-        <h4 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center">
-          <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          Key Technical Findings for {coinInfo?.name || 'This Asset'}
-        </h4>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Overall Trend Assessment */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-            <h5 className="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
-              <div className={`w-3 h-3 rounded-full mr-2 ${(() => {
-                const macdHistogram = analysis?.macd?.histogram[analysis.macd.histogram.length - 1] || 0
-                const rsi = analysis?.rsi?.[analysis.rsi.length - 1] || 50
-                const sma20 = analysis?.sma20?.[analysis.sma20.length - 1] || 0
-
-                if (macdHistogram > 0 && rsi > 50 && currentPrice && currentPrice > sma20) return 'bg-green-500'
-                if (macdHistogram < 0 && rsi < 50 && currentPrice && currentPrice < sma20) return 'bg-red-500'
-                return 'bg-yellow-500'
-              })()}`}></div>
-              Overall Trend
-            </h5>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {(() => {
-                const macdHistogram = analysis?.macd?.histogram[analysis.macd.histogram.length - 1] || 0
-                const rsi = analysis?.rsi?.[analysis.rsi.length - 1] || 50
-                const sma20 = analysis?.sma20?.[analysis.sma20.length - 1] || 0
-
-                if (macdHistogram > 0 && rsi > 50 && currentPrice && currentPrice > sma20) {
-                  return 'Strong bullish momentum across all indicators'
-                } else if (macdHistogram < 0 && rsi < 50 && currentPrice && currentPrice < sma20) {
-                  return 'Strong bearish momentum across all indicators'
-                } else if (macdHistogram > 0 || (rsi > 50 && currentPrice && currentPrice > sma20)) {
-                  return 'Mixed signals leaning bullish'
-                } else if (macdHistogram < 0 || (rsi < 50 && currentPrice && currentPrice < sma20)) {
-                  return 'Mixed signals leaning bearish'
-                }
-                return 'Neutral trend with conflicting signals'
-              })()}
-            </p>
-          </div>
-
-          {/* Momentum Status */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-            <h5 className="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
-              <div className={`w-3 h-3 rounded-full mr-2 ${(() => {
-                const rsi = analysis?.rsi?.[analysis.rsi.length - 1] || 50
-                if (rsi >= 70) return 'bg-red-500'
-                if (rsi <= 30) return 'bg-green-500'
-                return 'bg-blue-500'
-              })()}`}></div>
-              Momentum Status
-            </h5>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {(() => {
-                const rsi = analysis?.rsi?.[analysis.rsi.length - 1] || 50
-                const macdHistogram = analysis?.macd?.histogram[analysis.macd.histogram.length - 1] || 0
-
-                if (rsi >= 70) return `Overbought (RSI: ${rsi.toFixed(0)}) - consider selling`
-                if (rsi <= 30) return `Oversold (RSI: ${rsi.toFixed(0)}) - consider buying`
-                if (macdHistogram > 0) return `Bullish momentum building (RSI: ${rsi.toFixed(0)})`
-                if (macdHistogram < 0) return `Bearish momentum building (RSI: ${rsi.toFixed(0)})`
-                return `Neutral momentum (RSI: ${rsi.toFixed(0)})`
-              })()}
-            </p>
-          </div>
-
-          {/* Price Position */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-            <h5 className="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
-              <div className={`w-3 h-3 rounded-full mr-2 ${(() => {
-                if (!currentPrice || !analysis?.bollingerBands) return 'bg-gray-400'
-                const upper = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1]
-                const lower = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1]
-                if (currentPrice >= upper) return 'bg-red-500'
-                if (currentPrice <= lower) return 'bg-green-500'
-                return 'bg-blue-500'
-              })()}`}></div>
-              Price Position
-            </h5>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {(() => {
-                if (!currentPrice || !analysis?.bollingerBands) return 'Price data unavailable'
-                const upper = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1]
-                const lower = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1]
-                const middle = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1]
-
-                if (currentPrice >= upper) return `At resistance ($${currentPrice.toFixed(4)} vs $${upper.toFixed(4)})`
-                if (currentPrice <= lower) return `At support ($${currentPrice.toFixed(4)} vs $${lower.toFixed(4)})`
-                if (currentPrice > middle) return `Above middle band ($${currentPrice.toFixed(4)} vs $${middle.toFixed(4)})`
-                return `Below middle band ($${currentPrice.toFixed(4)} vs $${middle.toFixed(4)})`
-              })()}
-            </p>
-          </div>
-
-          {/* Volatility Assessment */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-            <h5 className="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
-              <div className={`w-3 h-3 rounded-full mr-2 ${(() => {
-                if (!analysis?.bollingerBands) return 'bg-gray-400'
-                const upper = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1]
-                const lower = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1]
-                const middle = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1]
-                const bandWidth = ((upper - lower) / middle * 100)
-                if (bandWidth > 10) return 'bg-red-500'
-                if (bandWidth > 5) return 'bg-yellow-500'
-                return 'bg-green-500'
-              })()}`}></div>
-              Volatility Level
-            </h5>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {(() => {
-                if (!analysis?.bollingerBands) return 'Volatility data unavailable'
-                const upper = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1]
-                const lower = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1]
-                const middle = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1]
-                const bandWidth = ((upper - lower) / middle * 100)
-
-                if (bandWidth > 10) return `High volatility (${bandWidth.toFixed(1)}%) - expect large swings`
-                if (bandWidth > 5) return `Moderate volatility (${bandWidth.toFixed(1)}%) - normal movement`
-                return `Low volatility (${bandWidth.toFixed(1)}%) - price may consolidate`
-              })()}
-            </p>
-          </div>
-
-          {/* Risk Level */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-            <h5 className="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
-              <div className={`w-3 h-3 rounded-full mr-2 ${(() => {
-                const rsi = analysis?.rsi?.[analysis.rsi.length - 1] || 50
-                const macdHistogram = analysis?.macd?.histogram[analysis.macd.histogram.length - 1] || 0
-                const volatility = analysis?.bollingerBands ? (() => {
-                  const upper = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1]
-                  const lower = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1]
-                  const middle = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1]
-                  return ((upper - lower) / middle * 100)
-                })() : 5
-
-                if (volatility > 10 || (rsi >= 70 || rsi <= 30)) return 'bg-red-500'
-                if (volatility > 5 || Math.abs(macdHistogram) > 0.05) return 'bg-yellow-500'
-                return 'bg-green-500'
-              })()}`}></div>
-              Risk Assessment
-            </h5>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {(() => {
-                const rsi = analysis?.rsi?.[analysis.rsi.length - 1] || 50
-                const macdHistogram = analysis?.macd?.histogram[analysis.macd.histogram.length - 1] || 0
-                const volatility = analysis?.bollingerBands ? (() => {
-                  const upper = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1]
-                  const lower = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1]
-                  const middle = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1]
-                  return ((upper - lower) / middle * 100)
-                })() : 5
-
-                if (volatility > 10 || (rsi >= 70 || rsi <= 30)) return 'High risk - extreme conditions'
-                if (volatility > 5 || Math.abs(macdHistogram) > 0.05) return 'Medium risk - active market'
-                return 'Low risk - stable conditions'
-              })()}
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Detailed Indicator Analysis */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
         {/* RSI Analysis */}
@@ -201,9 +34,7 @@ const AnalysisTechnicalDetails: React.FC<AnalysisTechnicalDetailsProps> = ({
             <div className="flex items-center space-x-2 mb-3">
               <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">RSI Analysis</h4>
               <div className="group relative">
-                <svg className="w-4 h-4 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <FaInfoCircle className="w-4 h-4 text-gray-400 cursor-help" />
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
                   RSI measures momentum and identifies overbought/oversold conditions
                 </div>
@@ -272,9 +103,7 @@ const AnalysisTechnicalDetails: React.FC<AnalysisTechnicalDetailsProps> = ({
             <div className="flex items-center space-x-2 mb-3">
               <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">MACD Analysis</h4>
               <div className="group relative">
-                <svg className="w-4 h-4 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <FaInfoCircle className="w-4 h-4 text-gray-400 cursor-help" />
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
                   MACD measures momentum by comparing two moving averages
                 </div>

@@ -189,6 +189,27 @@ export interface TechnicalAnalysisData {
       apexIndex?: number
       targetPrice?: number
     }>
+    highTrendlines: Array<{
+      index: number
+      pattern: string
+      signal: 'bullish' | 'bearish' | 'neutral'
+      confidence: number
+      strength: 'weak' | 'moderate' | 'strong'
+      volumeConfirmation?: boolean
+      rsiConfirmation?: boolean
+      maConfirmation?: boolean
+      description: string
+      entryPrice?: number
+      stopLoss?: number
+      takeProfit?: number
+      riskRewardRatio?: number
+      resistanceLevel: number
+      supportLevel: number
+      trendlineSlope?: number
+      breakoutDirection?: 'up' | 'down'
+      breakoutPrice?: number
+      touches: number
+    }>
   }
   trendlines: Trendline[]
   entryPoints: EntryPoint[]

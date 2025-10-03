@@ -170,11 +170,10 @@ const PriceChart: React.FC<PriceChartProps> = ({
         <div className="flex items-center justify-between mb-4">
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full mr-3"></div>
-              Price Analysis
+              Price Chart
             </h4>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {data.interval.toUpperCase()} timeframe with technical indicators
+              Daily price with technical indicators
             </p>
           </div>
           

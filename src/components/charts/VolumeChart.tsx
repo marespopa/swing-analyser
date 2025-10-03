@@ -23,7 +23,6 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ chartData }) => {
         <div className="flex items-center justify-between">
           <div>
             <h4 className="text-lg font-bold text-gray-900 dark:text-white flex items-center">
-              <div className="w-2 h-2 bg-amber-500 rounded-full mr-3"></div>
               Volume
             </h4>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">

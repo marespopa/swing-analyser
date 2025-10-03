@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { usePriceData } from '../hooks/usePriceData'
 import AnalysisResults from '../components/AnalysisResults'
+import { AnalysisProvider } from '../contexts/AnalysisContext'
 
 const AnalysisResultsPage: React.FC = () => {
   console.log('AnalysisResultsPage component is rendering!')
@@ -21,18 +22,70 @@ const AnalysisResultsPage: React.FC = () => {
   console.log('usePriceData hook completed successfully')
   
   const [analysisResults, setAnalysisResults] = useState<any>(null)
+  const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isAnalysisRefreshing, setIsAnalysisRefreshing] = useState(false)
+  const intervalRef = useRef<number | null>(null)
 
-  console.log('coinId from useParams:', coinId);
-  useEffect(() => {
-    console.log('useEffect running - coinId:', coinId);
-    if (!coinId) {
-      console.log('No coinId, navigating to home');
-      navigate('/')
-      return
+  // Manual analysis refresh function (fetches new price data and re-runs analysis)
+  const handleAnalysisRefresh = async () => {
+    if (!coinId) return
+    
+    setIsAnalysisRefreshing(true)
+    
+    try {
+      console.log('AnalysisResultsPage: Refreshing analysis with new price data for coinId:', coinId)
+      
+      // Fetch fresh price data
+      const { currentPrice, historicalData } = await loadAllData(coinId)
+      
+      if (currentPrice && historicalData) {
+        // Transform data to match the expected format for AnalysisResults
+        const priceDataWithVolume = historicalData.prices.map((pricePoint, index) => {
+          const volumePoint = historicalData.volumes[index]
+          return {
+            ...pricePoint,
+            volume: volumePoint ? volumePoint.volume : undefined
+          }
+        })
+
+        const results = {
+          '1d': {
+            coin: { 
+              id: currentPrice.id, 
+              name: currentPrice.name, 
+              symbol: currentPrice.symbol 
+            },
+            interval: '1d',
+            priceData: priceDataWithVolume,
+            currentPriceData: currentPrice
+          }
+        }
+        
+        setAnalysisResults(results)
+        setLastRefreshTime(new Date())
+        
+        console.log('Analysis refreshed successfully with new price data')
+      }
+    } catch (error) {
+      console.error('Error refreshing analysis:', error)
+    } finally {
+      setIsAnalysisRefreshing(false)
     }
+  }
 
+  // Function to fetch and process data
+  const fetchData = async (isAutoRefresh: boolean = false) => {
+    if (!coinId) return
+    
+    if (isAutoRefresh) {
+      setIsRefreshing(true)
+    }
+    
     console.log('AnalysisResultsPage: Fetching data for coinId:', coinId)
-    loadAllData(coinId).then(({ currentPrice, historicalData }) => {
+    try {
+      const { currentPrice, historicalData } = await loadAllData(coinId)
+      
       if (currentPrice && historicalData) {
         // Transform data to match the expected format for AnalysisResults
         // Merge price and volume data
@@ -57,15 +110,81 @@ const AnalysisResultsPage: React.FC = () => {
           }
         }
         setAnalysisResults(results)
-      } else {
+        setLastRefreshTime(new Date())
+      } else if (!isAutoRefresh) {
+        // Only navigate away on initial load failure, not auto-refresh failures
         navigate('/', { 
           state: { 
             message: error || 'Failed to fetch analysis data. Please check your API key and try again.' 
           } 
         })
       }
-    })
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      if (!isAutoRefresh) {
+        navigate('/', { 
+          state: { 
+            message: 'Failed to fetch analysis data. Please check your API key and try again.' 
+          } 
+        })
+      }
+    } finally {
+      if (isAutoRefresh) {
+        setIsRefreshing(false)
+      }
+    }
+  }
+
+  console.log('coinId from useParams:', coinId);
+  useEffect(() => {
+    console.log('useEffect running - coinId:', coinId);
+    if (!coinId) {
+      console.log('No coinId, navigating to home');
+      navigate('/')
+      return
+    }
+
+    // Initial data fetch
+    fetchData(false)
+
+    // Set up auto-refresh interval (60 seconds)
+    intervalRef.current = setInterval(() => {
+      fetchData(true)
+    }, 60000) // 60 seconds
+
+    // Cleanup function
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+    }
   }, [coinId, navigate, loadAllData, error])
+
+  // Update page title with coin name and current price
+  useEffect(() => {
+    if (analysisResults && analysisResults['1d']?.coin && analysisResults['1d']?.currentPriceData) {
+      const coin = analysisResults['1d'].coin
+      const currentPrice = analysisResults['1d'].currentPriceData.currentPrice
+      
+      // Format price with appropriate decimal places
+      const formattedPrice = currentPrice >= 1 
+        ? `$${currentPrice.toFixed(2)}`
+        : `$${currentPrice.toFixed(6)}`
+      
+      document.title = `${formattedPrice} - ${coin.name} (${coin.symbol.toUpperCase()}) | Swing Analyzer`
+    } else if (coinId) {
+      // Fallback title while loading
+      document.title = `Loading ${coinId} Analysis | Swing Analyzer`
+    }
+  }, [analysisResults, coinId])
+
+  // Reset title when component unmounts
+  useEffect(() => {
+    return () => {
+      document.title = 'Swing Analyzer'
+    }
+  }, [])
 
   if (!analysisResults && isLoading) {
     return (
@@ -85,11 +204,18 @@ const AnalysisResultsPage: React.FC = () => {
   }
 
   return (
-    <AnalysisResults
-      results={analysisResults}
-      isPriceLoading={isLoading}
-      isInitialLoading={isLoading}
-    />
+    <AnalysisProvider
+      isAnalysisRefreshing={isAnalysisRefreshing}
+      onAnalysisRefresh={handleAnalysisRefresh}
+      lastRefreshTime={lastRefreshTime}
+    >
+      <AnalysisResults
+        results={analysisResults}
+        isPriceLoading={isLoading || isRefreshing}
+        isInitialLoading={isLoading}
+        isRefreshing={isRefreshing}
+      />
+    </AnalysisProvider>
   )
 }
 

@@ -26,7 +26,6 @@ const MACDChart: React.FC<MACDChartProps> = ({ chartData }) => {
         <div className="flex items-center justify-between">
           <div>
             <h4 className="text-lg font-bold text-gray-900 dark:text-white flex items-center">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
               MACD (Moving Average Convergence Divergence)
             </h4>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">

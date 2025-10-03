@@ -1,4 +1,6 @@
 
+import { FaInfoCircle } from 'react-icons/fa'
+
 interface TradingRecommendation {
   action: string
   signalColor: 'green' | 'amber' | 'red'
@@ -36,9 +38,7 @@ const AnalysisMetrics = ({
         </div>
         <div className="text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center justify-center">
           Recommendation
-          <svg className="w-3 h-3 ml-1 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <FaInfoCircle className="w-3 h-3 ml-1 text-gray-400 cursor-help" />
         </div>
         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
           Trading recommendation based on technical analysis
@@ -60,9 +60,7 @@ const AnalysisMetrics = ({
             : pricePosition?.position === 'Below Lower Band' ? 'Oversold'
               : pricePosition?.position === 'Within Bands' ? 'Normal Range'
                 : 'Price Position'}
-          <svg className="w-3 h-3 ml-1 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <FaInfoCircle className="w-3 h-3 ml-1 text-gray-400 cursor-help" />
         </div>
         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
           {pricePosition?.position === 'Above Upper Band' ? 'Price is above normal range - potential selling opportunity'
@@ -82,9 +80,7 @@ const AnalysisMetrics = ({
         </div>
         <div className="text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center justify-center">
           {tradingRecommendation?.strength || 'Trend'}
-          <svg className="w-3 h-3 ml-1 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <FaInfoCircle className="w-3 h-3 ml-1 text-gray-400 cursor-help" />
         </div>
         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
           Overall market direction and momentum strength based on technical indicators

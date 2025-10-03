@@ -1,5 +1,7 @@
 import Button from '../ui/Button'
 import FavouriteButton from '../FavouriteButton'
+import { useAnalysisContext } from '../../contexts/AnalysisContext'
+import { MdRefresh } from 'react-icons/md'
 
 interface CoinInfo {
   id: string
@@ -13,7 +15,6 @@ interface AnalysisHeaderProps {
   currentPrice: number | null
   priceChange24h?: number | null
   onBack: () => void
-  onRefresh?: () => void
   isPriceLoading?: boolean
 }
 
@@ -22,62 +23,77 @@ const AnalysisHeader = ({
   currentPrice,
   priceChange24h,
   onBack,
-  onRefresh,
   isPriceLoading = false
 }: AnalysisHeaderProps) => {
+  const { isAnalysisRefreshing, onAnalysisRefresh } = useAnalysisContext()
   return (
     <div className="mb-6">
       {coinInfo && (
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {coinInfo.name}
-              </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-400">
-                {coinInfo.symbol?.toUpperCase()}
-              </p>
-            </div>
+        <div className="space-y-4 mb-4">
+          {/* Mobile-first responsive layout */}
+          {/* Coin info - always visible */}
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+              {coinInfo.name}
+            </h1>
+            <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400">
+              {coinInfo.symbol?.toUpperCase()}
+            </p>
           </div>
+
+          {/* Price and controls - responsive layout */}
           {(currentPrice || isPriceLoading) && (
-            <div className="text-right">
-              {isPriceLoading ? (
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
-                  <p className="text-lg text-gray-600 dark:text-gray-400">
-                    Updating price...
-                  </p>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-3">
-                  <p className={`text-3xl font-bold ${
-                    priceChange24h && priceChange24h > 0 
-                      ? 'text-green-600 dark:text-green-400'
-                      : priceChange24h && priceChange24h < 0
-                        ? 'text-red-600 dark:text-red-400'
-                        : 'text-primary-600 dark:text-primary-400'
-                  }`}>
-                    ${currentPrice?.toLocaleString(undefined, {
-                      minimumFractionDigits: 4,
-                      maximumFractionDigits: 4
-                    })}
-                  </p>
-                  {onRefresh && (
-                    <button
-                      onClick={onRefresh}
-                      className="p-2 text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors"
-                      title="Refresh price"
-                    >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
+            <div className="space-y-3">
+              {!isPriceLoading && (
+                <>
+                  {/* Price and refresh button - responsive flex */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center justify-center sm:justify-start gap-3">
+                      {onAnalysisRefresh && (
+                        <Button
+                          onClick={onAnalysisRefresh}
+                          variant="primary"
+                          size="sm"
+                          className="px-3 py-2 !min-h-auto text-sm flex-shrink-0 shadow-sm"
+                          title="Get fresh technical analysis with latest price data and updated indicators"
+                          disabled={isAnalysisRefreshing}
+                        >
+                          {isAnalysisRefreshing ? (
+                            <div className="flex items-center space-x-2">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
+                              <span className='text-sm'>Refreshing...</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-2">
+                              <MdRefresh className="w-4 h-4" />
+                              <span className='text-sm'>Refresh Analysis</span>
+                            </div>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {/* Price display - centered on mobile, right-aligned on larger screens */}
+                    <div className="text-center sm:text-right">
+                      <p className={`text-2xl sm:text-3xl font-bold ${
+                        priceChange24h && priceChange24h > 0 
+                          ? 'text-green-600 dark:text-green-400'
+                          : priceChange24h && priceChange24h < 0
+                            ? 'text-red-600 dark:text-red-400'
+                            : 'text-primary-600 dark:text-primary-400'
+                      }`}>
+                        ${currentPrice?.toLocaleString(undefined, {
+                          minimumFractionDigits: 6,
+                          maximumFractionDigits: 6
+                        })}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {isPriceLoading ? 'Refreshing...' : 'Current Price'}
+                      </p>
+                    </div>
+                  </div>
+                </>
               )}
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {isPriceLoading ? 'Refreshing...' : 'Current Price'}
-              </p>
             </div>
           )}
         </div>

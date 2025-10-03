@@ -9,6 +9,7 @@ import AnalysisMetrics from './analysis/AnalysisMetrics'
 import AnalysisChart from './analysis/AnalysisChart'
 import AnalysisTechnicalDetails from './analysis/AnalysisTechnicalDetails'
 import AnalysisFibonacciLevels from './analysis/AnalysisFibonacciLevels'
+import { useAnalysisContext } from '../contexts/AnalysisContext'
 
 interface AnalysisResultsProps {
   results: {
@@ -22,14 +23,17 @@ interface AnalysisResultsProps {
   }
   isPriceLoading?: boolean
   isInitialLoading?: boolean
+  isRefreshing?: boolean
 }
 
 const AnalysisResults: React.FC<AnalysisResultsProps> = ({ 
   results, 
   isPriceLoading = false, 
   isInitialLoading = false,
+  isRefreshing = false,
 }) => {
   const navigate = useNavigate()
+  const { lastRefreshTime } = useAnalysisContext()
 
   const processedResults: { [key: string]: TechnicalAnalysisData | null } = {}
   const errors: { [key: string]: string } = {}
@@ -166,7 +170,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
       ...analysis.patternDetection.doublePatterns,
       ...analysis.patternDetection.cupAndHandle,
       ...analysis.patternDetection.flags,
-      ...analysis.patternDetection.wedges
+      ...analysis.patternDetection.wedges,
+      ...analysis.patternDetection.highTrendlines
     ] : []
 
     // Convert to the format expected by the trading recommendation
@@ -398,9 +403,22 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           pricePosition={pricePosition}
         />
 
-        {/* Analysis Timestamp */}
-        <div className="text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 pt-4">
-          Analysis generated on {analysisTimestamp}
+        {/* Analysis Timestamp and Auto-refresh Status */}
+        <div className="text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 pt-4 flex items-center justify-between">
+          <div>
+            Analysis generated on {analysisTimestamp}
+            {lastRefreshTime && (
+              <span className="ml-2">
+                • Last updated: {lastRefreshTime.toLocaleTimeString()}
+              </span>
+            )}
+          </div>
+          {isRefreshing && (
+            <div className="flex items-center text-blue-600 dark:text-blue-400">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+              <span className="text-xs">Refreshing...</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -414,7 +432,6 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
       <AnalysisTechnicalDetails
         analysis={analysis || null}
         coinInfo={coinInfo}
-        currentPrice={currentPrice}
       />
 
       {/* Technical Analysis Chart */}

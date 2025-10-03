@@ -167,11 +167,11 @@ const AnalysisFibonacciLevels = ({ analysis, currentPrice: propCurrentPrice }: A
           </div>
           <div>
             <span className="font-medium text-gray-600 dark:text-gray-400">Swing High:</span>
-            <span className="ml-1 font-mono">${actualSwingHigh.toFixed(4)}</span>
+            <span className="ml-1 font-mono">${actualSwingHigh.toFixed(6)}</span>
           </div>
           <div>
             <span className="font-medium text-gray-600 dark:text-gray-400">Swing Low:</span>
-            <span className="ml-1 font-mono">${actualSwingLow.toFixed(4)}</span>
+            <span className="ml-1 font-mono">${actualSwingLow.toFixed(6)}</span>
           </div>
         </div>
       </div>
@@ -180,7 +180,7 @@ const AnalysisFibonacciLevels = ({ analysis, currentPrice: propCurrentPrice }: A
       <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
         <div className="text-sm">
           <span className="font-medium text-gray-600 dark:text-gray-400">Current Price:</span>
-          <span className="ml-1 font-mono font-semibold text-lg">${currentPrice.toFixed(4)}</span>
+          <span className="ml-1 font-mono font-semibold text-lg">${currentPrice.toFixed(6)}</span>
         </div>
         <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
           {direction} <strong>{closestLevel.name}</strong> by <strong>{Math.abs(parseFloat(distance))}%</strong>
@@ -225,7 +225,7 @@ const AnalysisFibonacciLevels = ({ analysis, currentPrice: propCurrentPrice }: A
                   {isCurrent && <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">(Current)</span>}
                 </div>
                 <div className="font-mono font-semibold">
-                  ${level.value.toFixed(4)}
+                  ${level.value.toFixed(6)}
                 </div>
               </div>
             )
