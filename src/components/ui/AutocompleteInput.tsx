@@ -8,7 +8,7 @@ interface SearchResult {
   marketCapRank: number | null
 }
 
-interface AutocompleteInputProps extends Omit<InputProps, 'onChange' | 'value'> {
+interface AutocompleteInputProps extends Omit<InputProps, 'onChange' | 'value' | 'onSelect'> {
   value: string
   onChange: (value: string) => void
   onSelect: (item: SearchResult) => void
@@ -19,6 +19,8 @@ interface AutocompleteInputProps extends Omit<InputProps, 'onChange' | 'value'> 
   minSearchLength?: number
   maxResults?: number
   className?: string
+  variant?: 'default' | 'filled' | 'outline'
+  inputSize?: 'sm' | 'md' | 'lg'
 }
 
 const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
@@ -182,7 +184,7 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   
   const errorClasses = error ? 'border-red-500 focus:border-red-500 focus:ring-red-400' : ''
   
-  const inputClasses = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[inputSize]} ${errorClasses} ${className}`
+  const inputClasses = `${baseClasses} ${variantClasses[variant as keyof typeof variantClasses]} ${sizeClasses[inputSize as keyof typeof sizeClasses]} ${errorClasses} ${className}`
 
   return (
     <div className="space-y-2 relative">
