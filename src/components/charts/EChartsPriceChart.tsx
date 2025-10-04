@@ -1,7 +1,14 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import ReactECharts from 'echarts-for-react'
 import type { TechnicalAnalysisData, ChartDataPoint, ToggleState } from '../../types'
 import { CHART_HEIGHTS } from '../../constants/chart'
+import { 
+  filterChartDataByTimeRange, 
+  getDefaultTimeRange, 
+  formatTimeRange,
+  type TimeRange 
+} from '../../utils/chartDataFilter'
+import { FaCalendarAlt, FaExpandArrowsAlt, FaCompressArrowsAlt } from 'react-icons/fa'
 
 interface EChartsPriceChartProps {
   data: TechnicalAnalysisData
@@ -18,57 +25,72 @@ const EChartsPriceChart: React.FC<EChartsPriceChartProps> = ({
   onToggleChange,
   height = CHART_HEIGHTS.main 
 }) => {
+  // Detect mobile device for responsive height
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+  const responsiveHeight = isMobile ? CHART_HEIGHTS.mainMobile : height
+  
+  // Time range state
+  const [timeRange] = useState<TimeRange>(() => getDefaultTimeRange(chartData))
+  const [showFullRange, setShowFullRange] = useState(false)
+  
+  // Filter chart data based on time range
+  const filteredChartData = useMemo(() => {
+    if (showFullRange) {
+      return chartData
+    }
+    return filterChartDataByTimeRange(chartData, timeRange)
+  }, [chartData, timeRange, showFullRange])
   
   // Prepare data for ECharts line format
   const echartsData = useMemo(() => {
-    return chartData.map(point => [point.timestamp, point.price])
-  }, [chartData])
+    return filteredChartData.map(point => [point.timestamp, point.price])
+  }, [filteredChartData])
 
   // Prepare moving averages data
   const sma20Data = useMemo(() => {
     if (!toggles.showSMA20) return []
-    return chartData
+    return filteredChartData
       .map((point, index) => [point.timestamp, data.sma20[index]])
       .filter(item => !isNaN(item[1] as number))
-  }, [chartData, data.sma20, toggles.showSMA20])
+  }, [filteredChartData, data.sma20, toggles.showSMA20])
 
   const sma50Data = useMemo(() => {
     if (!toggles.showSMA50) return []
-    return chartData
+    return filteredChartData
       .map((point, index) => [point.timestamp, data.sma50[index]])
       .filter(item => !isNaN(item[1] as number))
-  }, [chartData, data.sma50, toggles.showSMA50])
+  }, [filteredChartData, data.sma50, toggles.showSMA50])
 
   const sma9Data = useMemo(() => {
     if (!toggles.showSMA9) return []
-    return chartData
+    return filteredChartData
       .map((point, index) => [point.timestamp, data.ema9[index]])
       .filter(item => !isNaN(item[1] as number))
-  }, [chartData, data.ema9, toggles.showSMA9])
+  }, [filteredChartData, data.ema9, toggles.showSMA9])
 
   const ema21Data = useMemo(() => {
     if (!toggles.showEMA21) return []
-    return chartData
+    return filteredChartData
       .map((point, index) => [point.timestamp, data.ema20[index]])
       .filter(item => !isNaN(item[1] as number))
-  }, [chartData, data.ema20, toggles.showEMA21])
+  }, [filteredChartData, data.ema20, toggles.showEMA21])
 
   // Prepare Bollinger Bands data
   const bollingerBandsData = useMemo(() => {
     if (!data.bollingerBands || !toggles.showBollingerBands) return { upper: [], middle: [], lower: [] }
     
     return {
-      upper: chartData
+      upper: filteredChartData
         .map((point, index) => [point.timestamp, data.bollingerBands!.upper[index]])
         .filter(item => !isNaN(item[1] as number)),
-      middle: chartData
+      middle: filteredChartData
         .map((point, index) => [point.timestamp, data.bollingerBands!.middle[index]])
         .filter(item => !isNaN(item[1] as number)),
-      lower: chartData
+      lower: filteredChartData
         .map((point, index) => [point.timestamp, data.bollingerBands!.lower[index]])
         .filter(item => !isNaN(item[1] as number))
     }
-  }, [chartData, data.bollingerBands, toggles.showBollingerBands])
+  }, [filteredChartData, data.bollingerBands, toggles.showBollingerBands])
 
   const option = useMemo(() => {
     const series: any[] = []
@@ -262,6 +284,14 @@ const EChartsPriceChart: React.FC<EChartsPriceChartProps> = ({
           }
         }
       },
+      dataZoom: [
+        {
+          type: 'inside',
+          start: 0,
+          end: 100,
+          zoomLock: false
+        }
+      ],
       series
     }
   }, [echartsData, sma20Data, sma50Data, sma9Data, ema21Data, bollingerBandsData, toggles, data.bollingerBands])
@@ -280,34 +310,55 @@ const EChartsPriceChart: React.FC<EChartsPriceChartProps> = ({
           </div>
           
           {/* Chart Controls */}
-          {onToggleChange && (
-            <div className="flex items-center space-x-4">
-              {/* Indicator Toggles */}
-              <div className="flex items-center space-x-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            {/* Time Range Controls */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-md">
+                <FaCalendarAlt className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {showFullRange ? 'All Data' : formatTimeRange(timeRange)}
+                </span>
+              </div>
+              <button
+                onClick={() => setShowFullRange(!showFullRange)}
+                className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                title={showFullRange ? 'Show last 3 months' : 'Show all data'}
+              >
+                {showFullRange ? (
+                  <FaCompressArrowsAlt className="w-4 h-4" />
+                ) : (
+                  <FaExpandArrowsAlt className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+
+            {/* Indicator Toggles */}
+            {onToggleChange && (
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 {/* EMA 9 Toggle */}
                 <div 
-                  className="flex items-center space-x-1 cursor-pointer group hover:bg-gray-50 dark:hover:bg-gray-700 px-2 py-1 rounded transition-colors"
+                  className="flex items-center space-x-2 cursor-pointer group hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-2 rounded-md transition-colors min-h-[44px] touch-manipulation"
                   onClick={() => onToggleChange('showSMA9', !toggles.showSMA9)}
                 >
                   <div 
-                    className="w-3 h-3 rounded-sm border border-gray-300 dark:border-gray-600"
+                    className="w-4 h-4 rounded-sm border border-gray-300 dark:border-gray-600 flex-shrink-0"
                     style={{ backgroundColor: toggles.showSMA9 ? '#8B5CF6' : '#E5E7EB' }}
                   />
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     EMA 9
                   </span>
                 </div>
 
                 {/* EMA 21 Toggle */}
                 <div 
-                  className="flex items-center space-x-1 cursor-pointer group hover:bg-gray-50 dark:hover:bg-gray-700 px-2 py-1 rounded transition-colors"
+                  className="flex items-center space-x-2 cursor-pointer group hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-2 rounded-md transition-colors min-h-[44px] touch-manipulation"
                   onClick={() => onToggleChange('showEMA21', !toggles.showEMA21)}
                 >
                   <div 
-                    className="w-3 h-3 rounded-sm border border-gray-300 dark:border-gray-600"
+                    className="w-4 h-4 rounded-sm border border-gray-300 dark:border-gray-600 flex-shrink-0"
                     style={{ backgroundColor: toggles.showEMA21 ? '#10B981' : '#E5E7EB' }}
                   />
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     EMA 21
                   </span>
                 </div>
@@ -315,29 +366,28 @@ const EChartsPriceChart: React.FC<EChartsPriceChartProps> = ({
                 {/* Bollinger Bands Toggle */}
                 {data.bollingerBands && (
                   <div 
-                    className="flex items-center space-x-1 cursor-pointer group hover:bg-gray-50 dark:hover:bg-gray-700 px-2 py-1 rounded transition-colors"
+                    className="flex items-center space-x-2 cursor-pointer group hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-2 rounded-md transition-colors min-h-[44px] touch-manipulation"
                     onClick={() => onToggleChange('showBollingerBands', !toggles.showBollingerBands)}
                   >
                     <div 
-                      className="w-3 h-3 rounded-sm border border-gray-300 dark:border-gray-600"
+                      className="w-4 h-4 rounded-sm border border-gray-300 dark:border-gray-600 flex-shrink-0"
                       style={{ backgroundColor: toggles.showBollingerBands ? '#C084FC' : '#E5E7EB' }}
                     />
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Bollinger Bands
                     </span>
                   </div>
                 )}
               </div>
-              
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
       
       <ReactECharts
         key={`${toggles.showSMA9}-${toggles.showEMA21}-${toggles.showBollingerBands}`}
         option={option}
-        style={{ height: height, width: '100%' }}
+        style={{ height: responsiveHeight, width: '100%' }}
         opts={{ 
           renderer: 'canvas'
         }}

@@ -1,5 +1,5 @@
 import React from 'react'
-import { calculateBullishnessScore, type BullishnessScore } from '../../utils/bullishnessIndicator'
+import { calculateBullishnessScore } from '../../utils/bullishnessIndicator'
 import type { TechnicalAnalysisData, ChartDataPoint } from '../../types'
 
 interface BullishnessIndicatorProps {

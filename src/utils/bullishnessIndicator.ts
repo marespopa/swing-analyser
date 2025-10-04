@@ -166,10 +166,10 @@ export class BullishnessIndicator {
     if (!this.data.volumeAnalysis) return 50
 
     const volumeRatio = this.data.volumeAnalysis.volumeRatio
-    const volumeSMA = this.data.volumeAnalysis.volumeSMA
+    // const volumeSMA = this.data.volumeAnalysis.volumeSMA
 
     const latestRatio = volumeRatio[volumeRatio.length - 1]
-    const latestSMA = volumeSMA[volumeSMA.length - 1]
+    // const latestSMA = volumeSMA[volumeSMA.length - 1]
 
     let score = 50
 

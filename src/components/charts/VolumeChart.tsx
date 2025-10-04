@@ -1,24 +1,102 @@
-import React from 'react'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer
-} from 'recharts'
+import React, { useMemo } from 'react'
+import ReactECharts from 'echarts-for-react'
 import type { ChartDataPoint } from '../../types'
-import { CHART_MARGINS, CHART_HEIGHTS } from '../../constants/chart'
-import CustomTooltip from './CustomTooltip'
+import { CHART_HEIGHTS } from '../../constants/chart'
 
 interface VolumeChartProps {
   chartData: ChartDataPoint[]
 }
 
 const VolumeChart: React.FC<VolumeChartProps> = ({ chartData }) => {
+  // Detect mobile device for responsive height
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+  const responsiveHeight = isMobile ? CHART_HEIGHTS.volumeMobile : CHART_HEIGHTS.volume
+
+  // Prepare data for ECharts
+  const volumeData = useMemo(() => {
+    return chartData
+      .map(point => [point.timestamp, point.volume])
+      .filter(item => !isNaN(item[1] as number) && item[1] !== null)
+  }, [chartData])
+
+  const option = useMemo(() => ({
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '10%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'time',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: {
+        color: '#6B7280',
+        fontSize: 11
+      },
+      splitLine: { show: false }
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: {
+        color: '#6B7280',
+        fontSize: 11,
+        formatter: (value: number) => {
+          if (value >= 1e9) return `${(value/1e9).toFixed(1)}B`
+          if (value >= 1e6) return `${(value/1e6).toFixed(1)}M`
+          if (value >= 1e3) return `${(value/1e3).toFixed(1)}K`
+          return `${value}`
+        }
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#E5E7EB',
+          type: 'dashed',
+          opacity: 0.5
+        }
+      }
+    },
+    series: [
+      {
+        name: 'Volume',
+        type: 'bar',
+        data: volumeData,
+        itemStyle: {
+          color: '#60A5FA'
+        },
+        barWidth: '60%'
+      }
+    ],
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      borderColor: '#374151',
+      textStyle: {
+        color: '#F9FAFB',
+        fontSize: 12
+      },
+      formatter: (params: any) => {
+        const data = params[0]
+        const date = new Date(data.axisValue).toLocaleString()
+        const value = data.value[1]
+        const formattedValue = value >= 1e9 
+          ? `${(value/1e9).toFixed(2)}B`
+          : value >= 1e6 
+          ? `${(value/1e6).toFixed(2)}M`
+          : value >= 1e3 
+          ? `${(value/1e3).toFixed(2)}K`
+          : value.toFixed(0)
+        
+        return `${date}<br/>Volume: ${formattedValue}`
+      }
+    }
+  }), [volumeData])
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
       <div className="mb-4">
         <div className="flex items-center justify-between">
           <div>
@@ -32,45 +110,17 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ chartData }) => {
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={CHART_HEIGHTS.volume}>
-        <BarChart data={chartData} margin={CHART_MARGINS}>
-          <CartesianGrid 
-            strokeDasharray="1 3" 
-            stroke="#E5E7EB" 
-            opacity={0.5}
-            vertical={false}
-          />
-          <XAxis 
-            dataKey="time" 
-            stroke="#9CA3AF"
-            fontSize={11}
-            tick={{ fill: '#6B7280' }}
-            axisLine={false}
-            tickLine={false}
-            tickMargin={8}
-          />
-          <YAxis 
-            stroke="#9CA3AF"
-            fontSize={11}
-            tick={{ fill: '#6B7280' }}
-            axisLine={false}
-            tickLine={false}
-            tickMargin={8}
-            tickFormatter={(v: number) => {
-              if (v >= 1e9) return `${(v/1e9).toFixed(1)}B`
-              if (v >= 1e6) return `${(v/1e6).toFixed(1)}M`
-              if (v >= 1e3) return `${(v/1e3).toFixed(1)}K`
-              return `${v}`
-            }}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar dataKey="volume" fill="#60A5FA" name="Volume" />
-        </BarChart>
-      </ResponsiveContainer>
+      <ReactECharts
+        option={option}
+        style={{ height: responsiveHeight, width: '100%' }}
+        opts={{ 
+          renderer: 'canvas'
+        }}
+        notMerge={true}
+        lazyUpdate={true}
+      />
     </div>
   )
 }
 
 export default React.memo(VolumeChart)
-
-

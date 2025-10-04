@@ -44,9 +44,13 @@ export const CHART_MARGINS = {
 
 export const CHART_HEIGHTS = {
   main: 300,
+  mainMobile: 250,  // Smaller height for mobile
   rsi: 150,
+  rsiMobile: 120,   // Smaller height for mobile
   macd: 150,
-  volume: 120
+  macdMobile: 120,  // Smaller height for mobile
+  volume: 120,
+  volumeMobile: 100 // Smaller height for mobile
 } as const
 
 export const RSI_LEVELS = {

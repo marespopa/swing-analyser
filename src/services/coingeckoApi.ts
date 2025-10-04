@@ -336,7 +336,7 @@ class CoinGeckoAPI {
 
   async getHistoricalData(
     coinId: string, 
-    interval: '1d', // Only daily data for free tier optimization
+    _interval: '1d', // Only daily data for free tier optimization
     days: number = 30
   ): Promise<CoinGeckoResponse> {
     const vs_currency = 'usd'
