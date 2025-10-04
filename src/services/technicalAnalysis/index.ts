@@ -30,6 +30,11 @@ export class TechnicalAnalysis {
     const sma50 = BaseTechnicalAnalysis.calculateSMA(prices, 50)
     const rsi = BaseTechnicalAnalysis.calculateRSI(prices, 14)
     
+    // Calculate EMAs for crypto entry decisions (9, 20, 50 periods)
+    const ema9 = BaseTechnicalAnalysis.calculateEMA(prices, 9)
+    const ema20 = BaseTechnicalAnalysis.calculateEMA(prices, 20)
+    const ema50 = BaseTechnicalAnalysis.calculateEMA(prices, 50)
+    
     // Calculate volume analysis
     const volumeAnalysis = BaseTechnicalAnalysis.calculateVolumeAnalysis(volumes)
     
@@ -98,6 +103,9 @@ export class TechnicalAnalysis {
       data,
       sma20,
       sma50,
+      ema9,
+      ema20,
+      ema50,
       rsi,
       macd,
       bollingerBands,

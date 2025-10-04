@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import ThemeToggle from './ui/ThemeToggle'
-import { FaCheckCircle } from 'react-icons/fa'
+import { FaCheckCircle, FaBook, FaChartLine } from 'react-icons/fa'
 
 const Navigation = () => {
   return (
@@ -13,7 +13,21 @@ const Navigation = () => {
             </div>
             <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">SwingAnalyser</span>
           </Link>
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
+            <Link
+              to="/"
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+            >
+              <FaChartLine className="w-4 h-4" />
+              Analysis
+            </Link>
+            <Link
+              to="/trade-log"
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+            >
+              <FaBook className="w-4 h-4" />
+              Trade Log
+            </Link>
             <ThemeToggle />
           </div>
         </div>

@@ -82,10 +82,17 @@ export const calculateVolatilityScore = (
 }
 
 export const formatVolatilityAnalysis = (volatilityScore: VolatilityScore): string => {
-  let analysis = `## 📊 Volatility Score\n\n`
+  let analysis = `## Volatility Analysis\n\n`
   
-  analysis += `${volatilityScore.color} **Volatility Score**: ${volatilityScore.score}/100 (${volatilityScore.level})\n\n`
-  analysis += `💡 **Recommendation**: ${volatilityScore.recommendation}\n\n`
+  analysis += `**Volatility Score**: ${volatilityScore.score}/100 (${volatilityScore.level})\n\n`
+  analysis += `**Recommendation**: ${volatilityScore.recommendation}\n\n`
   
   return analysis
+}
+
+export const generateVolatilityAnalysisSection = (
+  tradingRecommendation: TradingRecommendation
+): string => {
+  const volatilityScore = calculateVolatilityScore(tradingRecommendation, 0)
+  return formatVolatilityAnalysis(volatilityScore)
 }

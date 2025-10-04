@@ -22,22 +22,22 @@ export const getDetectedPatterns = (analysis: TechnicalAnalysisData): string[] =
 export const formatChartPatterns = (patterns: string[]): string => {
   if (patterns.length === 0) return ''
   
-  let formatted = `## 🔍 Chart Patterns Detected\n\n`
+  let formatted = `## Chart Patterns\n\n`
   
   const patternDescriptions: { [key: string]: string } = {
-    'Double Bottom': '🔄 Double Bottom pattern forming - typically signals a bullish reversal as selling pressure appears exhausted.',
-    'Double Top': '🔄 Double Top pattern emerged - often signals a bearish reversal as buying pressure weakens.',
-    'Ascending Triangle': '📈 Ascending Triangle developing - typically signals a bullish continuation with higher lows and constant resistance.',
-    'Descending Triangle': '📉 Descending Triangle forming - often signals a bearish continuation with lower highs and constant support.',
-    'Symmetrical Triangle': '⚖️ Symmetrical Triangle emerging - indicates consolidation before a potential breakout in either direction.',
-    'Head and Shoulders': '👤 Head and Shoulders pattern formed - typically signals a bearish reversal with the head being the highest peak.',
-    'Cup and Handle': '☕ Cup and Handle pattern developing - a bullish continuation pattern indicating potential upward movement.',
-    'Bull Flag': '🚩 Bull Flag pattern forming - typically signals a bullish continuation after a strong upward move.',
-    'Bear Flag': '🚩 Bear Flag pattern emerged - often signals a bearish continuation after a strong downward move.',
-    'Rising Wedge': '📐 Rising Wedge pattern forming - typically signals a bearish reversal despite rising prices.',
-    'Falling Wedge': '📐 Falling Wedge pattern developing - actually a bullish reversal pattern despite falling prices.',
-    'Rising Trendline': '📈 Rising Trendline (Support) - multiple touches creating ascending support, typically signals bullish continuation.',
-    'Falling Trendline': '📉 Falling Trendline (Resistance) - multiple touches creating descending resistance, typically signals bearish continuation.'
+    'Double Bottom': 'Double Bottom pattern forming - typically signals a bullish reversal as selling pressure appears exhausted.',
+    'Double Top': 'Double Top pattern emerged - often signals a bearish reversal as buying pressure weakens.',
+    'Ascending Triangle': 'Ascending Triangle developing - typically signals a bullish continuation with higher lows and constant resistance.',
+    'Descending Triangle': 'Descending Triangle forming - often signals a bearish continuation with lower highs and constant support.',
+    'Symmetrical Triangle': 'Symmetrical Triangle emerging - indicates consolidation before a potential breakout in either direction.',
+    'Head and Shoulders': 'Head and Shoulders pattern formed - typically signals a bearish reversal with the head being the highest peak.',
+    'Cup and Handle': 'Cup and Handle pattern developing - a bullish continuation pattern indicating potential upward movement.',
+    'Bull Flag': 'Bull Flag pattern forming - typically signals a bullish continuation after a strong upward move.',
+    'Bear Flag': 'Bear Flag pattern emerged - often signals a bearish continuation after a strong downward move.',
+    'Rising Wedge': 'Rising Wedge pattern forming - typically signals a bearish reversal despite rising prices.',
+    'Falling Wedge': 'Falling Wedge pattern developing - actually a bullish reversal pattern despite falling prices.',
+    'Rising Trendline': 'Rising Trendline (Support) - multiple touches creating ascending support, typically signals bullish continuation.',
+    'Falling Trendline': 'Falling Trendline (Resistance) - multiple touches creating descending resistance, typically signals bearish continuation.'
   }
   
   // Add descriptions for all detected patterns
@@ -75,7 +75,7 @@ export const generateRSITrendlineAnalysis = (analysis: TechnicalAnalysisData): s
     const distanceToSupport = ((currentPrice - supportLevel) / supportLevel) * 100
     const distanceToResistance = ((resistanceLevel - currentPrice) / currentPrice) * 100
     
-    analysisText += `## 📊 RSI + Trendline Breakout Analysis\n\n`
+    analysisText += `## RSI + Trendline Analysis\n\n`
     
     if (pattern === 'Rising Trendline') {
       // Rising trendline (support) analysis
@@ -142,4 +142,12 @@ export const generateRSITrendlineAnalysis = (analysis: TechnicalAnalysisData): s
   }
   
   return analysisText
+}
+
+export const generatePatternAnalysisSection = (analysis: TechnicalAnalysisData): string => {
+  const patterns = getDetectedPatterns(analysis)
+  const patternAnalysis = formatChartPatterns(patterns)
+  const rsiTrendlineAnalysis = generateRSITrendlineAnalysis(analysis)
+  
+  return patternAnalysis + rsiTrendlineAnalysis
 }

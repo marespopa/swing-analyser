@@ -34,17 +34,13 @@ export const generateRiskAssessment = (
   
   // Determine risk level
   let riskLevel: 'Low' | 'Medium' | 'High' = 'Medium'
-  let riskColor = '🟡'
   
   if (riskScore >= 70) {
     riskLevel = 'High'
-    riskColor = '🔴'
   } else if (riskScore >= 40) {
     riskLevel = 'Medium'
-    riskColor = '🟡'
   } else {
     riskLevel = 'Low'
-    riskColor = '🟢'
   }
   
   // Risk factors
@@ -82,22 +78,23 @@ export const generateRiskAssessment = (
   return {
     riskLevel,
     riskScore,
-    riskColor,
     riskFactors: riskFactors.length > 0 ? riskFactors : ['- No major risk factors identified'],
     positionSizing
   }
 }
 
 export const formatRiskAssessment = (riskAssessment: RiskAssessmentResult): string => {
-  let assessment = `## ⚖️ Risk Assessment\n\n`
+  let assessment = `## Risk Assessment\n\n`
   
-  assessment += `${riskAssessment.riskColor} **Risk Level**: ${riskAssessment.riskLevel} (${riskAssessment.riskScore}/100)\n\n`
+  assessment += `**Risk Level**: ${riskAssessment.riskLevel} (${riskAssessment.riskScore}/100)\n\n`
   
   assessment += `**Risk Factors**:\n`
   assessment += riskAssessment.riskFactors.join('\n') + '\n\n'
   
-  assessment += `**Position Sizing**:\n`
-  assessment += riskAssessment.positionSizing.join('\n') + '\n\n'
-  
   return assessment
+}
+
+export const generateRiskAssessmentSection = (tradingRecommendation: TradingRecommendation): string => {
+  const riskAssessment = generateRiskAssessment(tradingRecommendation, tradingRecommendation.action)
+  return formatRiskAssessment(riskAssessment)
 }

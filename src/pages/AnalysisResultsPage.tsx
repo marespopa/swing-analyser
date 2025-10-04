@@ -17,6 +17,7 @@ const AnalysisResultsPage: React.FC = () => {
     isLoading, 
     error,
     loadAllData,
+    loadMultipleTimeframes,
   } = usePriceData()
   
   console.log('usePriceData hook completed successfully')
@@ -36,36 +37,47 @@ const AnalysisResultsPage: React.FC = () => {
     try {
       console.log('AnalysisResultsPage: Refreshing analysis with new price data for coinId:', coinId)
       
-      // Fetch fresh price data
-      const { currentPrice, historicalData } = await loadAllData(coinId)
+      // Fetch fresh price data for multiple timeframes
+      const [currentPriceData, multipleTimeframesData] = await Promise.all([
+        loadAllData(coinId),
+        loadMultipleTimeframes(coinId)
+      ])
       
-      if (currentPrice && historicalData) {
+      const { currentPrice } = currentPriceData
+      
+      if (currentPrice && multipleTimeframesData) {
         // Transform data to match the expected format for AnalysisResults
-        const priceDataWithVolume = historicalData.prices.map((pricePoint, index) => {
-          const volumePoint = historicalData.volumes[index]
-          return {
-            ...pricePoint,
-            volume: volumePoint ? volumePoint.volume : undefined
+        const results: any = {}
+        
+        // Process each timeframe
+        Object.entries(multipleTimeframesData).forEach(([interval, historicalData]) => {
+          if (historicalData) {
+            // Merge price and volume data
+            const priceDataWithVolume = historicalData.prices.map((pricePoint, index) => {
+              const volumePoint = historicalData.volumes[index]
+              return {
+                ...pricePoint,
+                volume: volumePoint ? volumePoint.volume : undefined
+              }
+            })
+
+            results[interval] = {
+              coin: { 
+                id: currentPrice.id, 
+                name: currentPrice.name, 
+                symbol: currentPrice.symbol 
+              },
+              interval: interval,
+              priceData: priceDataWithVolume,
+              currentPriceData: currentPrice
+            }
           }
         })
-
-        const results = {
-          '1d': {
-            coin: { 
-              id: currentPrice.id, 
-              name: currentPrice.name, 
-              symbol: currentPrice.symbol 
-            },
-            interval: '1d',
-            priceData: priceDataWithVolume,
-            currentPriceData: currentPrice
-          }
-        }
         
         setAnalysisResults(results)
         setLastRefreshTime(new Date())
         
-        console.log('Analysis refreshed successfully with new price data')
+        console.log('Analysis refreshed successfully with new price data for multiple timeframes')
       }
     } catch (error) {
       console.error('Error refreshing analysis:', error)
@@ -84,31 +96,42 @@ const AnalysisResultsPage: React.FC = () => {
     
     console.log('AnalysisResultsPage: Fetching data for coinId:', coinId)
     try {
-      const { currentPrice, historicalData } = await loadAllData(coinId)
+      const [currentPriceData, multipleTimeframesData] = await Promise.all([
+        loadAllData(coinId),
+        loadMultipleTimeframes(coinId)
+      ])
       
-      if (currentPrice && historicalData) {
+      const { currentPrice } = currentPriceData
+      
+      if (currentPrice && multipleTimeframesData) {
         // Transform data to match the expected format for AnalysisResults
-        // Merge price and volume data
-        const priceDataWithVolume = historicalData.prices.map((pricePoint, index) => {
-          const volumePoint = historicalData.volumes[index]
-          return {
-            ...pricePoint,
-            volume: volumePoint ? volumePoint.volume : undefined
+        const results: any = {}
+        
+        // Process each timeframe
+        Object.entries(multipleTimeframesData).forEach(([interval, historicalData]) => {
+          if (historicalData) {
+            // Merge price and volume data
+            const priceDataWithVolume = historicalData.prices.map((pricePoint, index) => {
+              const volumePoint = historicalData.volumes[index]
+              return {
+                ...pricePoint,
+                volume: volumePoint ? volumePoint.volume : undefined
+              }
+            })
+
+            results[interval] = {
+              coin: { 
+                id: currentPrice.id, 
+                name: currentPrice.name, 
+                symbol: currentPrice.symbol 
+              },
+              interval: interval,
+              priceData: priceDataWithVolume,
+              currentPriceData: currentPrice
+            }
           }
         })
-
-        const results = {
-          '1d': {
-            coin: { 
-              id: currentPrice.id, 
-              name: currentPrice.name, 
-              symbol: currentPrice.symbol 
-            },
-            interval: '1d',
-            priceData: priceDataWithVolume,
-            currentPriceData: currentPrice
-          }
-        }
+        
         setAnalysisResults(results)
         setLastRefreshTime(new Date())
       } else if (!isAutoRefresh) {

@@ -6,6 +6,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 // Lazy load pages to reduce initial bundle size
 const AnalysisFormPage = lazy(() => import('./pages/AnalysisFormPage'))
 const AnalysisResultsPage = lazy(() => import('./pages/AnalysisResultsPage'))
+const TradeLogPage = lazy(() => import('./pages/TradeLogPage'))
 
 function App() {
   console.log('App component rendering')
@@ -22,6 +23,7 @@ function App() {
             <Routes>
               <Route path="/" element={<AnalysisFormPage />} />
               <Route path="/analysis/:coinId" element={<AnalysisResultsPage />} />
+              <Route path="/trade-log" element={<TradeLogPage />} />
             </Routes>
           </Suspense>
         </div>

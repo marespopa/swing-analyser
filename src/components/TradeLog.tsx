@@ -1,341 +1,437 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useAtom } from 'jotai'
-import { tradesAtom, type Trade } from '../store/trades'
+import { tradeLogAtom, addTradeLogEntry, updateEndingPortfolio } from '../store/tradeLog'
+import Button from './ui/Button'
+import Input from './ui/Input'
+import { FaPlus, FaTrash, FaEdit, FaSave, FaTimes, FaCheck } from 'react-icons/fa'
 
-// Main TradeLog component
 const TradeLog: React.FC = () => {
-  // Use Jotai hook to access and modify trades state
-  const [trades, setTrades] = useAtom(tradesAtom)
-  
-  // Form state for new trade entry
-  const [formData, setFormData] = React.useState({
-    asset: '',
-    buyPrice: '',
-    stopLoss: '',
-    closePrice: '',
-    notes: ''
+  const [tradeLog, setTradeLog] = useAtom(tradeLogAtom)
+  const [isAdding, setIsAdding] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [newEntry, setNewEntry] = useState({
+    date: new Date().toISOString().split('T')[0], // Today's date
+    text: '',
+    startingPortfolio: '',
+    endingPortfolio: ''
   })
-
-  // State for closing trades
-  const [closingTrade, setClosingTrade] = React.useState<{
-    tradeId: number | null
-    closePrice: string
-  }>({
-    tradeId: null,
-    closePrice: ''
+  const [editEntry, setEditEntry] = useState({
+    date: '',
+    text: '',
+    startingPortfolio: '',
+    endingPortfolio: ''
   })
+  const [addingEndingValue, setAddingEndingValue] = useState<string | null>(null)
+  const [endingValue, setEndingValue] = useState('')
 
-  // Handle form input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
+  const handleAddEntry = () => {
+    const startingPortfolio = parseFloat(newEntry.startingPortfolio)
+    const endingPortfolio = newEntry.endingPortfolio ? parseFloat(newEntry.endingPortfolio) : undefined
 
-  // Handle form submission
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    
-    // Parse numeric values
-    const buyPrice = parseFloat(formData.buyPrice)
-    const closePrice = formData.closePrice ? parseFloat(formData.closePrice) : null
-    const stopLoss = formData.stopLoss ? parseFloat(formData.stopLoss) : null
-    
-    // Validate required fields - only buyPrice is required
-    if (!buyPrice) return
-    
-    // Calculate profit/loss only if close price is provided
-    const profitLoss = closePrice ? closePrice - buyPrice : null
-    const profitLossPercent = closePrice ? ((closePrice - buyPrice) / buyPrice) * 100 : null
-    
-    // Create new trade object
-    const newTrade: Trade = {
-      id: Date.now(), // Unique ID using timestamp
-      asset: formData.asset,
-      buyPrice,
-      stopLoss,
-      closePrice: closePrice || null, // null if no close price (open trade)
-      isClosed: !!closePrice, // true if close price provided, false if open
-      dateOpened: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
-      dateClosed: closePrice ? new Date().toISOString().split('T')[0] : null, // null if open
-      profitLoss: closePrice ? profitLoss : null, // null if trade is open
-      profitLossPercent: closePrice ? profitLossPercent : null, // null if trade is open
-      notes: formData.notes // trade motivation and notes
+    if (!newEntry.text.trim() || isNaN(startingPortfolio) || startingPortfolio <= 0) {
+      alert('Please fill in text and starting portfolio value')
+      return
     }
-    
-    // Add new trade to the beginning of the array
-    setTrades(prev => [newTrade, ...prev])
-    
-    // Reset form
-    setFormData({
-      asset: '',
-      buyPrice: '',
-      stopLoss: '',
-      closePrice: '',
-      notes: ''
+
+    const entry = addTradeLogEntry({
+      ...newEntry,
+      startingPortfolio,
+      endingPortfolio
     })
+    setTradeLog(prev => ({
+      ...prev,
+      entries: [entry, ...prev.entries]
+    }))
+    
+    setNewEntry({
+      date: new Date().toISOString().split('T')[0],
+      text: '',
+      startingPortfolio: '',
+      endingPortfolio: ''
+    })
+    setIsAdding(false)
   }
 
-  // Clear all trade history
-  const clearHistory = () => {
-    setTrades([])
+  const handleEditEntry = (entry: any) => {
+    setEditEntry({
+      date: entry.date,
+      text: entry.text,
+      startingPortfolio: entry.startingPortfolio.toString(),
+      endingPortfolio: entry.endingPortfolio ? entry.endingPortfolio.toString() : ''
+    })
+    setEditingId(entry.id)
+  }
+
+  const handleSaveEdit = () => {
+    const startingPortfolio = parseFloat(editEntry.startingPortfolio)
+    const endingPortfolio = editEntry.endingPortfolio ? parseFloat(editEntry.endingPortfolio) : undefined
+
+    if (!editEntry.text.trim() || isNaN(startingPortfolio) || startingPortfolio <= 0) {
+      alert('Please fill in text and starting portfolio value')
+      return
+    }
+
+    const profit = endingPortfolio ? endingPortfolio - startingPortfolio : undefined
+    const profitPercentage = endingPortfolio && startingPortfolio !== 0
+      ? ((endingPortfolio - startingPortfolio) / startingPortfolio) * 100
+      : undefined
+
+    setTradeLog(prev => ({
+      ...prev,
+      entries: prev.entries.map(entry => 
+        entry.id === editingId 
+          ? {
+              ...entry,
+              ...editEntry,
+              startingPortfolio,
+              endingPortfolio,
+              profit,
+              profitPercentage
+            }
+          : entry
+      )
+    }))
+    
+    setEditingId(null)
+    setEditEntry({ date: '', text: '', startingPortfolio: '', endingPortfolio: '' })
+  }
+
+  const handleDeleteEntry = (id: string) => {
+    if (confirm('Are you sure you want to delete this trade log entry?')) {
+      setTradeLog(prev => ({
+        ...prev,
+        entries: prev.entries.filter(entry => entry.id !== id)
+      }))
+    }
+  }
+
+  const handleAddEndingValue = (id: string) => {
+    setAddingEndingValue(id)
+    setEndingValue('')
+  }
+
+  const handleSaveEndingValue = () => {
+    if (!addingEndingValue || !endingValue || parseFloat(endingValue) <= 0) {
+      alert('Please enter a valid ending portfolio value')
+      return
+    }
+
+    const endingPortfolioValue = parseFloat(endingValue)
+    setTradeLog(prev => ({
+      ...prev,
+      entries: prev.entries.map(entry => {
+        if (entry.id === addingEndingValue) {
+          return updateEndingPortfolio(entry, endingPortfolioValue)
+        }
+        return entry
+      })
+    }))
+
+    setAddingEndingValue(null)
+    setEndingValue('')
+  }
+
+  const handleCancelEndingValue = () => {
+    setAddingEndingValue(null)
+    setEndingValue('')
+  }
+
+  const formatCurrency = (amount: number | undefined) => {
+    if (amount === undefined) return 'N/A'
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount)
+  }
+
+  const formatPercentage = (percentage: number | undefined) => {
+    if (percentage === undefined) return 'N/A'
+    return `${percentage >= 0 ? '+' : ''}${percentage.toFixed(2)}%`
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <header className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Trade Log</h1>
-          <p className="text-gray-600 dark:text-gray-300">Track your trading performance</p>
-        </header>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+          Trade Log
+        </h3>
+        <Button
+          onClick={() => setIsAdding(true)}
+          variant="primary"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          <FaPlus className="w-4 h-4" />
+          Add Entry
+        </Button>
+      </div>
 
-        {/* Trade Entry Form */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6 border border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Enter New Trade</h2>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Add New Entry Form */}
+      {isAdding && (
+        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Add New Trade Log Entry</h4>
+          <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Asset Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Asset Name
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Date
                 </label>
-                <input
-                  type="text"
-                  name="asset"
-                  value={formData.asset}
-                  onChange={handleInputChange}
-                  placeholder="BTC, ETH, AAPL, etc."
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                <Input
+                  type="date"
+                  value={newEntry.date}
+                  onChange={(e) => setNewEntry(prev => ({ ...prev, date: e.target.value }))}
+                  className="w-full"
                 />
               </div>
-
-              {/* Buy Price */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Buy Price *
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Starting Portfolio ($)
                 </label>
-                <input
+                <Input
                   type="number"
-                  name="buyPrice"
-                  value={formData.buyPrice}
-                  onChange={handleInputChange}
-                  step="0.000001"
-                  required
-                  placeholder="0.00"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  step="0.01"
+                  value={newEntry.startingPortfolio}
+                  onChange={(e) => setNewEntry(prev => ({ ...prev, startingPortfolio: e.target.value }))}
+                  className="w-full"
+                  placeholder="1000.00"
                 />
-              </div>
-
-              {/* Stop Loss */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Stop Loss (Optional)
-                </label>
-                <input
-                  type="number"
-                  name="stopLoss"
-                  value={formData.stopLoss}
-                  onChange={handleInputChange}
-                  step="0.000001"
-                  placeholder="0.00"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-
-              {/* Close Price */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Close Price (Optional)
-                </label>
-                <input
-                  type="number"
-                  name="closePrice"
-                  value={formData.closePrice}
-                  onChange={handleInputChange}
-                  step="0.000001"
-                  placeholder="Leave empty for open trade"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Leave empty to create an open trade. You can close it later.
-                </p>
-              </div>
-
-              {/* Notes */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Trade Notes & Motivation
-                </label>
-                <textarea
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  placeholder="Why did you take this trade? What's your thesis? Any key levels to watch?"
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Document your trading rationale and key insights.
-                </p>
               </div>
             </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              className="w-full bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
-            >
-              Add Trade
-            </button>
-          </form>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Ending Portfolio ($) <span className="text-gray-500 text-sm">(Optional - add later)</span>
+              </label>
+              <Input
+                type="number"
+                step="0.01"
+                value={newEntry.endingPortfolio}
+                onChange={(e) => setNewEntry(prev => ({ ...prev, endingPortfolio: e.target.value }))}
+                className="w-full"
+                placeholder="1200.00 (optional)"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Trade Notes
+              </label>
+              <textarea
+                value={newEntry.text}
+                onChange={(e) => setNewEntry(prev => ({ ...prev, text: e.target.value }))}
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                rows={3}
+                placeholder="Describe your trades, strategy, or observations..."
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleAddEntry} variant="primary" size="sm">
+                <FaSave className="w-4 h-4 mr-2" />
+                Save Entry
+              </Button>
+              <Button onClick={() => setIsAdding(false)} variant="outline" size="sm">
+                <FaTimes className="w-4 h-4 mr-2" />
+                Cancel
+              </Button>
+            </div>
+          </div>
         </div>
+      )}
 
-        {/* Trade History Table */}
-        {trades.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Trade History</h3>
-              <button
-                onClick={clearHistory}
-                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded-md transition-colors duration-200"
-              >
-                Clear History
-              </button>
+      {/* Trade Log Entries */}
+      <div className="space-y-4">
+        {tradeLog.entries.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <p>No trade log entries yet. Add your first entry to start tracking your trades!</p>
+          </div>
+        ) : (
+          tradeLog.entries.map(entry => (
+            <div
+              key={entry.id}
+              className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
+            >
+              {editingId === entry.id ? (
+                // Edit Mode
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Date
+                      </label>
+                      <Input
+                        type="date"
+                        value={editEntry.date}
+                        onChange={(e) => setEditEntry(prev => ({ ...prev, date: e.target.value }))}
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Starting Portfolio ($)
+                      </label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={editEntry.startingPortfolio}
+                        onChange={(e) => setEditEntry(prev => ({ ...prev, startingPortfolio: e.target.value }))}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Ending Portfolio ($)
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={editEntry.endingPortfolio}
+                      onChange={(e) => setEditEntry(prev => ({ ...prev, endingPortfolio: e.target.value }))}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Trade Notes
+                    </label>
+                    <textarea
+                      value={editEntry.text}
+                      onChange={(e) => setEditEntry(prev => ({ ...prev, text: e.target.value }))}
+                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleSaveEdit} variant="primary" size="sm">
+                      <FaSave className="w-4 h-4 mr-2" />
+                      Save
+                    </Button>
+                    <Button onClick={() => setEditingId(null)} variant="outline" size="sm">
+                      <FaTimes className="w-4 h-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                // View Mode
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        {new Date(entry.date).toLocaleDateString()}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {entry.endingPortfolio ? (
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            entry.profit !== undefined && entry.profit >= 0 
+                              ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' 
+                              : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                          }`}>
+                            {formatCurrency(entry.profit)} ({formatPercentage(entry.profitPercentage)})
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                            Pending
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleEditEntry(entry)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <FaEdit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        onClick={() => handleDeleteEntry(entry.id)}
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <FaTrash className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                    <div>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Starting Portfolio:</span>
+                      <span className="ml-2 font-medium">{formatCurrency(entry.startingPortfolio)}</span>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Ending Portfolio:</span>
+                      {entry.endingPortfolio ? (
+                        <span className="ml-2 font-medium">{formatCurrency(entry.endingPortfolio)}</span>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-400 italic">Not set</span>
+                          {addingEndingValue === entry.id ? (
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={endingValue}
+                                onChange={(e) => setEndingValue(e.target.value)}
+                                placeholder="Enter ending value"
+                                className="w-32"
+                              />
+                              <Button onClick={handleSaveEndingValue} size="sm" variant="primary">
+                                <FaCheck className="w-3 h-3" />
+                              </Button>
+                              <Button onClick={handleCancelEndingValue} size="sm" variant="outline">
+                                <FaTimes className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button 
+                              onClick={() => handleAddEndingValue(entry.id)} 
+                              size="sm" 
+                              variant="outline"
+                              className="text-green-600 hover:text-green-700"
+                            >
+                              Add Ending Value
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {entry.endingPortfolio && (
+                    <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">Profit/Loss:</span>
+                          <span className={`ml-2 font-bold ${entry.profit !== undefined && entry.profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            {formatCurrency(entry.profit)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">Percentage:</span>
+                          <span className={`ml-2 font-bold ${entry.profitPercentage !== undefined && entry.profitPercentage >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            {formatPercentage(entry.profitPercentage)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {entry.text && (
+                    <div className="mt-3">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Notes:</span>
+                      <p className="mt-1 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                        {entry.text}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-            
-            {/* Responsive Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-2 px-2 font-medium text-gray-700 dark:text-gray-300">Date</th>
-                    <th className="text-left py-2 px-2 font-medium text-gray-700 dark:text-gray-300">Asset</th>
-                    <th className="text-left py-2 px-2 font-medium text-gray-700 dark:text-gray-300">Buy</th>
-                    <th className="text-left py-2 px-2 font-medium text-gray-700 dark:text-gray-300">SL</th>
-                                         <th className="text-left py-2 px-2 font-medium text-gray-700 dark:text-gray-300">Close</th>
-                     <th className="text-left py-2 px-2 font-medium text-gray-700 dark:text-gray-300">P/L %</th>
-                     <th className="text-left py-2 px-2 font-medium text-gray-700 dark:text-gray-300">Notes</th>
-                     <th className="text-left py-2 px-2 font-medium text-gray-700 dark:text-gray-300">Actions</th>
-                   </tr>
-                </thead>
-                <tbody>
-                  {trades.map((trade) => (
-                    <tr key={trade.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                             <td className="py-2 px-2 text-gray-700 dark:text-gray-300">{trade.dateOpened}</td>
-                       <td className="py-2 px-2 font-medium text-gray-900 dark:text-white">{trade.asset || 'N/A'}</td>
-                       <td className="py-2 px-2 text-gray-700 dark:text-gray-300">${trade.buyPrice.toFixed(6)}</td>
-                       <td className="py-2 px-2 text-gray-700 dark:text-gray-300">
-                         {trade.stopLoss ? `$${trade.stopLoss.toFixed(6)}` : '-'}
-                       </td>
-                       <td className="py-2 px-2 text-gray-700 dark:text-gray-300">
-                         {trade.closePrice ? (
-                           `$${trade.closePrice.toFixed(6)}`
-                         ) : (
-                           <span className="italic text-gray-500">Open</span>
-                         )}
-                       </td>
-                                              <td className="py-2 px-2 font-medium">
-                         {trade.profitLossPercent !== null ? (
-                           <span className={trade.profitLossPercent >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
-                             {trade.profitLossPercent.toFixed(2)}%
-                           </span>
-                         ) : (
-                           <span className="text-sm text-gray-400">*</span>
-                         )}
-                       </td>
-                       <td className="py-2 px-2 text-gray-700 dark:text-gray-300 max-w-xs">
-                         <div className="truncate" title={trade.notes}>
-                           {trade.notes || '-'}
-                         </div>
-                       </td>
-                       <td className="py-2 px-2">
-                         {!trade.isClosed && (
-                           <button
-                             onClick={() => setClosingTrade({ tradeId: trade.id, closePrice: '' })}
-                             className="px-2 py-1 bg-primary-600 hover:bg-primary-700 text-white text-xs rounded transition-colors duration-200"
-                           >
-                             Close Trade
-                           </button>
-                         )}
-                       </td>
-                     </tr>
-                   ))}
-                 </tbody>
-               </table>
-             </div>
-           </div>
-         )}
-
-         {/* Close Trade Modal */}
-         {closingTrade.tradeId && (
-           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96 max-w-full mx-4">
-               <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Close Trade</h3>
-               
-               <div className="space-y-4">
-                 <div>
-                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                     Close Price *
-                   </label>
-                   <input
-                     type="number"
-                     value={closingTrade.closePrice}
-                     onChange={(e) => setClosingTrade(prev => ({ ...prev, closePrice: e.target.value }))}
-                     step="0.000001"
-                     required
-                     placeholder="0.00"
-                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                   />
-                 </div>
-                 
-                 <div className="flex space-x-3">
-                   <button
-                     onClick={() => {
-                       const closePrice = parseFloat(closingTrade.closePrice)
-                       if (!closePrice) return
-                       
-                       setTrades(prev => prev.map(trade => {
-                         if (trade.id === closingTrade.tradeId) {
-                           const profitLoss = closePrice - trade.buyPrice
-                           const profitLossPercent = (profitLoss / trade.buyPrice) * 100
-                           
-                           return {
-                             ...trade,
-                             closePrice,
-                             isClosed: true,
-                             dateClosed: new Date().toISOString().split('T')[0],
-                             profitLoss,
-                             profitLossPercent
-                           }
-                         }
-                         return trade
-                       }))
-                       
-                       setClosingTrade({ tradeId: null, closePrice: '' })
-                     }}
-                     className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
-                   >
-                     Close Trade
-                   </button>
-                   
-                   <button
-                     onClick={() => setClosingTrade({ tradeId: null, closePrice: '' })}
-                     className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
-                   >
-                     Cancel
-                   </button>
-                 </div>
-               </div>
-             </div>
-           </div>
-         )}
-       </div>
-     </div>
-   )
- }
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
 
 export default TradeLog

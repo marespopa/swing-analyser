@@ -32,14 +32,12 @@ export interface TradingRecommendation {
 export interface SummaryGeneratorParams {
   coinInfo: CoinInfo
   tradingRecommendation: TradingRecommendation
-  currentPrice: number
   analysis: TechnicalAnalysisData
 }
 
 export interface RiskAssessmentResult {
   riskLevel: 'Low' | 'Medium' | 'High'
   riskScore: number
-  riskColor: string
   riskFactors: string[]
   positionSizing: string[]
 }

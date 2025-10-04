@@ -268,11 +268,8 @@ const CoinAnalysisForm: React.FC<CoinAnalysisFormProps> = ({
             size="lg"
             className="w-full"
           >
-            Continue to Analysis
+            Start Analysis
           </Button>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-            Click to validate form and proceed to analysis page
-          </p>
         </div>
         </div>
       </form>

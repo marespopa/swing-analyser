@@ -8,7 +8,7 @@ const Button: React.FC<ButtonProps> = ({
   className = '', 
   ...props 
 }) => {
-  const baseClasses = 'cursor-pointer font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+  const baseClasses = 'cursor-pointer font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex gap-1 items-center justify-center'
   
   const variantClasses = {
     primary: 'bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white border border-transparent focus:ring-primary-500 focus:ring-offset-white dark:focus:ring-offset-gray-800',

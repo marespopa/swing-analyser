@@ -1,5 +1,4 @@
 import React from 'react'
-import ReactMarkdown from 'react-markdown'
 import Button from '../ui/Button'
 import { useAnalysisContext } from '../../contexts/AnalysisContext'
 
@@ -37,10 +36,18 @@ const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
           </div>
         )}
-        <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-gray-800 dark:prose-headings:text-gray-200 prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-ul:text-gray-700 dark:prose-ul:text-gray-300 prose-li:text-gray-700 dark:prose-li:text-gray-300">
-          <ReactMarkdown>
-            {summary}
-          </ReactMarkdown>
+        <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
+          {summary ? (
+            <p>{summary}</p>
+          ) : (
+            <div className="space-y-3">
+              <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded animate-pulse w-4/5"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded animate-pulse w-3/4"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded animate-pulse w-5/6"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded animate-pulse w-2/3"></div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -21,6 +21,9 @@ export interface TechnicalAnalysisData {
   data: PriceDataPoint[]
   sma20: number[]
   sma50: number[]
+  ema9: number[]
+  ema20: number[]
+  ema50: number[]
   rsi: number[]
   macd?: {
     macd: number[]

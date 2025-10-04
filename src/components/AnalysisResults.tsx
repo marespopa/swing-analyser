@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TechnicalAnalysis } from '../services/technicalAnalysis'
 import type { TechnicalAnalysisData, PriceDataPoint } from '../services/coingeckoApi'
@@ -8,8 +8,6 @@ import AnalysisSummary from './analysis/AnalysisSummary'
 import AnalysisMetrics from './analysis/AnalysisMetrics'
 import AnalysisChart from './analysis/AnalysisChart'
 import AnalysisTechnicalDetails from './analysis/AnalysisTechnicalDetails'
-import AnalysisFibonacciLevels from './analysis/AnalysisFibonacciLevels'
-import { useAnalysisContext } from '../contexts/AnalysisContext'
 
 interface AnalysisResultsProps {
   results: {
@@ -30,33 +28,36 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   results, 
   isPriceLoading = false, 
   isInitialLoading = false,
-  isRefreshing = false,
 }) => {
   const navigate = useNavigate()
-  const { lastRefreshTime } = useAnalysisContext()
 
-  const processedResults: { [key: string]: TechnicalAnalysisData | null } = {}
-  const errors: { [key: string]: string } = {}
+  // Memoize expensive technical analysis calculations
+  const { processedResults, errors, coinInfo, currentPrice, priceChange24h, analysis } = useMemo(() => {
+    const processedResults: { [key: string]: TechnicalAnalysisData | null } = {}
+    const errors: { [key: string]: string } = {}
 
-  Object.entries(results).forEach(([interval, result]) => {
-    if (result.error) {
-      errors[interval] = result.error
-    } else if (result.priceData && result.priceData.length > 0) {
-      try {
-        processedResults[interval] = TechnicalAnalysis.performAnalysis(result.priceData)
-      } catch (error) {
-        errors[interval] = `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    Object.entries(results).forEach(([interval, result]) => {
+      if (result.error) {
+        errors[interval] = result.error
+      } else if (result.priceData && result.priceData.length > 0) {
+        try {
+          processedResults[interval] = TechnicalAnalysis.performAnalysis(result.priceData)
+        } catch (error) {
+          errors[interval] = `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }
       }
-    }
-  })
+    })
 
-  const coinInfo = Object.values(results)[0]?.coin
-  const currentPriceData = Object.values(results)[0]?.currentPriceData
-  const currentPrice = currentPriceData?.currentPrice || Object.values(processedResults).find(result => result?.data?.length)?.data?.slice(-1)[0]?.price
-  const priceChange24h = currentPriceData?.priceChange24h || null
-  const analysis = Object.values(processedResults).find(result => result !== null)
+    const coinInfo = Object.values(results)[0]?.coin
+    const currentPriceData = Object.values(results)[0]?.currentPriceData
+    const currentPrice = currentPriceData?.currentPrice || Object.values(processedResults).find(result => result?.data?.length)?.data?.slice(-1)[0]?.price
+    const priceChange24h = currentPriceData?.priceChange24h || null
+    const analysis = Object.values(processedResults).find(result => result !== null)
 
-  const generateTradingRecommendation = () => {
+    return { processedResults, errors, coinInfo, currentPrice, priceChange24h, analysis }
+  }, [results])
+
+  const generateTradingRecommendation = useCallback(() => {
     if (!analysis || !currentPrice) return null
 
     const recentPrices = analysis.data.slice(-10).map(d => d.price)
@@ -156,13 +157,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
     let signalColor: 'green' | 'amber' | 'red' = 'red'
 
     const hasGoodRiskReward = riskReward >= 1.5
-    const hasDecentRiskReward = riskReward >= 1.0
     
-    // Calculate RSI trend
-    const currentRSI = analysis.rsi[analysis.rsi.length - 1]
-    const previousRSI = analysis.rsi[analysis.rsi.length - 2]
-    const rsiTrend = currentRSI > previousRSI ? 'rising' : currentRSI < previousRSI ? 'falling' : 'flat'
-
     // Extract detected patterns (already deduplicated and prioritized)
     const detectedPatterns = analysis.patternDetection ? [
       ...analysis.patternDetection.triangles,
@@ -186,140 +181,200 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
     const hasConflictingSignals = (trend === 'Bullish' && macdSignal === 'Bearish') || 
                                  (trend === 'Bearish' && macdSignal === 'Bullish')
 
-    if (trend === 'Bullish') {
-      if (rsi < 70 && currentPrice > lowerBand) {
-        if (hasGoodRiskReward) {
-          action = 'BUY'
-          confidence = rsi < 30 ? 'high' : 'medium'
-          signalColor = 'green'
-        } else if (hasDecentRiskReward && strength === 'Strong') {
+    // RSI-First Trading Logic: RSI is the primary indicator for crypto 1h/4h charts
+    if (rsi < 30) {
+      // Strong oversold conditions - RSI is the most reliable indicator for crypto
+      action = 'BUY'
+      confidence = 'high'
+      signalColor = 'green'
+    } else if (rsi > 70) {
+      // Strong overbought conditions - RSI is the most reliable indicator for crypto
+      action = 'SELL'
+      confidence = 'high'
+      signalColor = 'red'
+    } else if (rsi < 35) {
+      // Near oversold - still strong buy signal for crypto
+      if (trend === 'Bullish' || macdSignal === 'Bullish') {
+        action = 'BUY'
+        confidence = 'high'
+        signalColor = 'green'
+      } else {
+        action = 'BUY'
+        confidence = 'medium'
+        signalColor = 'green'
+      }
+    } else if (rsi > 65) {
+      // Near overbought - still strong sell signal for crypto
+      if (trend === 'Bearish' || macdSignal === 'Bearish') {
+        action = 'SELL'
+        confidence = 'high'
+        signalColor = 'red'
+      } else {
+        action = 'SELL'
+        confidence = 'medium'
+        signalColor = 'red'
+      }
+    } else {
+      // Neutral RSI range (35-65) - use trend and other confirmations
+      if (trend === 'Bullish') {
+        if (macdSignal === 'Bullish' || currentPrice > sma20) {
           action = 'BUY'
           confidence = 'medium'
-          signalColor = 'green'
-        } else if (strength === 'Strong') {
-          action = 'BUY'
-          confidence = 'low'
-          signalColor = 'green'
-        } else if (rsiTrend === 'falling' && rsi > 50) {
-          // Falling RSI from high levels in bullish trend can be good (momentum building)
-          action = 'BUY'
-          confidence = 'low'
           signalColor = 'green'
         } else {
           action = 'WAIT'
-          confidence = 'medium'
+          confidence = 'low'
           signalColor = 'amber'
         }
-      } else if (rsi >= 70) {
-        if (rsiTrend === 'falling') {
-          // RSI falling from overbought in bullish trend - potential buying opportunity
-          action = 'BUY'
-          confidence = 'low'
-          signalColor = 'green'
+      } else if (trend === 'Bearish') {
+        if (macdSignal === 'Bearish' || currentPrice < sma20) {
+          action = 'SELL'
+          confidence = 'medium'
+          signalColor = 'red'
         } else {
           action = 'WAIT'
-          confidence = 'medium'
+          confidence = 'low'
           signalColor = 'amber'
         }
       } else {
-        action = 'WAIT'
-        confidence = 'low'
-        signalColor = 'amber'
-      }
-
-      // Handle conflicting signals - downgrade confidence or change to WAIT
-      if (hasConflictingSignals) {
-        if (action === 'BUY') {
-          // Downgrade confidence and potentially change to WAIT
-          if (confidence === 'high') {
-            confidence = 'medium'
-          } else if (confidence === 'medium') {
-            confidence = 'low'
-          } else {
-            // If already low confidence, consider changing to WAIT
-            if (strength !== 'Strong' || !hasDecentRiskReward) {
-              action = 'WAIT'
-              confidence = 'medium'
-              signalColor = 'amber'
-            }
-          }
-        }
-      }
-
-      // Boost confidence for Golden Cross or MACD bullish crossover (only if no conflicts)
-      if (!hasConflictingSignals) {
-        if ((goldenCrossSignal === 'Golden Cross' || macdSignal === 'Bullish') && action === 'BUY') {
-          confidence = 'high'
-        } else if (goldenCrossSignal === 'Golden Cross' && action === 'WAIT') {
-          action = 'BUY'
-          confidence = 'medium'
-          signalColor = 'green'
-        }
-      }
-    } else if (trend === 'Bearish') {
-      if (rsi > 30 && currentPrice < upperBand) {
-        if (hasGoodRiskReward) {
-          action = 'SELL'
-          confidence = rsi > 70 ? 'high' : 'medium'
-          signalColor = 'red'
-        } else if (hasDecentRiskReward && strength === 'Strong') {
-          action = 'SELL'
-          confidence = 'medium'
-          signalColor = 'red'
-        } else if (strength === 'Strong') {
-          action = 'SELL'
-          confidence = 'low'
-          signalColor = 'red'
-        } else {
-          action = 'WAIT'
-          confidence = 'medium'
-          signalColor = 'amber'
-        }
-      } else if (rsi <= 30) {
         action = 'WAIT'
         confidence = 'medium'
         signalColor = 'amber'
-      } else {
-        action = 'WAIT'
-        confidence = 'low'
-        signalColor = 'amber'
       }
-
-      // Handle conflicting signals - downgrade confidence or change to WAIT
-      if (hasConflictingSignals) {
-        if (action === 'SELL') {
-          // Downgrade confidence and potentially change to WAIT
-          if (confidence === 'high') {
-            confidence = 'medium'
-          } else if (confidence === 'medium') {
-            confidence = 'low'
-          } else {
-            // If already low confidence, consider changing to WAIT
-            if (strength !== 'Strong' || !hasDecentRiskReward) {
-              action = 'WAIT'
-              confidence = 'medium'
-              signalColor = 'amber'
-            }
-          }
-        }
-      }
-
-      // Boost confidence for Death Cross or MACD bearish crossover (only if no conflicts)
-      if (!hasConflictingSignals) {
-        if ((goldenCrossSignal === 'Death Cross' || macdSignal === 'Bearish') && action === 'SELL') {
-          confidence = 'high'
-        } else if (goldenCrossSignal === 'Death Cross' && action === 'WAIT') {
-          action = 'SELL'
-          confidence = 'medium'
-          signalColor = 'red'
-        }
-      }
-    } else {
-      // Sideways trend
-      action = 'WAIT'
-      confidence = 'medium'
-      signalColor = 'amber'
     }
+
+    // Handle conflicting signals - only downgrade confidence, don't change to WAIT
+    if (hasConflictingSignals) {
+      if (confidence === 'high') {
+        confidence = 'medium'
+      } else if (confidence === 'medium') {
+        confidence = 'low'
+      }
+    }
+
+    // Boost confidence for Golden Cross/Death Cross or MACD signals (only if no conflicts)
+    if (!hasConflictingSignals) {
+      if (action === 'BUY' && (goldenCrossSignal === 'Golden Cross' || macdSignal === 'Bullish')) {
+        confidence = 'high'
+      } else if (action === 'SELL' && (goldenCrossSignal === 'Death Cross' || macdSignal === 'Bearish')) {
+        confidence = 'high'
+      } else if (goldenCrossSignal === 'Golden Cross' && action === 'WAIT') {
+        action = 'BUY'
+        confidence = 'medium'
+        signalColor = 'green'
+      } else if (goldenCrossSignal === 'Death Cross' && action === 'WAIT') {
+        action = 'SELL'
+        confidence = 'medium'
+        signalColor = 'red'
+      }
+    }
+
+    // Calculate bullishness score using enhanced EMA + RSI logic
+    let bullishnessScore = 50 // Start neutral
+    const buySignals: string[] = []
+    const sellSignals: string[] = []
+
+    // Get EMA values
+    const ema9 = analysis.ema9?.[analysis.ema9.length - 1] || 0
+    const ema20 = analysis.ema20?.[analysis.ema20.length - 1] || 0
+    const ema50 = analysis.ema50?.[analysis.ema50.length - 1] || 0
+
+    // Strong bullish setup: price > 9EMA > 20EMA > 50EMA + RSI < 70
+    if (currentPrice > ema9 && ema9 > ema20 && ema20 > ema50 && rsi < 70) {
+      bullishnessScore += 35
+      buySignals.push('Perfect bullish EMA alignment + RSI confirmation')
+    }
+    // Strong bearish setup: price < 9EMA < 20EMA < 50EMA + RSI > 30
+    else if (currentPrice < ema9 && ema9 < ema20 && ema20 < ema50 && rsi > 30) {
+      bullishnessScore -= 35
+      sellSignals.push('Perfect bearish EMA alignment + RSI confirmation')
+    }
+    // Weak bullish setup: price > 20EMA + RSI < 65
+    else if (currentPrice > ema20 && rsi < 65) {
+      bullishnessScore += 20
+      buySignals.push('Moderate bullish EMA + RSI setup')
+    }
+    // Weak bearish setup: price < 20EMA + RSI > 35
+    else if (currentPrice < ema20 && rsi > 35) {
+      bullishnessScore -= 20
+      sellSignals.push('Moderate bearish EMA + RSI setup')
+    }
+
+    // RSI signals (additional to EMA alignment)
+    if (rsi < 30) {
+      bullishnessScore += 15
+      buySignals.push('RSI oversold (<30)')
+    } else if (rsi > 70) {
+      bullishnessScore -= 15
+      sellSignals.push('RSI overbought (>70)')
+    } else if (rsi < 35) {
+      bullishnessScore += 8
+      buySignals.push('RSI near oversold (<35)')
+    } else if (rsi > 65) {
+      bullishnessScore -= 8
+      sellSignals.push('RSI near overbought (>65)')
+    } else if (rsi > 50) {
+      bullishnessScore += 3
+    } else {
+      bullishnessScore -= 3
+    }
+
+    // EMA alignment bonus (if not already counted above)
+    if (ema9 > ema20 && ema20 > ema50) {
+      bullishnessScore += 10
+      buySignals.push('EMA bullish alignment (9>20>50)')
+    } else if (ema9 < ema20 && ema20 < ema50) {
+      bullishnessScore -= 10
+      sellSignals.push('EMA bearish alignment (9<20<50)')
+    }
+
+    // MACD signals (as confirmation)
+    if (macdSignal === 'Bullish') {
+      bullishnessScore += 8
+      buySignals.push('MACD bullish crossover')
+    } else if (macdSignal === 'Bearish') {
+      bullishnessScore -= 8
+      sellSignals.push('MACD bearish crossover')
+    }
+
+    // Bollinger Bands position
+    if (currentPrice <= lowerBand * 1.02) {
+      bullishnessScore += 8
+      buySignals.push('Price near lower Bollinger Band')
+    } else if (currentPrice >= upperBand * 0.98) {
+      bullishnessScore -= 8
+      sellSignals.push('Price near upper Bollinger Band')
+    }
+
+    // Volume confirmation
+    const currentVolume = analysis.data[analysis.data.length - 1]?.volume || 0
+    const avgVolume = analysis.volumeAnalysis?.volumeSMA[analysis.volumeAnalysis.volumeSMA.length - 1] || 0
+    const volumeRatio = avgVolume > 0 ? currentVolume / avgVolume : 1
+
+    if (volumeRatio > 1.2 && trend === 'Bullish') {
+      bullishnessScore += 5
+      buySignals.push('High volume bullish confirmation')
+    } else if (volumeRatio > 1.2 && trend === 'Bearish') {
+      bullishnessScore -= 5
+      sellSignals.push('High volume bearish confirmation')
+    }
+
+    // Pattern-based signals
+    if (detectedPatterns.length > 0) {
+      const bullishPatterns = detectedPatterns.filter(p => p.signal === 'bullish').length
+      const bearishPatterns = detectedPatterns.filter(p => p.signal === 'bearish').length
+      
+      if (bullishPatterns > bearishPatterns) {
+        bullishnessScore += 8
+        buySignals.push(`${bullishPatterns} bullish pattern(s) detected`)
+      } else if (bearishPatterns > bullishPatterns) {
+        bullishnessScore -= 8
+        sellSignals.push(`${bearishPatterns} bearish pattern(s) detected`)
+      }
+    }
+
+    // Ensure score stays within 0-100 range
+    bullishnessScore = Math.max(0, Math.min(100, bullishnessScore))
 
 
     return {
@@ -330,6 +385,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
       strength,
       priceChange: priceChange.toFixed(2),
       recommendation: `${action} - ${trend} trend with ${strength} momentum`,
+      bullishnessScore: Math.round(bullishnessScore),
+      buySignals,
+      sellSignals,
       swingAnalysis: {
         trend: trend as 'Bullish' | 'Bearish' | 'Sideways',
         momentum: rsi > 70 ? 'Overbought' : rsi < 30 ? 'Oversold' : 'Neutral',
@@ -345,9 +403,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         goldenCrossSignal: goldenCrossSignal
       }
     }
-  }
+  }, [analysis, currentPrice])
 
-  const tradingRecommendation = generateTradingRecommendation()
+  const tradingRecommendation = useMemo(() => generateTradingRecommendation(), [generateTradingRecommendation])
 
   // Calculate price position for metrics
   const pricePosition = tradingRecommendation ? {
@@ -358,18 +416,15 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   } : null
 
   // Generate summary
-  const generateSummaryText = () => {
+  const summary = useMemo(() => {
     if (!coinInfo || !tradingRecommendation || !currentPrice || !analysis) return ''
 
     return generateSummary({
       coinInfo,
       tradingRecommendation: tradingRecommendation as any,
-      currentPrice,
       analysis,
     })
-  }
-
-  const summary = generateSummaryText()
+  }, [coinInfo, tradingRecommendation, analysis])
 
   const handleBack = () => {
     navigate('/')
@@ -379,12 +434,11 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
     navigator.clipboard.writeText(summary)
   }
 
-  const analysisTimestamp = new Date().toLocaleString()
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 p-3 sm:p-4 min-h-screen relative">
       {/* Combined Header and Summary Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 relative z-10">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <AnalysisHeader
           coinInfo={coinInfo}
           currentPrice={currentPrice}
@@ -393,40 +447,16 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           isPriceLoading={isPriceLoading || isInitialLoading}
         />
 
-        <AnalysisSummary
-          summary={summary}
-          onCopySummary={handleCopySummary}
-        />
-
         <AnalysisMetrics
           tradingRecommendation={tradingRecommendation}
           pricePosition={pricePosition}
         />
 
-        {/* Analysis Timestamp and Auto-refresh Status */}
-        <div className="text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 pt-4 flex items-center justify-between">
-          <div>
-            Analysis generated on {analysisTimestamp}
-            {lastRefreshTime && (
-              <span className="ml-2">
-                • Last updated: {lastRefreshTime.toLocaleTimeString()}
-              </span>
-            )}
-          </div>
-          {isRefreshing && (
-            <div className="flex items-center text-blue-600 dark:text-blue-400">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-              <span className="text-xs">Refreshing...</span>
-            </div>
-          )}
-        </div>
+        <AnalysisSummary
+          summary={summary}
+          onCopySummary={handleCopySummary}
+        />
       </div>
-
-      {/* Fibonacci Levels */}
-      <AnalysisFibonacciLevels
-        analysis={analysis || null}
-        currentPrice={currentPrice}
-      />
 
       {/* Detailed Technical Indicators */}
       <AnalysisTechnicalDetails

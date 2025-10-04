@@ -130,6 +130,69 @@ export const usePriceData = () => {
     }
   }, [loadCurrentPrice, loadHistoricalData])
 
+  const loadMultipleTimeframes = useCallback(async (coinId: string, apiKey?: string): Promise<{ [key: string]: HistoricalData | null }> => {
+    if (!coinId) return {}
+    
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      if (apiKey) {
+        coinGeckoAPI.setApiKey(apiKey)
+      }
+      
+      // Define timeframes and their corresponding API intervals and days
+      const timeframes = [
+        { interval: '15m', apiInterval: '1h' as const, days: 1 }, // 1 day of hourly data for 15m analysis
+        { interval: '1h', apiInterval: '1h' as const, days: 7 }, // 7 days of hourly data
+        { interval: '4h', apiInterval: '4h' as const, days: 14 }, // 14 days of 4-hour data
+        { interval: '1d', apiInterval: '1d' as const, days: 30 }, // 30 days of daily data
+        { interval: '3d', apiInterval: '1d' as const, days: 90 } // 90 days of daily data for 3d analysis
+      ]
+      
+      // Fetch data for all timeframes in parallel
+      const timeframePromises = timeframes.map(async ({ interval, apiInterval, days }) => {
+        try {
+          const data = await coinGeckoAPI.getHistoricalData(coinId, apiInterval, days)
+          
+          const historicalData: HistoricalData = {
+            prices: data.prices.map(([timestamp, price]) => ({
+              timestamp,
+              price,
+              volume: undefined
+            })),
+            volumes: data.total_volumes.map(([timestamp, volume]) => ({
+              timestamp,
+              volume
+            }))
+          }
+          
+          return { interval, data: historicalData }
+        } catch (error) {
+          console.error(`Failed to fetch data for ${interval}:`, error)
+          return { interval, data: null }
+        }
+      })
+      
+      const results = await Promise.all(timeframePromises)
+      
+      // Convert array to object
+      const timeframeData: { [key: string]: HistoricalData | null } = {}
+      results.forEach(({ interval, data }) => {
+        timeframeData[interval] = data
+      })
+      
+      return timeframeData
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch multiple timeframes'
+      setError(errorMessage)
+      console.error('Failed to fetch multiple timeframes:', error)
+      return {}
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
   const clearData = useCallback(() => {
     setCurrentPrice(null)
     setHistoricalData(null)
@@ -144,6 +207,7 @@ export const usePriceData = () => {
     loadCurrentPrice,
     loadHistoricalData,
     loadAllData,
+    loadMultipleTimeframes,
     clearData
   }
 }
