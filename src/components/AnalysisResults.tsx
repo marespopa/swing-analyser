@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { TechnicalAnalysis } from '../services/technicalAnalysis'
+import { TechnicalAnalysis } from '../services/technicalAnalysis/index'
 import type { TechnicalAnalysisData, PriceDataPoint } from '../services/coingeckoApi'
 import { generateSummary } from '../utils/summaryGenerator'
 import AnalysisHeader from './analysis/AnalysisHeader'
