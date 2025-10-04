@@ -77,6 +77,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
     const sma20 = analysis.sma20?.[analysis.sma20.length - 1] || 0
     const sma50 = analysis.sma50?.[analysis.sma50.length - 1] || 0
     const rsi = analysis.rsi?.[analysis.rsi.length - 1] || 50
+    const ema9 = analysis.ema9?.[analysis.ema9.length - 1] || 0
+    const ema20 = analysis.ema20?.[analysis.ema20.length - 1] || 0
+    const ema50 = analysis.ema50?.[analysis.ema50.length - 1] || 0
 
     let macdSignal: 'Bullish' | 'Bearish' | 'Neutral' = 'Neutral'
     if (analysis.macd && analysis.macd.macd.length >= 2 && analysis.macd.signal.length >= 2) {
@@ -181,66 +184,73 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
     const hasConflictingSignals = (trend === 'Bullish' && macdSignal === 'Bearish') || 
                                  (trend === 'Bearish' && macdSignal === 'Bullish')
 
-    // RSI-First Trading Logic: RSI is the primary indicator for crypto 1h/4h charts
-    if (rsi < 30) {
-      // Strong oversold conditions - RSI is the most reliable indicator for crypto
+    // Hybrid approach: EMA alignment for trend + RSI for timing
+    // Check EMA alignment for trend direction
+    const bullishEMA = currentPrice > ema9 && ema9 > ema20 && ema20 > ema50
+    const bearishEMA = currentPrice < ema9 && ema9 < ema20 && ema20 < ema50
+    const neutralEMA = !bullishEMA && !bearishEMA
+    
+    // Hybrid logic: EMA trend + RSI timing
+    if (bullishEMA && rsi < 70) {
+      // Bullish trend + not overbought
+      if (rsi < 30) {
+        action = 'BUY'
+        confidence = 'high'
+        signalColor = 'green'
+      } else if (rsi < 50) {
+        action = 'BUY'
+        confidence = 'high'
+        signalColor = 'green'
+      } else {
+        action = 'BUY'
+        confidence = 'medium'
+        signalColor = 'green'
+      }
+    } else if (bearishEMA && rsi > 30) {
+      // Bearish trend + not oversold
+      if (rsi > 70) {
+        action = 'SELL'
+        confidence = 'high'
+        signalColor = 'red'
+      } else if (rsi > 50) {
+        action = 'SELL'
+        confidence = 'high'
+        signalColor = 'red'
+      } else {
+        action = 'SELL'
+        confidence = 'medium'
+        signalColor = 'red'
+      }
+    } else if (rsi < 30) {
+      // Strong oversold regardless of EMA
       action = 'BUY'
       confidence = 'high'
       signalColor = 'green'
     } else if (rsi > 70) {
-      // Strong overbought conditions - RSI is the most reliable indicator for crypto
+      // Strong overbought regardless of EMA
       action = 'SELL'
       confidence = 'high'
       signalColor = 'red'
-    } else if (rsi < 35) {
-      // Near oversold - still strong buy signal for crypto
-      if (trend === 'Bullish' || macdSignal === 'Bullish') {
-        action = 'BUY'
-        confidence = 'high'
-        signalColor = 'green'
-      } else {
+    } else if (neutralEMA) {
+      // Neutral EMA alignment - use RSI for direction
+      if (rsi < 40) {
         action = 'BUY'
         confidence = 'medium'
         signalColor = 'green'
-      }
-    } else if (rsi > 65) {
-      // Near overbought - still strong sell signal for crypto
-      if (trend === 'Bearish' || macdSignal === 'Bearish') {
-        action = 'SELL'
-        confidence = 'high'
-        signalColor = 'red'
-      } else {
+      } else if (rsi > 60) {
         action = 'SELL'
         confidence = 'medium'
         signalColor = 'red'
-      }
-    } else {
-      // Neutral RSI range (35-65) - use trend and other confirmations
-      if (trend === 'Bullish') {
-        if (macdSignal === 'Bullish' || currentPrice > sma20) {
-          action = 'BUY'
-          confidence = 'medium'
-          signalColor = 'green'
-        } else {
-          action = 'WAIT'
-          confidence = 'low'
-          signalColor = 'amber'
-        }
-      } else if (trend === 'Bearish') {
-        if (macdSignal === 'Bearish' || currentPrice < sma20) {
-          action = 'SELL'
-          confidence = 'medium'
-          signalColor = 'red'
-        } else {
-          action = 'WAIT'
-          confidence = 'low'
-          signalColor = 'amber'
-        }
       } else {
         action = 'WAIT'
-        confidence = 'medium'
+        confidence = 'low'
         signalColor = 'amber'
       }
+    } else {
+      // Conflicting signals
+      action = 'WAIT'
+      confidence = 'low'
+      signalColor = 'amber'
     }
 
     // Handle conflicting signals - only downgrade confidence, don't change to WAIT
@@ -273,11 +283,6 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
     let bullishnessScore = 50 // Start neutral
     const buySignals: string[] = []
     const sellSignals: string[] = []
-
-    // Get EMA values
-    const ema9 = analysis.ema9?.[analysis.ema9.length - 1] || 0
-    const ema20 = analysis.ema20?.[analysis.ema20.length - 1] || 0
-    const ema50 = analysis.ema50?.[analysis.ema50.length - 1] || 0
 
     // Strong bullish setup: price > 9EMA > 20EMA > 50EMA + RSI < 70
     if (currentPrice > ema9 && ema9 > ema20 && ema20 > ema50 && rsi < 70) {

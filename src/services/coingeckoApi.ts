@@ -336,43 +336,36 @@ class CoinGeckoAPI {
 
   async getHistoricalData(
     coinId: string, 
-    interval: '1h' | '4h' | '1d',
+    interval: '1d', // Only daily data for free tier optimization
     days: number = 30
   ): Promise<CoinGeckoResponse> {
     const vs_currency = 'usd'
     let vs_currency_param = `vs_currency=${vs_currency}`
     let days_param = `days=${days}`
     
-    // Adjust days based on interval for better data density
-    if (interval === '1h') {
-      days = Math.min(days, 7) // Max 7 days for hourly data
-    } else if (interval === '4h') {
-      days = Math.min(days, 30) // Max 30 days for 4-hour data
-    }
-
-    // Note: interval=hourly requires Enterprise plan
-    // For free tier, hourly data is automatically returned when days=2-90
-    let interval_param = ''
-    // Removed interval parameter to work with free tier
-
-    const endpoint = `/coins/${coinId}/market_chart?${vs_currency_param}&${days_param}${interval_param}`
+    // Optimize for free tier: Only daily data, no interval parameter needed
+    // Daily data is automatically returned for any days value (1-365)
+    const endpoint = `/coins/${coinId}/market_chart?${vs_currency_param}&${days_param}`
     
     try {
       const data = await this.makeRequest(endpoint)
       
-      // For 4h interval, filter data to every 4th point
-      if (interval === '4h') {
-        const filteredData = {
-          prices: data.prices.filter((_: any, index: number) => index % 4 === 0),
-          market_caps: data.market_caps.filter((_: any, index: number) => index % 4 === 0),
-          total_volumes: data.total_volumes.filter((_: any, index: number) => index % 4 === 0)
-        }
-        return filteredData
-      }
-
+      // For daily data, we get one data point per day
+      // No filtering needed as CoinGecko returns daily data automatically
       return data
     } catch (error) {
-      throw error
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a moment and try again.')
+        }
+        if (error.response?.status === 404) {
+          throw new Error('Coin not found. Please check the coin ID.')
+        }
+        if (error.response?.status === 401) {
+          throw new Error('API key invalid or expired. Please check your API key.')
+        }
+      }
+      throw new Error('Failed to fetch historical data. Please try again.')
     }
   }
 

@@ -1,6 +1,8 @@
 import React from 'react'
 import type { TechnicalAnalysisData } from '../../services/coingeckoApi'
 import { FaInfoCircle } from 'react-icons/fa'
+import BullishnessIndicator from './BullishnessIndicator'
+import type { ChartDataPoint } from '../../types'
 
 interface CoinInfo {
   id: string
@@ -12,19 +14,28 @@ interface CoinInfo {
 interface AnalysisTechnicalDetailsProps {
   analysis: TechnicalAnalysisData | null
   coinInfo: CoinInfo | null
+  chartData?: ChartDataPoint[]
 }
 
 const AnalysisTechnicalDetails: React.FC<AnalysisTechnicalDetailsProps> = ({
   analysis,
   coinInfo,
+  chartData = [],
 }) => {
   if (!analysis) return null
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-      <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">
-        Technical Indicators Breakdown
-      </h3>
+    <div className="space-y-6">
+      {/* Bullishness Indicator */}
+      {chartData.length > 0 && (
+        <BullishnessIndicator data={analysis} chartData={chartData} />
+      )}
+
+      {/* Technical Indicators Breakdown */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">
+          Technical Indicators Breakdown
+        </h3>
 
       {/* Detailed Indicator Analysis */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
@@ -39,7 +50,7 @@ const AnalysisTechnicalDetails: React.FC<AnalysisTechnicalDetailsProps> = ({
               <div className="group relative">
                 <FaInfoCircle className="w-4 h-4 text-gray-400 cursor-help" />
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                  RSI is the most widely regarded indicator for 1h/4h crypto charts. Identifies overbought/oversold conditions and momentum shifts.
+                  Identifies overbought/oversold conditions and momentum shifts.
                 </div>
               </div>
             </div>
@@ -137,7 +148,7 @@ const AnalysisTechnicalDetails: React.FC<AnalysisTechnicalDetailsProps> = ({
               <div className="group relative">
                 <FaInfoCircle className="w-4 h-4 text-gray-400 cursor-help" />
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                  EMA is critical for entry decisions in crypto. Responds quickly to price changes and provides dynamic support/resistance.
+                  Responds quickly to price changes and provides dynamic support/resistance.
                 </div>
               </div>
             </div>
@@ -168,7 +179,7 @@ const AnalysisTechnicalDetails: React.FC<AnalysisTechnicalDetailsProps> = ({
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <strong>Key Support/Resistance</strong> - most important EMA for crypto entries on 1h/4h charts.
+                  <strong>Key Support/Resistance</strong> - most important EMA for crypto entries on short term charts.
                   {(() => {
                     const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
                     const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
@@ -251,7 +262,7 @@ const AnalysisTechnicalDetails: React.FC<AnalysisTechnicalDetailsProps> = ({
               <div className="group relative">
                 <FaInfoCircle className="w-4 h-4 text-gray-400 cursor-help" />
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                  Bollinger Bands identify volatility squeezes and reversal opportunities
+                  Identifies volatility squeezes and reversal opportunities
                 </div>
               </div>
             </div>
@@ -666,6 +677,7 @@ const AnalysisTechnicalDetails: React.FC<AnalysisTechnicalDetailsProps> = ({
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   )

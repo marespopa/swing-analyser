@@ -74,31 +74,21 @@ export const usePriceData = () => {
         coinGeckoAPI.setApiKey(apiKey)
       }
       
-      // Fetch both price data and OHLC data
-      const [data, ohlcData] = await Promise.all([
-        coinGeckoAPI.getHistoricalData(coinId, '1d', days),
-        coinGeckoAPI.getOHLCData(coinId, days)
-      ])
-      
-      // Create a map of OHLC data by timestamp for quick lookup
-      const ohlcMap = new Map<number, { open: number; high: number; low: number; close: number }>()
-      ohlcData.forEach(([timestamp, open, high, low, close]) => {
-        ohlcMap.set(timestamp, { open, high, low, close })
-      })
+      // Optimize for free tier: Use only daily data, no OHLC calls
+      // Daily data is most reliable and doesn't require Enterprise plan
+      const data = await coinGeckoAPI.getHistoricalData(coinId, '1d', days)
       
       const historicalData: HistoricalData = {
-        prices: data.prices.map(([timestamp, price]) => {
-          const ohlc = ohlcMap.get(timestamp)
-          return {
-            timestamp,
-            price,
-            volume: undefined,
-            open: ohlc?.open,
-            high: ohlc?.high,
-            low: ohlc?.low,
-            close: ohlc?.close
-          }
-        }),
+        prices: data.prices.map(([timestamp, price]) => ({
+          timestamp,
+          price,
+          volume: undefined,
+          // No OHLC data for free tier optimization
+          open: undefined,
+          high: undefined,
+          low: undefined,
+          close: undefined
+        })),
         volumes: data.total_volumes.map(([timestamp, volume]) => ({
           timestamp,
           volume
@@ -158,43 +148,32 @@ export const usePriceData = () => {
         coinGeckoAPI.setApiKey(apiKey)
       }
       
-      // Define timeframes and their corresponding API intervals and days
+      // Optimized timeframes for free tier - all daily data
       const timeframes = [
-        { interval: '15m', apiInterval: '1h' as const, days: 1 }, // 1 day of hourly data for 15m analysis
-        { interval: '1h', apiInterval: '1h' as const, days: 7 }, // 7 days of hourly data
-        { interval: '4h', apiInterval: '4h' as const, days: 14 }, // 14 days of 4-hour data
-        { interval: '1d', apiInterval: '1d' as const, days: 30 }, // 30 days of daily data
-        { interval: '3d', apiInterval: '1d' as const, days: 90 } // 90 days of daily data for 3d analysis
+        { interval: '1d', apiInterval: '1d' as const, days: 7 },   // 7 days for short-term analysis
+        { interval: '1d', apiInterval: '1d' as const, days: 30 },  // 30 days for medium-term analysis
+        { interval: '1d', apiInterval: '1d' as const, days: 90 },  // 90 days for long-term analysis
+        { interval: '1d', apiInterval: '1d' as const, days: 180 }, // 180 days for swing trading
+        { interval: '1d', apiInterval: '1d' as const, days: 365 }  // 1 year for trend analysis
       ]
       
       // Fetch data for all timeframes in parallel
       const timeframePromises = timeframes.map(async ({ interval, apiInterval, days }) => {
         try {
-          // Fetch both price data and OHLC data for each timeframe
-          const [data, ohlcData] = await Promise.all([
-            coinGeckoAPI.getHistoricalData(coinId, apiInterval, days),
-            coinGeckoAPI.getOHLCData(coinId, days)
-          ])
-          
-          // Create a map of OHLC data by timestamp for quick lookup
-          const ohlcMap = new Map<number, { open: number; high: number; low: number; close: number }>()
-          ohlcData.forEach(([timestamp, open, high, low, close]) => {
-            ohlcMap.set(timestamp, { open, high, low, close })
-          })
+          // Single API call per timeframe - no OHLC data for free tier optimization
+          const data = await coinGeckoAPI.getHistoricalData(coinId, apiInterval, days)
           
           const historicalData: HistoricalData = {
-            prices: data.prices.map(([timestamp, price]) => {
-              const ohlc = ohlcMap.get(timestamp)
-              return {
-                timestamp,
-                price,
-                volume: undefined,
-                open: ohlc?.open,
-                high: ohlc?.high,
-                low: ohlc?.low,
-                close: ohlc?.close
-              }
-            }),
+            prices: data.prices.map(([timestamp, price]) => ({
+              timestamp,
+              price,
+              volume: undefined,
+              // No OHLC data for free tier optimization
+              open: undefined,
+              high: undefined,
+              low: undefined,
+              close: undefined
+            })),
             volumes: data.total_volumes.map(([timestamp, volume]) => ({
               timestamp,
               volume
