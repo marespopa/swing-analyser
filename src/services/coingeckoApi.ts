@@ -350,12 +350,10 @@ class CoinGeckoAPI {
       days = Math.min(days, 30) // Max 30 days for 4-hour data
     }
 
+    // Note: interval=hourly requires Enterprise plan
+    // For free tier, hourly data is automatically returned when days=2-90
     let interval_param = ''
-    if (interval === '1h') {
-      interval_param = '&interval=hourly'
-    } else if (interval === '4h') {
-      interval_param = '&interval=hourly' // We'll filter this to 4h intervals
-    }
+    // Removed interval parameter to work with free tier
 
     const endpoint = `/coins/${coinId}/market_chart?${vs_currency_param}&${days_param}${interval_param}`
     

@@ -71,6 +71,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
           }}
         />
         
+        {/* Price Display - Line Chart */}
         {/* Price Area with Gradient Fill */}
         <Area
           type="monotone"
@@ -155,8 +156,8 @@ const PriceChart: React.FC<PriceChartProps> = ({
       <ComposedChart {...commonProps}>
         <defs>
           <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.3}/>
-            <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.05}/>
+            <stop offset="0%" stopColor="#60A5FA" stopOpacity={0.3}/>
+            <stop offset="100%" stopColor="#60A5FA" stopOpacity={0.05}/>
           </linearGradient>
         </defs>
         {commonElements}
@@ -227,6 +228,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
                 )}
 
               </div>
+              
             </div>
           )}
         </div>

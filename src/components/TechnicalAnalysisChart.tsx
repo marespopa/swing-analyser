@@ -4,7 +4,7 @@ import { useChartData } from '../hooks/useChartData'
 import { useChartToggles } from '../hooks/useChartToggles'
 
 // Lazy load chart components to reduce bundle size
-const PriceChart = lazy(() => import('./charts/PriceChart'))
+const EChartsPriceChart = lazy(() => import('./charts/EChartsPriceChart'))
 const RSIChart = lazy(() => import('./charts/RSIChart'))
 const MACDChart = lazy(() => import('./charts/MACDChart'))
 const VolumeChart = lazy(() => import('./charts/VolumeChart'))
@@ -34,7 +34,7 @@ const TechnicalAnalysisChart: React.FC<TechnicalAnalysisChartProps> = ({
           <span className="ml-3 text-gray-600 dark:text-gray-400">Loading chart...</span>
         </div>
       }>
-        <PriceChart 
+        <EChartsPriceChart 
           data={data} 
           chartData={chartData} 
           toggles={toggles} 

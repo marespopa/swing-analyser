@@ -42,12 +42,13 @@ export interface ToggleState {
   showBollingerBands: boolean
   showSMA20: boolean
   showSMA50: boolean
+  showSMA9: boolean
+  showEMA21: boolean
   showSupport: boolean
   showResistance: boolean
-  chartType: 'line'
 }
 
-export type ChartType = 'line'
+export type ChartType = 'line' | 'candlestick'
 
 // UI Component types
 export interface BaseComponentProps {

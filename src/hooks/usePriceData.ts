@@ -74,14 +74,31 @@ export const usePriceData = () => {
         coinGeckoAPI.setApiKey(apiKey)
       }
       
-      const data = await coinGeckoAPI.getHistoricalData(coinId, '1d', days)
+      // Fetch both price data and OHLC data
+      const [data, ohlcData] = await Promise.all([
+        coinGeckoAPI.getHistoricalData(coinId, '1d', days),
+        coinGeckoAPI.getOHLCData(coinId, days)
+      ])
+      
+      // Create a map of OHLC data by timestamp for quick lookup
+      const ohlcMap = new Map<number, { open: number; high: number; low: number; close: number }>()
+      ohlcData.forEach(([timestamp, open, high, low, close]) => {
+        ohlcMap.set(timestamp, { open, high, low, close })
+      })
       
       const historicalData: HistoricalData = {
-        prices: data.prices.map(([timestamp, price]) => ({
-          timestamp,
-          price,
-          volume: undefined
-        })),
+        prices: data.prices.map(([timestamp, price]) => {
+          const ohlc = ohlcMap.get(timestamp)
+          return {
+            timestamp,
+            price,
+            volume: undefined,
+            open: ohlc?.open,
+            high: ohlc?.high,
+            low: ohlc?.low,
+            close: ohlc?.close
+          }
+        }),
         volumes: data.total_volumes.map(([timestamp, volume]) => ({
           timestamp,
           volume
@@ -153,14 +170,31 @@ export const usePriceData = () => {
       // Fetch data for all timeframes in parallel
       const timeframePromises = timeframes.map(async ({ interval, apiInterval, days }) => {
         try {
-          const data = await coinGeckoAPI.getHistoricalData(coinId, apiInterval, days)
+          // Fetch both price data and OHLC data for each timeframe
+          const [data, ohlcData] = await Promise.all([
+            coinGeckoAPI.getHistoricalData(coinId, apiInterval, days),
+            coinGeckoAPI.getOHLCData(coinId, days)
+          ])
+          
+          // Create a map of OHLC data by timestamp for quick lookup
+          const ohlcMap = new Map<number, { open: number; high: number; low: number; close: number }>()
+          ohlcData.forEach(([timestamp, open, high, low, close]) => {
+            ohlcMap.set(timestamp, { open, high, low, close })
+          })
           
           const historicalData: HistoricalData = {
-            prices: data.prices.map(([timestamp, price]) => ({
-              timestamp,
-              price,
-              volume: undefined
-            })),
+            prices: data.prices.map(([timestamp, price]) => {
+              const ohlc = ohlcMap.get(timestamp)
+              return {
+                timestamp,
+                price,
+                volume: undefined,
+                open: ohlc?.open,
+                high: ohlc?.high,
+                low: ohlc?.low,
+                close: ohlc?.close
+              }
+            }),
             volumes: data.total_volumes.map(([timestamp, volume]) => ({
               timestamp,
               volume

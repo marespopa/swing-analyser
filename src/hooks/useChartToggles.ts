@@ -2,12 +2,13 @@ import { useState, useCallback } from 'react'
 import type { ToggleState } from '../types'
 
 const initialToggleState: ToggleState = {
-  showBollingerBands: true,
-  showSMA20: true,
-  showSMA50: true,
+  showBollingerBands: false,
+  showSMA20: false,
+  showSMA50: false,
+  showSMA9: false,
+  showEMA21: false,
   showSupport: false,
-  showResistance: false,
-  chartType: 'line'
+  showResistance: false
 }
 
 export const useChartToggles = () => {

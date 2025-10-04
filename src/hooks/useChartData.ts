@@ -16,6 +16,7 @@ export const useChartData = (data: TechnicalAnalysisData, toggles: ToggleState) 
 
       const entryPoint = data.entryPoints.find(ep => ep.timestamp === point.timestamp)
 
+
       return {
         timestamp: point.timestamp,
         time,
