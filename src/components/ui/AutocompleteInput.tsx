@@ -238,7 +238,11 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
       {isOpen && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 w-full mt-1 border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 shadow-lg max-h-64 overflow-y-auto"
+          className="absolute z-50 w-full mt-1 border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 shadow-lg max-h-64 overflow-y-auto overscroll-contain touch-pan-y"
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'thin'
+          }}
         >
           {searchResults.length > 0 ? (
             <>
@@ -250,9 +254,10 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
                   key={item.id}
                   type="button"
                   onClick={() => handleSelect(item)}
-                  className={`w-full px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 transition-colors cursor-pointer ${
+                  className={`w-full px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-600 active:bg-gray-100 dark:active:bg-gray-500 border-b border-gray-100 dark:border-gray-600 last:border-b-0 transition-colors cursor-pointer touch-manipulation ${
                     index === highlightedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : ''
                   }`}
+                  style={{ minHeight: '44px' }}
                 >
                   <div className="flex justify-between items-center">
                     <div className="flex-1 min-w-0">

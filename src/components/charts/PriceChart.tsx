@@ -218,7 +218,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
                   >
                     <div 
                       className="w-3 h-3 rounded-sm border border-gray-300 dark:border-gray-600"
-                      style={{ backgroundColor: toggles.showBollingerBands ? '#8B5CF6' : '#E5E7EB' }}
+                      style={{ backgroundColor: toggles.showBollingerBands ? '#C084FC' : '#E5E7EB' }}
                     />
                     <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                       Bollinger Bands

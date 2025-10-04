@@ -2,33 +2,35 @@ import type { ChartConfig } from '../types'
 
 export const CHART_CONFIG: ChartConfig = {
   colors: {
-    price: '#3B82F6',           // Blue for main price
-    sma20: '#EF4444',           // Red for SMA 20
-    sma50: '#F59E0B',           // Orange for SMA 50
-    bbUpper: '#8B5CF6',         // Purple for Bollinger Bands
-    bbLower: '#8B5CF6',         // Purple for Bollinger Bands
-    support: '#10B981',         // Green for support
-    resistance: '#EF4444',      // Red for resistance
-    macd: '#3B82F6',            // Blue for MACD
-    signal: '#F59E0B',          // Orange for signal
-    rsi: '#8B5CF6'              // Purple for RSI
+    price: '#60A5FA',           // Brighter blue for main price (better dark mode visibility)
+    sma20: '#F87171',           // Brighter red for SMA 20 (better dark mode visibility)
+    sma50: '#FBBF24',           // Brighter orange for SMA 50 (better dark mode visibility)
+    bbUpper: '#C084FC',         // Bright purple for Bollinger Bands (much better dark mode visibility)
+    bbLower: '#C084FC',         // Bright purple for Bollinger Bands (much better dark mode visibility)
+    bbFill: '#C084FC',          // Fill color for Bollinger Bands area
+    support: '#34D399',         // Brighter green for support (better dark mode visibility)
+    resistance: '#F87171',      // Brighter red for resistance (better dark mode visibility)
+    macd: '#60A5FA',            // Brighter blue for MACD (better dark mode visibility)
+    signal: '#FBBF24',          // Brighter orange for signal (better dark mode visibility)
+    rsi: '#C084FC'              // Bright purple for RSI (better dark mode visibility)
   },
   strokeWidths: {
     price: 3,                   // Slightly thinner for cleaner look
     movingAverage: 1.5,         // Thinner moving averages
-    bollingerBand: 1,           // Very thin Bollinger Bands
+    bollingerBand: 2,           // Thicker Bollinger Bands for better visibility
     supportResistance: 2        // Keep support/resistance visible
   },
   opacities: {
     movingAverage: 0.8,         // More visible moving averages
-    bollingerBand: 0.4,         // Much more subtle Bollinger Bands
+    bollingerBand: 0.8,         // Much more visible Bollinger Bands
+    bollingerFill: 0.1,         // Subtle fill for Bollinger Bands area
     supportResistance: 0.9      // Keep support/resistance visible
   }
 }
 
 export const CHART_DASH_PATTERNS = {
-  movingAverage: '8 4',
-  bollingerBand: '4 4',
+  movingAverage: '0',           // Solid lines for moving averages (EMA)
+  bollingerBand: '4 4',         // Dotted lines for Bollinger Bands
   supportResistance: '8 4',
   macd: '2 2'
 } as const

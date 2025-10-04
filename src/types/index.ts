@@ -74,6 +74,7 @@ export interface ChartConfig {
     sma50: string
     bbUpper: string
     bbLower: string
+    bbFill: string
     support: string
     resistance: string
     macd: string
@@ -89,6 +90,7 @@ export interface ChartConfig {
   opacities: {
     movingAverage: number
     bollingerBand: number
+    bollingerFill: number
     supportResistance: number
   }
 }
