@@ -221,6 +221,10 @@ export interface TechnicalAnalysisData {
       volumeConfirmation?: boolean
       rsiConfirmation?: boolean
       maConfirmation?: boolean
+      breakoutConfirmation?: boolean
+      fakeBreakoutRisk?: 'low' | 'medium' | 'high'
+      marketContext?: 'uptrend' | 'downtrend' | 'sideways'
+      completionTimeframe?: 'short' | 'medium' | 'long'
       description: string
       entryPrice?: number
       stopLoss?: number
@@ -230,6 +234,8 @@ export interface TechnicalAnalysisData {
       lowerTrendline: { start: { index: number; price: number }; end: { index: number; price: number } }
       apexIndex?: number
       targetPrice?: number
+      tradingAdvice?: string
+      riskManagement?: string
     }>
     highTrendlines: Array<{
       index: number
@@ -260,6 +266,14 @@ export interface TechnicalAnalysisData {
     volumeRatio: number[]
     volumeTrend: 'increasing' | 'decreasing' | 'stable'
   }
+  dataQuality?: {
+    totalDataPoints: number
+    hasBasicIndicators: boolean
+    hasAdvancedIndicators: boolean
+    hasPatternDetection: boolean
+    hasFullAnalysis: boolean
+    limitations?: string
+  }
 }
 
 export interface Trendline {
@@ -278,6 +292,8 @@ export interface EntryPoint {
 class CoinGeckoAPI {
   private baseURL = 'https://api.coingecko.com/api/v3'
   private apiKey: string | null = null
+  private lastRequestTime = 0
+  private readonly MIN_REQUEST_INTERVAL = 1000 // 1 second between requests
 
   setApiKey(apiKey: string) {
     this.apiKey = this.cleanApiKey(apiKey)
@@ -306,6 +322,44 @@ class CoinGeckoAPI {
     return apiKey.replace(/^["']|["']$/g, '').replace(/\\[tnr]/g, '').trim()
   }
 
+  private async waitForRateLimit(): Promise<void> {
+    const now = Date.now()
+    const timeSinceLastRequest = now - this.lastRequestTime
+    
+    if (timeSinceLastRequest < this.MIN_REQUEST_INTERVAL) {
+      const waitTime = this.MIN_REQUEST_INTERVAL - timeSinceLastRequest
+      await new Promise(resolve => setTimeout(resolve, waitTime))
+    }
+    
+    this.lastRequestTime = Date.now()
+  }
+
+  private async makeRequestWithRetry(endpoint: string, params: Record<string, any> = {}, maxRetries: number = 3): Promise<any> {
+    let lastError: Error | null = null
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await this.waitForRateLimit()
+        return await this.makeRequest(endpoint, params)
+      } catch (error) {
+        lastError = error as Error
+        
+        // If it's a rate limit error, wait longer before retrying
+        if (axios.isAxiosError(error) && error.response?.status === 429) {
+          const waitTime = Math.pow(2, attempt) * 2000 // Exponential backoff: 4s, 8s, 16s
+          console.warn(`Rate limited. Waiting ${waitTime}ms before retry ${attempt}/${maxRetries}`)
+          await new Promise(resolve => setTimeout(resolve, waitTime))
+          continue
+        }
+        
+        // For other errors, don't retry
+        throw error
+      }
+    }
+    
+    throw lastError
+  }
+
   private async makeRequest(endpoint: string, params: Record<string, any> = {}) {
     try {
       const config: any = {
@@ -332,9 +386,10 @@ class CoinGeckoAPI {
         } else if (error.response?.status === 403) {
           throw new Error('API key access denied. Please check your CoinGecko API key permissions.')
         } else if (error.response?.status === 404) {
-          throw new Error('Coin not found. Please check the coin ID or symbol.')
+          const coinId = params.coinId || endpoint.split('/')[2] || 'unknown'
+          throw new Error(`Coin "${coinId}" not found on CoinGecko. Please check the coin ID or symbol. Try searching for a valid cryptocurrency.`)
         } else if (error.response?.status === 429) {
-          throw new Error('Rate limit exceeded. Please wait a moment and try again.')
+          throw new Error('Rate limit exceeded. The system is making too many requests too quickly. Please wait a moment and try again.')
         } else {
           const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message
           throw new Error(`API Error: ${errorMessage}`)
@@ -378,19 +433,15 @@ class CoinGeckoAPI {
     _interval: '1d', // Only daily data for free tier optimization
     days: number = 30
   ): Promise<CoinGeckoResponse> {
-    const vs_currency = 'usd'
-    let vs_currency_param = `vs_currency=${vs_currency}`
-    let days_param = `days=${days}`
-    
-    // Optimize for free tier: Only daily data, no interval parameter needed
-    // Daily data is automatically returned for any days value (1-365)
-    const endpoint = `/coins/${coinId}/market_chart?${vs_currency_param}&${days_param}`
+    const endpoint = `/coins/${coinId}/market_chart`
+    const params = {
+      vs_currency: 'usd',
+      days: days.toString(),
+      coinId: coinId // Add coinId for better error messages
+    }
     
     try {
-      const data = await this.makeRequest(endpoint)
-      
-      // For daily data, we get one data point per day
-      // No filtering needed as CoinGecko returns daily data automatically
+      const data = await this.makeRequestWithRetry(endpoint, params)
       return data
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -398,7 +449,7 @@ class CoinGeckoAPI {
           throw new Error('Rate limit exceeded. Please wait a moment and try again.')
         }
         if (error.response?.status === 404) {
-          throw new Error('Coin not found. Please check the coin ID.')
+          throw new Error(`Coin "${coinId}" not found. Please check the coin ID or try searching for a valid cryptocurrency.`)
         }
         if (error.response?.status === 401) {
           throw new Error('API key invalid or expired. Please check your API key.')
@@ -425,13 +476,14 @@ class CoinGeckoAPI {
 
   async getCoinInfo(coinId: string) {
     try {
-      const data = await this.makeRequest(`/coins/${coinId}`, {
+      const data = await this.makeRequestWithRetry(`/coins/${coinId}`, {
         localization: false,
         tickers: false,
         market_data: true,
         community_data: false,
         developer_data: false,
-        sparkline: false
+        sparkline: false,
+        coinId: coinId // Add coinId for better error messages
       })
       
       return {
@@ -444,6 +496,9 @@ class CoinGeckoAPI {
         volume24h: data.market_data.total_volume.usd
       }
     } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        throw new Error(`Coin "${coinId}" not found. Please check the coin ID or try searching for a valid cryptocurrency.`)
+      }
       throw error
     }
   }
@@ -452,7 +507,7 @@ class CoinGeckoAPI {
     const endpoint = `/coins/${coinId}/tickers`
     
     try {
-      const response = await this.makeRequest(endpoint)
+      const response = await this.makeRequestWithRetry(endpoint, { coinId })
       const tickers: ExchangeTicker[] = response.tickers || []
       
       // Check if coin is listed on Binance
@@ -477,7 +532,7 @@ class CoinGeckoAPI {
           throw new Error('Rate limit exceeded. Please wait a moment and try again.')
         }
         if (error.response?.status === 404) {
-          throw new Error('Coin not found. Please check the coin ID.')
+          throw new Error(`Coin "${coinId}" not found. Please check the coin ID or try searching for a valid cryptocurrency.`)
         }
         if (error.response?.status === 401) {
           throw new Error('API key invalid or expired. Please check your API key.')

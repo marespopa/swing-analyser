@@ -195,4 +195,10 @@ export interface WedgePattern extends PatternDetection {
   lowerTrendline: { start: { index: number; price: number }; end: { index: number; price: number } }
   apexIndex?: number
   targetPrice?: number
+  breakoutConfirmation?: boolean
+  fakeBreakoutRisk?: 'low' | 'medium' | 'high'
+  marketContext?: 'uptrend' | 'downtrend' | 'sideways'
+  completionTimeframe?: 'short' | 'medium' | 'long'
+  tradingAdvice?: string
+  riskManagement?: string
 }
