@@ -16,6 +16,45 @@ export interface CoinGeckoResponse {
   total_volumes: [number, number][]
 }
 
+export interface ExchangeTicker {
+  base: string
+  target: string
+  market: {
+    name: string
+    identifier: string
+    has_trading_incentive: boolean
+  }
+  last: number
+  volume: number
+  converted_last: {
+    btc: number
+    eth: number
+    usd: number
+  }
+  converted_volume: {
+    btc: number
+    eth: number
+    usd: number
+  }
+  trust_score: string
+  bid_ask_spread_percentage: number
+  timestamp: string
+  last_traded_at: string
+  last_fetch_at: string
+  is_anomaly: boolean
+  is_stale: boolean
+  trade_url: string
+  token_info_url: string | null
+  coin_id: string
+  target_coin_id: string
+}
+
+export interface ExchangeInfo {
+  isListedOnBinance: boolean
+  binanceTicker?: ExchangeTicker
+  otherExchanges: ExchangeTicker[]
+}
+
 export interface TechnicalAnalysisData {
   interval: '1h' | '4h' | '1d'
   data: PriceDataPoint[]
@@ -406,6 +445,45 @@ class CoinGeckoAPI {
       }
     } catch (error) {
       throw error
+    }
+  }
+
+  async getExchangeInfo(coinId: string): Promise<ExchangeInfo> {
+    const endpoint = `/coins/${coinId}/tickers`
+    
+    try {
+      const response = await this.makeRequest(endpoint)
+      const tickers: ExchangeTicker[] = response.tickers || []
+      
+      // Check if coin is listed on Binance
+      const binanceTicker = tickers.find(ticker => 
+        ticker.market.identifier === 'binance' || 
+        ticker.market.name.toLowerCase().includes('binance')
+      )
+      
+      const otherExchanges = tickers.filter(ticker => 
+        ticker.market.identifier !== 'binance' && 
+        !ticker.market.name.toLowerCase().includes('binance')
+      )
+      
+      return {
+        isListedOnBinance: !!binanceTicker,
+        binanceTicker,
+        otherExchanges: otherExchanges.slice(0, 10) // Limit to top 10 other exchanges
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a moment and try again.')
+        }
+        if (error.response?.status === 404) {
+          throw new Error('Coin not found. Please check the coin ID.')
+        }
+        if (error.response?.status === 401) {
+          throw new Error('API key invalid or expired. Please check your API key.')
+        }
+      }
+      throw new Error('Failed to fetch exchange information. Please try again.')
     }
   }
 }

@@ -1,10 +1,8 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import ReactECharts from 'echarts-for-react'
 import type { TechnicalAnalysisData, ChartDataPoint, ToggleState } from '../../types'
 import { CHART_HEIGHTS } from '../../constants/chart'
 import { 
-  filterChartDataByTimeRange, 
-  getDefaultTimeRange, 
   formatTimeRange,
   type TimeRange 
 } from '../../utils/chartDataFilter'
@@ -16,6 +14,9 @@ interface EChartsPriceChartProps {
   toggles: ToggleState
   onToggleChange?: (key: keyof ToggleState, value: boolean | string) => void
   height?: number
+  timeRange?: TimeRange
+  showFullRange?: boolean
+  onToggleFullRange?: (showFull: boolean) => void
 }
 
 const EChartsPriceChart: React.FC<EChartsPriceChartProps> = ({ 
@@ -23,23 +24,17 @@ const EChartsPriceChart: React.FC<EChartsPriceChartProps> = ({
   chartData, 
   toggles, 
   onToggleChange,
-  height = CHART_HEIGHTS.main 
+  height = CHART_HEIGHTS.main,
+  timeRange,
+  showFullRange = false,
+  onToggleFullRange
 }) => {
   // Detect mobile device for responsive height
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
   const responsiveHeight = isMobile ? CHART_HEIGHTS.mainMobile : height
   
-  // Time range state
-  const [timeRange] = useState<TimeRange>(() => getDefaultTimeRange(chartData))
-  const [showFullRange, setShowFullRange] = useState(false)
-  
-  // Filter chart data based on time range
-  const filteredChartData = useMemo(() => {
-    if (showFullRange) {
-      return chartData
-    }
-    return filterChartDataByTimeRange(chartData, timeRange)
-  }, [chartData, timeRange, showFullRange])
+  // Use chartData directly since it's already filtered by parent component
+  const filteredChartData = chartData
   
   // Prepare data for ECharts line format
   const echartsData = useMemo(() => {
@@ -316,20 +311,22 @@ const EChartsPriceChart: React.FC<EChartsPriceChartProps> = ({
               <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-md">
                 <FaCalendarAlt className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {showFullRange ? 'All Data' : formatTimeRange(timeRange)}
+                  {showFullRange ? 'All Data' : timeRange ? formatTimeRange(timeRange) : 'Loading...'}
                 </span>
               </div>
-              <button
-                onClick={() => setShowFullRange(!showFullRange)}
-                className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                title={showFullRange ? 'Show last 3 months' : 'Show all data'}
-              >
-                {showFullRange ? (
-                  <FaCompressArrowsAlt className="w-4 h-4" />
-                ) : (
-                  <FaExpandArrowsAlt className="w-4 h-4" />
-                )}
-              </button>
+              {onToggleFullRange && (
+                <button
+                  onClick={() => onToggleFullRange(!showFullRange)}
+                  className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  title={showFullRange ? 'Show last 3 months' : 'Show all data'}
+                >
+                  {showFullRange ? (
+                    <FaCompressArrowsAlt className="w-4 h-4" />
+                  ) : (
+                    <FaExpandArrowsAlt className="w-4 h-4" />
+                  )}
+                </button>
+              )}
             </div>
 
             {/* Indicator Toggles */}

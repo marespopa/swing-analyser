@@ -1,6 +1,7 @@
 import Button from '../ui/Button'
 import FavouriteButton from '../FavouriteButton'
 import { useAnalysisContext } from '../../contexts/AnalysisContext'
+import { useExchangeInfo } from '../../hooks/useExchangeInfo'
 import { MdRefresh } from 'react-icons/md'
 
 interface CoinInfo {
@@ -26,6 +27,7 @@ const AnalysisHeader = ({
   isPriceLoading = false
 }: AnalysisHeaderProps) => {
   const { isAnalysisRefreshing, onAnalysisRefresh } = useAnalysisContext()
+  const { exchangeInfo } = useExchangeInfo(coinInfo?.id || null)
   return (
     <div className="mb-6">
       {coinInfo && (
@@ -33,9 +35,17 @@ const AnalysisHeader = ({
           {/* Mobile-first responsive layout */}
           {/* Coin info - always visible */}
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-              {coinInfo.name}
-            </h1>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                {coinInfo.name}
+              </h1>
+              {exchangeInfo?.isListedOnBinance && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-700">
+                  <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full mr-1.5"></span>
+                  Binance
+                </span>
+              )}
+            </div>
             <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400">
               {coinInfo.symbol?.toUpperCase()}
             </p>

@@ -18,22 +18,29 @@ export class TechnicalAnalysis {
    * Perform complete technical analysis
    */
   static performAnalysis(data: PriceDataPoint[]): TechnicalAnalysisData {
-    if (data.length < 50) {
-      throw new Error('Insufficient data for technical analysis. Need at least 50 data points.')
+    if (data.length < 14) {
+      throw new Error('Insufficient data for technical analysis. Need at least 14 data points.')
     }
 
     const prices = data.map(d => d.price)
     const volumes = data.map(d => d.volume || 0)
     
-    // Calculate basic indicators
-    const sma20 = BaseTechnicalAnalysis.calculateSMA(prices, 20)
-    const sma50 = BaseTechnicalAnalysis.calculateSMA(prices, 50)
+    // Calculate basic indicators - adjust periods based on data availability
+    const dataLength = prices.length
+    const smaPeriod20 = Math.min(20, Math.max(5, Math.floor(dataLength / 3)))
+    const smaPeriod50 = Math.min(50, Math.max(10, Math.floor(dataLength / 2)))
+    const emaPeriod9 = Math.min(9, Math.max(3, Math.floor(dataLength / 6)))
+    const emaPeriod20 = Math.min(20, Math.max(5, Math.floor(dataLength / 3)))
+    const emaPeriod50 = Math.min(50, Math.max(10, Math.floor(dataLength / 2)))
+    
+    const sma20 = BaseTechnicalAnalysis.calculateSMA(prices, smaPeriod20)
+    const sma50 = dataLength >= 50 ? BaseTechnicalAnalysis.calculateSMA(prices, smaPeriod50) : []
     const rsi = BaseTechnicalAnalysis.calculateRSI(prices, 14)
     
-    // Calculate EMAs for crypto entry decisions (9, 20, 50 periods)
-    const ema9 = BaseTechnicalAnalysis.calculateEMA(prices, 9)
-    const ema20 = BaseTechnicalAnalysis.calculateEMA(prices, 20)
-    const ema50 = BaseTechnicalAnalysis.calculateEMA(prices, 50)
+    // Calculate EMAs for crypto entry decisions - adjusted periods
+    const ema9 = BaseTechnicalAnalysis.calculateEMA(prices, emaPeriod9)
+    const ema20 = BaseTechnicalAnalysis.calculateEMA(prices, emaPeriod20)
+    const ema50 = dataLength >= 50 ? BaseTechnicalAnalysis.calculateEMA(prices, emaPeriod50) : []
     
     // Calculate volume analysis
     const volumeAnalysis = BaseTechnicalAnalysis.calculateVolumeAnalysis(volumes)
@@ -67,9 +74,11 @@ export class TechnicalAnalysis {
       ...HighTrendlinePatterns.detectHighTrendlinePatterns(data, rsi, sma20, sma50)
     ]
 
-    // Filter to recent patterns and deduplicate
-    const recentPatterns = filterRecentPatterns(allPatterns, data.length, 30)
-    const prioritizedPatterns = deduplicateAndPrioritizePatterns(recentPatterns, 5)
+    // Filter to recent patterns and deduplicate - adjust based on data length
+    const maxPeriodsBack = Math.min(30, Math.max(10, Math.floor(data.length / 2)))
+    const maxPatterns = Math.min(5, Math.max(2, Math.floor(data.length / 20)))
+    const recentPatterns = filterRecentPatterns(allPatterns, data.length, maxPeriodsBack)
+    const prioritizedPatterns = deduplicateAndPrioritizePatterns(recentPatterns, maxPatterns)
 
     // Group patterns by type for the response (using type assertion for flexibility)
     const triangles = prioritizedPatterns.filter(p => 

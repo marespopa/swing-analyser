@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { FaSun, FaMoon } from 'react-icons/fa'
+import Button from './Button'
 
 interface ThemeToggleProps {
   className?: string
@@ -42,9 +43,11 @@ const ThemeToggle: React.FC<ThemeToggleProps> = () => {
   }
 
   return (
-    <button
+    <Button
       onClick={toggleTheme}
-      className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      variant="outline"
+      size="sm"
+      className="p-2"
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
     >
       {isDark ? (
@@ -52,7 +55,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = () => {
       ) : (
         <FaMoon className="w-5 h-5" />
       )}
-    </button>
+    </Button>
   )
 }
 

@@ -1,7 +1,12 @@
-import React, { lazy, Suspense } from 'react'
+import React, { lazy, Suspense, useState, useMemo } from 'react'
 import type { TechnicalAnalysisData } from '../types'
 import { useChartData } from '../hooks/useChartData'
 import { useChartToggles } from '../hooks/useChartToggles'
+import { 
+  filterChartDataByTimeRange, 
+  getDefaultTimeRange, 
+  type TimeRange 
+} from '../utils/chartDataFilter'
 
 // Lazy load chart components to reduce bundle size
 const EChartsPriceChart = lazy(() => import('./charts/EChartsPriceChart'))
@@ -23,6 +28,18 @@ const TechnicalAnalysisChart: React.FC<TechnicalAnalysisChartProps> = ({
     handleToggleChange
   } = useChartToggles()
   const { chartData } = useChartData(data, toggles)
+  
+  // Time range state - shared across all charts
+  const [timeRange] = useState<TimeRange>(() => getDefaultTimeRange(chartData))
+  const [showFullRange, setShowFullRange] = useState(false)
+  
+  // Filter chart data based on time range - shared across all charts
+  const filteredChartData = useMemo(() => {
+    if (showFullRange) {
+      return chartData
+    }
+    return filterChartDataByTimeRange(chartData, timeRange)
+  }, [chartData, timeRange, showFullRange])
 
   return (
     <div className="space-y-4">
@@ -36,10 +53,13 @@ const TechnicalAnalysisChart: React.FC<TechnicalAnalysisChartProps> = ({
       }>
         <EChartsPriceChart 
           data={data} 
-          chartData={chartData} 
+          chartData={filteredChartData} 
           toggles={toggles} 
           onToggleChange={handleToggleChange}
           height={height}
+          timeRange={timeRange}
+          showFullRange={showFullRange}
+          onToggleFullRange={setShowFullRange}
         />
       </Suspense>
 
@@ -50,7 +70,7 @@ const TechnicalAnalysisChart: React.FC<TechnicalAnalysisChartProps> = ({
           <span className="ml-2 text-gray-600 dark:text-gray-400">Loading Volume...</span>
         </div>
       }>
-        <VolumeChart chartData={chartData} />
+        <VolumeChart chartData={filteredChartData} />
       </Suspense>
 
       {/* Indicators Grid */}
@@ -62,7 +82,7 @@ const TechnicalAnalysisChart: React.FC<TechnicalAnalysisChartProps> = ({
             <span className="ml-2 text-gray-600 dark:text-gray-400">Loading RSI...</span>
           </div>
         }>
-          <RSIChart chartData={chartData} />
+          <RSIChart chartData={filteredChartData} />
         </Suspense>
 
         {/* MACD Chart */}
@@ -73,7 +93,7 @@ const TechnicalAnalysisChart: React.FC<TechnicalAnalysisChartProps> = ({
               <span className="ml-2 text-gray-600 dark:text-gray-400">Loading MACD...</span>
             </div>
           }>
-            <MACDChart chartData={chartData} />
+            <MACDChart chartData={filteredChartData} />
           </Suspense>
         )}
       </div>
