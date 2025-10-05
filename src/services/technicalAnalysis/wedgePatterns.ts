@@ -450,6 +450,15 @@ export class WedgePatterns {
   ): string {
     let advice = "Risk Management: "
     
+    // Market context advice
+    if (marketContext === 'uptrend') {
+      advice += "In uptrend - consider higher conviction trades but maintain discipline. "
+    } else if (marketContext === 'downtrend') {
+      advice += "In downtrend - use extra caution and tighter stops. "
+    } else {
+      advice += "In sideways market - expect more whipsaws and use smaller positions. "
+    }
+    
     if (fakeBreakoutRisk === 'high') {
       advice += "High fake breakout risk - use strict stop-loss discipline. Never risk more than 2% of capital. "
     } else if (fakeBreakoutRisk === 'medium') {
