@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, Suspense } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { usePriceData } from '../hooks/usePriceData'
 import AnalysisResults from '../components/AnalysisResults'
 import { AnalysisProvider } from '../contexts/AnalysisContext'
+import AnalysisPageSkeleton from '../components/skeletons/AnalysisPageSkeleton'
 
 const AnalysisResultsPage: React.FC = () => {
   console.log('AnalysisResultsPage component is rendering!')
@@ -209,36 +210,25 @@ const AnalysisResultsPage: React.FC = () => {
     }
   }, [])
 
-  if (!analysisResults && isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">
-            Loading analysis data...
-          </p>
-        </div>
-      </div>
-    )
-  }
-
+  // Show skeleton immediately while data is loading
   if (!analysisResults) {
-    return null
+    return <AnalysisPageSkeleton />
   }
 
   return (
-    <AnalysisProvider
-      isAnalysisRefreshing={isAnalysisRefreshing}
-      onAnalysisRefresh={handleAnalysisRefresh}
-      lastRefreshTime={lastRefreshTime}
-    >
-      <AnalysisResults
-        results={analysisResults}
-        isPriceLoading={isLoading || isRefreshing}
-        isInitialLoading={isLoading}
-        isRefreshing={isRefreshing}
-      />
-    </AnalysisProvider>
+    <Suspense fallback={<AnalysisPageSkeleton />}>
+      <AnalysisProvider
+        isAnalysisRefreshing={isAnalysisRefreshing}
+        onAnalysisRefresh={handleAnalysisRefresh}
+        lastRefreshTime={lastRefreshTime}
+      >
+        <AnalysisResults
+          results={analysisResults}
+          isPriceLoading={isLoading || isRefreshing}
+          isRefreshing={isRefreshing}
+        />
+      </AnalysisProvider>
+    </Suspense>
   )
 }
 

@@ -20,8 +20,6 @@ export interface ChartDataPoint {
   high?: number
   low?: number
   close?: number
-  sma20: number | null
-  sma50: number | null
   rsi: number | null
   macd?: number | null
   signal?: number | null
@@ -40,9 +38,7 @@ export interface ChartDataPoint {
 
 export interface ToggleState {
   showBollingerBands: boolean
-  showSMA20: boolean
-  showSMA50: boolean
-  showSMA9: boolean
+  showEMA9: boolean
   showEMA21: boolean
   showSupport: boolean
   showResistance: boolean

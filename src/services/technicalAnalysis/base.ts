@@ -8,6 +8,8 @@ export class BaseTechnicalAnalysis {
    * Calculate Simple Moving Average
    */
   static calculateSMA(prices: number[], period: number): number[] {
+    if (prices.length === 0) return []
+    
     const sma: number[] = []
     
     for (let i = period - 1; i < prices.length; i++) {
@@ -15,29 +17,32 @@ export class BaseTechnicalAnalysis {
       sma.push(sum / period)
     }
     
-    // Pad the beginning with the first available SMA value to extend lines to chart start
-    const firstSMA = sma[0]
-    return [...Array(period - 1).fill(firstSMA), ...sma]
+    // Pad the beginning with NaN values to maintain array length alignment
+    return [...Array(period - 1).fill(NaN), ...sma]
   }
 
   /**
    * Calculate Exponential Moving Average (EMA)
    */
   static calculateEMA(prices: number[], period: number): number[] {
+    if (prices.length === 0) return []
+    
     const ema: number[] = []
     const multiplier = 2 / (period + 1)
     
-    // First EMA is SMA
+    // First EMA is SMA of the first 'period' values
     const firstSMA = prices.slice(0, period).reduce((sum, price) => sum + price, 0) / period
     ema.push(firstSMA)
     
+    // Calculate EMA for remaining values
     for (let i = period; i < prices.length; i++) {
       const currentEMA = (prices[i] * multiplier) + (ema[ema.length - 1] * (1 - multiplier))
       ema.push(currentEMA)
     }
     
-    // Pad the beginning with the first available EMA value to extend lines to chart start
-    return [...Array(period - 1).fill(firstSMA), ...ema]
+    // Pad the beginning with NaN values to maintain array length alignment
+    // This ensures the EMA array has the same length as the prices array
+    return [...Array(period - 1).fill(NaN), ...ema]
   }
 
   /**
@@ -83,13 +88,17 @@ export class BaseTechnicalAnalysis {
     middle: number[]
     lower: number[]
   } {
+    if (prices.length === 0) {
+      return { upper: [], middle: [], lower: [] }
+    }
+    
     const sma = this.calculateSMA(prices, period)
     const upper: number[] = []
     const lower: number[] = []
     
     for (let i = period - 1; i < prices.length; i++) {
       const slice = prices.slice(i - period + 1, i + 1)
-      const mean = sma[i]
+      const mean = sma[i - (period - 1)] // Use the correct SMA index
       const variance = slice.reduce((acc, price) => acc + Math.pow(price - mean, 2), 0) / period
       const standardDeviation = Math.sqrt(variance)
       
@@ -97,11 +106,9 @@ export class BaseTechnicalAnalysis {
       lower.push(mean - (stdDev * standardDeviation))
     }
     
-    // Pad the beginning with first available values to extend lines to chart start
-    const firstUpper = upper[0]
-    const firstLower = lower[0]
-    const paddedUpper = [...Array(period - 1).fill(firstUpper), ...upper]
-    const paddedLower = [...Array(period - 1).fill(firstLower), ...lower]
+    // Pad the beginning with NaN values to maintain array length alignment
+    const paddedUpper = [...Array(period - 1).fill(NaN), ...upper]
+    const paddedLower = [...Array(period - 1).fill(NaN), ...lower]
     
     return {
       upper: paddedUpper,

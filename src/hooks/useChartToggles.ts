@@ -2,11 +2,9 @@ import { useState, useCallback } from 'react'
 import type { ToggleState } from '../types'
 
 const initialToggleState: ToggleState = {
-  showBollingerBands: false,
-  showSMA20: false,
-  showSMA50: false,
-  showSMA9: false,
-  showEMA21: false,
+  showBollingerBands: true,
+  showEMA9: true,
+  showEMA21: true,
   showSupport: false,
   showResistance: false
 }

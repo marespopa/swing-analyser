@@ -31,6 +31,8 @@ const AnalysisTechnicalDetails: React.FC<AnalysisTechnicalDetailsProps> = ({
         <BullishnessIndicator data={analysis} chartData={chartData} />
       )}
 
+      {/* Pattern Detection moved to separate component at bottom of page */}
+
       {/* Technical Indicators Breakdown */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">

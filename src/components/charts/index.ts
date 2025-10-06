@@ -1,6 +1,5 @@
 export { default as CustomTooltip } from './CustomTooltip'
 export { default as PriceChart } from './PriceChart'
-export { default as EChartsPriceChart } from './EChartsPriceChart'
 export { default as RSIChart } from './RSIChart'
 export { default as MACDChart } from './MACDChart'
 export { default as ChartWithCrosshair } from './ChartWithCrosshair'

@@ -22,8 +22,6 @@ export const useChartData = (data: TechnicalAnalysisData, toggles: ToggleState) 
         time,
         price: point.price,
         volume: typeof point.volume === 'number' ? point.volume : null,
-        sma20: toggles.showSMA20 && !isNaN(data.sma20[index]) ? data.sma20[index] : null,
-        sma50: toggles.showSMA50 && !isNaN(data.sma50[index]) ? data.sma50[index] : null,
         rsi: isNaN(data.rsi[index]) ? null : data.rsi[index],
         macd: data.macd ? (isNaN(data.macd.macd[index]) ? null : data.macd.macd[index]) : null,
         signal: data.macd ? (isNaN(data.macd.signal[index]) ? null : data.macd.signal[index]) : null,
