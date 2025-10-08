@@ -40,214 +40,190 @@ const AnalysisTechnicalDetails: React.FC<AnalysisTechnicalDetailsProps> = ({
         </h3>
 
       {/* Detailed Indicator Analysis */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* RSI Analysis - Primary Indicator for Crypto */}
         {analysis?.rsi && (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2 mb-3">
-              <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">RSI Analysis</h4>
-              <div className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-medium rounded">
-                PRIMARY
-              </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-3">
+              <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">RSI</h4>
+              <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs font-medium rounded">
+                Momentum
+              </span>
               <div className="group relative">
-                <FaInfoCircle className="w-4 h-4 text-gray-400 cursor-help" />
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                  Identifies overbought/oversold conditions and momentum shifts.
+                <FaInfoCircle className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-help transition-colors" />
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                  Overbought/Oversold & Momentum
                 </div>
               </div>
             </div>
-            <div className="space-y-3">
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">Current RSI:</span>
-                  <span className={`font-mono font-medium text-lg ${(() => {
-                    const currentRSI = analysis.rsi[analysis.rsi.length - 1]
-                    if (currentRSI >= 70) return 'text-red-600 dark:text-red-400'
-                    if (currentRSI <= 30) return 'text-green-600 dark:text-green-400'
-                    return 'text-gray-800 dark:text-white'
-                  })()}`}>
-                    {analysis.rsi[analysis.rsi.length - 1]?.toFixed(0) || 'N/A'}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <strong>Relative Strength Index</strong> - measures speed and magnitude of price changes.
-                  {(() => {
-                    const currentRSI = analysis.rsi[analysis.rsi.length - 1]
-                    if (currentRSI >= 70) return ` At ${currentRSI.toFixed(0)}, ${coinInfo?.name || 'this coin'} is in overbought territory (70+), suggesting potential selling pressure.`
-                    if (currentRSI <= 30) return ` At ${currentRSI.toFixed(0)}, ${coinInfo?.name || 'this coin'} is in oversold territory (30-), suggesting potential buying opportunity.`
-                    return ` At ${currentRSI.toFixed(0)}, ${coinInfo?.name || 'this coin'} is in neutral zone (30-70), indicating normal price action.`
-                  })()}
-                </p>
+            
+            {/* Current Value - Highlighted */}
+            <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-750 rounded-lg border border-blue-200 dark:border-gray-600">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Current</span>
+                <span className={`text-2xl font-bold tabular-nums ${(() => {
+                  const currentRSI = analysis.rsi[analysis.rsi.length - 1]
+                  if (currentRSI >= 70) return 'text-red-600 dark:text-red-400'
+                  if (currentRSI <= 30) return 'text-green-600 dark:text-green-400'
+                  return 'text-gray-900 dark:text-white'
+                })()}`}>
+                  {analysis.rsi[analysis.rsi.length - 1]?.toFixed(1) || 'N/A'}
+                </span>
               </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">RSI Trend:</span>
-                  <span className={`text-sm font-medium ${(() => {
-                    const currentRSI = analysis.rsi[analysis.rsi.length - 1]
-                    const previousRSI = analysis.rsi[analysis.rsi.length - 2]
-                    const change = currentRSI - previousRSI
-                    const absChange = Math.abs(change)
-                    
-                    if (change > 0) {
-                      return absChange <= 2 ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'
-                    }
-                    if (change < 0) {
-                      return absChange <= 2 ? 'text-orange-600 dark:text-orange-400' : 'text-red-600 dark:text-red-400'
-                    }
-                    return 'text-gray-600 dark:text-gray-400'
-                  })()}`}>
-                    {(() => {
-                      const currentRSI = analysis.rsi[analysis.rsi.length - 1]
-                      const previousRSI = analysis.rsi[analysis.rsi.length - 2]
-                      const change = currentRSI - previousRSI
-                      const absChange = Math.abs(change)
-                      
-                      if (change > 0) {
-                        return absChange <= 2 ? '↗ Slowly Rising' : '↗ Rising'
-                      }
-                      if (change < 0) {
-                        return absChange <= 2 ? '↘ Slowly Falling' : '↘ Falling'
-                      }
-                      return '→ Flat'
-                    })()}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <strong>Momentum direction</strong> - shows if RSI is gaining or losing strength.
+              <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                {(() => {
+                  const currentRSI = analysis.rsi[analysis.rsi.length - 1]
+                  if (currentRSI >= 70) return 'Overbought territory (≥70) - Potential selling pressure'
+                  if (currentRSI <= 30) return 'Oversold territory (≤30) - Potential buying opportunity'
+                  return 'Neutral zone (30-70) - Normal price action'
+                })()}
+              </div>
+            </div>
+
+            {/* Trend Direction */}
+            <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Trend</span>
+                <span className={`text-sm font-semibold ${(() => {
+                  const currentRSI = analysis.rsi[analysis.rsi.length - 1]
+                  const previousRSI = analysis.rsi[analysis.rsi.length - 2]
+                  const change = currentRSI - previousRSI
+                  if (change > 2) return 'text-green-600 dark:text-green-400'
+                  if (change < -2) return 'text-red-600 dark:text-red-400'
+                  if (change > 0) return 'text-yellow-600 dark:text-yellow-400'
+                  if (change < 0) return 'text-orange-600 dark:text-orange-400'
+                  return 'text-gray-600 dark:text-gray-400'
+                })()}`}>
                   {(() => {
                     const currentRSI = analysis.rsi[analysis.rsi.length - 1]
                     const previousRSI = analysis.rsi[analysis.rsi.length - 2]
                     const change = currentRSI - previousRSI
-                    const absChange = Math.abs(change)
-                    
-                    if (change > 0) {
-                      if (absChange <= 2) {
-                        return ` Slowly rising from ${previousRSI.toFixed(0)} to ${currentRSI.toFixed(0)} (+${change.toFixed(0)}), indicating gradual bullish momentum for ${coinInfo?.name || 'this coin'}.`
-                      }
-                      return ` Rising from ${previousRSI.toFixed(0)} to ${currentRSI.toFixed(0)} (+${change.toFixed(0)}), indicating increasing bullish momentum for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    if (change < 0) {
-                      if (absChange <= 2) {
-                        return ` Slowly falling from ${previousRSI.toFixed(0)} to ${currentRSI.toFixed(0)} (${change.toFixed(0)}), indicating gradual bearish momentum for ${coinInfo?.name || 'this coin'}.`
-                      }
-                      return ` Falling from ${previousRSI.toFixed(0)} to ${currentRSI.toFixed(0)} (${change.toFixed(0)}), indicating increasing bearish momentum for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    return ` Stable at ${currentRSI.toFixed(0)}, indicating momentum is stabilizing for ${coinInfo?.name || 'this coin'}.`
+                    if (change > 2) return '↗ Rising'
+                    if (change < -2) return '↘ Falling'
+                    if (change > 0) return '→ Slightly Up'
+                    if (change < 0) return '→ Slightly Down'
+                    return '→ Flat'
                   })()}
-                </p>
+                </span>
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {(() => {
+                  const currentRSI = analysis.rsi[analysis.rsi.length - 1]
+                  const previousRSI = analysis.rsi[analysis.rsi.length - 2]
+                  const change = currentRSI - previousRSI
+                  return `${previousRSI.toFixed(1)} → ${currentRSI.toFixed(1)} (${change > 0 ? '+' : ''}${change.toFixed(1)})`
+                })()}
               </div>
             </div>
           </div>
         )}
-        {/* EMA Analysis - Critical for Entry Decisions */}
+        {/* EMA Analysis - Trend Identification */}
         {analysis?.ema9 && analysis?.ema20 && analysis?.ema50 && (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2 mb-3">
-              <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">EMA Analysis</h4>
-              <div className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs font-medium rounded">
-                ENTRY
-              </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-3">
+              <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">EMA</h4>
+              <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-medium rounded">
+                Trend
+              </span>
               <div className="group relative">
-                <FaInfoCircle className="w-4 h-4 text-gray-400 cursor-help" />
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                  Responds quickly to price changes and provides dynamic support/resistance.
+                <FaInfoCircle className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-help transition-colors" />
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                  Dynamic Support/Resistance Levels
                 </div>
               </div>
             </div>
-            <div className="space-y-3">
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">9 EMA:</span>
-                  <span className="font-mono text-gray-800 dark:text-white">
-                    ${analysis.ema9[analysis.ema9.length - 1]?.toFixed(2) || 'N/A'}
-                  </span>
+
+            {/* EMA Values Grid */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">9 EMA</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white tabular-nums">
+                  ${analysis.ema9[analysis.ema9.length - 1]?.toFixed(2)}
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <strong>Fast EMA</strong> - reacts quickly to price changes, ideal for short-term entry signals.
+                <div className={`text-xs mt-1 ${(() => {
+                  const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
+                  const ema9 = analysis.ema9[analysis.ema9.length - 1] || 0
+                  return currentPrice > ema9 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                })()}`}>
                   {(() => {
-                    const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
+                    const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
                     const ema9 = analysis.ema9[analysis.ema9.length - 1] || 0
-                    const position = currentPrice > ema9 ? 'above' : 'below'
                     const distance = Math.abs((currentPrice - ema9) / ema9 * 100)
-                    return ` Price is ${position} 9EMA by ${distance.toFixed(1)}%, indicating ${position === 'above' ? 'bullish' : 'bearish'} momentum for ${coinInfo?.name || 'this coin'}.`
+                    return currentPrice > ema9 ? `+${distance.toFixed(1)}%` : `-${distance.toFixed(1)}%`
                   })()}
-                </p>
-              </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">20 EMA:</span>
-                  <span className="font-mono text-gray-800 dark:text-white">
-                    ${analysis.ema20[analysis.ema20.length - 1]?.toFixed(2) || 'N/A'}
-                  </span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <strong>Key Support/Resistance</strong> - most important EMA for crypto entries on short term charts.
+              </div>
+
+              <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">20 EMA</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white tabular-nums">
+                  ${analysis.ema20[analysis.ema20.length - 1]?.toFixed(2)}
+                </div>
+                <div className={`text-xs mt-1 ${(() => {
+                  const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
+                  const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
+                  return currentPrice > ema20 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                })()}`}>
                   {(() => {
-                    const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
+                    const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
                     const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
-                    const position = currentPrice > ema20 ? 'above' : 'below'
                     const distance = Math.abs((currentPrice - ema20) / ema20 * 100)
-                    return ` Price is ${position} 20EMA by ${distance.toFixed(1)}%, suggesting ${position === 'above' ? 'bullish trend continuation' : 'bearish trend continuation'} for ${coinInfo?.name || 'this coin'}.`
+                    return currentPrice > ema20 ? `+${distance.toFixed(1)}%` : `-${distance.toFixed(1)}%`
                   })()}
-                </p>
-              </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">50 EMA:</span>
-                  <span className="font-mono text-gray-800 dark:text-white">
-                    ${analysis.ema50[analysis.ema50.length - 1]?.toFixed(2) || 'N/A'}
-                  </span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <strong>Trend Filter</strong> - defines overall trend direction for entry decisions.
+              </div>
+
+              <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">50 EMA</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white tabular-nums">
+                  ${analysis.ema50[analysis.ema50.length - 1]?.toFixed(2)}
+                </div>
+                <div className={`text-xs mt-1 ${(() => {
+                  const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
+                  const ema50 = analysis.ema50[analysis.ema50.length - 1] || 0
+                  return currentPrice > ema50 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                })()}`}>
                   {(() => {
-                    const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
+                    const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
                     const ema50 = analysis.ema50[analysis.ema50.length - 1] || 0
-                    const position = currentPrice > ema50 ? 'above' : 'below'
                     const distance = Math.abs((currentPrice - ema50) / ema50 * 100)
-                    return ` Price is ${position} 50EMA by ${distance.toFixed(1)}%, indicating ${position === 'above' ? 'bullish' : 'bearish'} trend for ${coinInfo?.name || 'this coin'}.`
+                    return currentPrice > ema50 ? `+${distance.toFixed(1)}%` : `-${distance.toFixed(1)}%`
                   })()}
-                </p>
-              </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">EMA Crossover:</span>
-                  <span className={`text-sm font-medium ${(() => {
-                    const ema9 = analysis.ema9[analysis.ema9.length - 1] || 0
-                    const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
-                    const ema50 = analysis.ema50[analysis.ema50.length - 1] || 0
-                    
-                    if (ema9 > ema20 && ema20 > ema50) return 'text-green-600 dark:text-green-400'
-                    if (ema9 < ema20 && ema20 < ema50) return 'text-red-600 dark:text-red-400'
-                    return 'text-gray-600 dark:text-gray-400'
-                  })()}`}>
-                    {(() => {
-                      const ema9 = analysis.ema9[analysis.ema9.length - 1] || 0
-                      const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
-                      const ema50 = analysis.ema50[analysis.ema50.length - 1] || 0
-                      
-                      if (ema9 > ema20 && ema20 > ema50) return '↗ Bullish Alignment'
-                      if (ema9 < ema20 && ema20 < ema50) return '↘ Bearish Alignment'
-                      return '→ Mixed Signals'
-                    })()}
-                  </span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <strong>EMA Alignment</strong> - shows trend strength and entry direction.
+              </div>
+            </div>
+
+            {/* Alignment Status */}
+            <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-750 rounded-lg border border-green-200 dark:border-gray-600">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Alignment</span>
+                <span className={`text-sm font-bold ${(() => {
+                  const ema9 = analysis.ema9[analysis.ema9.length - 1] || 0
+                  const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
+                  const ema50 = analysis.ema50[analysis.ema50.length - 1] || 0
+                  if (ema9 > ema20 && ema20 > ema50) return 'text-green-600 dark:text-green-400'
+                  if (ema9 < ema20 && ema20 < ema50) return 'text-red-600 dark:text-red-400'
+                  return 'text-gray-600 dark:text-gray-400'
+                })()}`}>
                   {(() => {
                     const ema9 = analysis.ema9[analysis.ema9.length - 1] || 0
                     const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
                     const ema50 = analysis.ema50[analysis.ema50.length - 1] || 0
-                    
-                    if (ema9 > ema20 && ema20 > ema50) {
-                      return ` All EMAs are aligned bullish (9EMA > 20EMA > 50EMA), indicating strong uptrend and potential long entries for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    if (ema9 < ema20 && ema20 < ema50) {
-                      return ` All EMAs are aligned bearish (9EMA < 20EMA < 50EMA), indicating strong downtrend and potential short entries for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    return ` Mixed EMA alignment suggests consolidation or trend change, wait for clearer signals for ${coinInfo?.name || 'this coin'}.`
+                    if (ema9 > ema20 && ema20 > ema50) return '↗ Bullish'
+                    if (ema9 < ema20 && ema20 < ema50) return '↘ Bearish'
+                    return '→ Mixed'
                   })()}
-                </p>
+                </span>
+              </div>
+              <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                {(() => {
+                  const ema9 = analysis.ema9[analysis.ema9.length - 1] || 0
+                  const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
+                  const ema50 = analysis.ema50[analysis.ema50.length - 1] || 0
+                  if (ema9 > ema20 && ema20 > ema50) return 'All EMAs aligned bullish (9>20>50)'
+                  if (ema9 < ema20 && ema20 < ema50) return 'All EMAs aligned bearish (9<20<50)'
+                  return 'Mixed alignment - consolidation phase'
+                })()}
               </div>
             </div>
           </div>
@@ -255,426 +231,355 @@ const AnalysisTechnicalDetails: React.FC<AnalysisTechnicalDetailsProps> = ({
 
         {/* Bollinger Bands Analysis - Volatility & Reversals */}
         {analysis?.bollingerBands && (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2 mb-3">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-3">
               <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Bollinger Bands</h4>
-              <div className="px-2 py-1 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 text-xs font-medium rounded">
-                VOLATILITY
-              </div>
+              <span className="px-2 py-0.5 bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 text-xs font-medium rounded">
+                Volatility
+              </span>
               <div className="group relative">
-                <FaInfoCircle className="w-4 h-4 text-gray-400 cursor-help" />
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                  Identifies volatility squeezes and reversal opportunities
+                <FaInfoCircle className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-help transition-colors" />
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                  Volatility & Reversal Zones
                 </div>
               </div>
             </div>
-            <div className="space-y-3">
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">Price Position:</span>
-                  <span className={`text-sm font-medium ${(() => {
-                    const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
-                    const upperBand = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1] || 0
-                    const lowerBand = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1] || 0
-                    const middleBand = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1] || 0
-                    
-                    if (currentPrice >= upperBand) return 'text-red-600 dark:text-red-400'
-                    if (currentPrice <= lowerBand) return 'text-green-600 dark:text-green-400'
-                    if (currentPrice > middleBand) return 'text-yellow-600 dark:text-yellow-400'
-                    return 'text-blue-600 dark:text-blue-400'
-                  })()}`}>
-                    {(() => {
-                      const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
-                      const upperBand = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1] || 0
-                      const lowerBand = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1] || 0
-                      const middleBand = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1] || 0
-                      
-                      if (currentPrice >= upperBand) return '🔴 Above Upper Band'
-                      if (currentPrice <= lowerBand) return '🟢 Below Lower Band'
-                      if (currentPrice > middleBand) return '🟡 Upper Half'
-                      return '🔵 Lower Half'
-                    })()}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <strong>Band position</strong> - identifies overbought/oversold conditions and reversal zones.
+
+            {/* Price Position */}
+            <div className="p-4 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-gray-700 dark:to-gray-750 rounded-lg border border-orange-200 dark:border-gray-600">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Price Position</span>
+                <span className={`text-sm font-bold ${(() => {
+                  const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
+                  const upperBand = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1] || 0
+                  const lowerBand = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1] || 0
+                  const middleBand = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1] || 0
+                  if (currentPrice >= upperBand) return 'text-red-600 dark:text-red-400'
+                  if (currentPrice <= lowerBand) return 'text-green-600 dark:text-green-400'
+                  if (currentPrice > middleBand) return 'text-yellow-600 dark:text-yellow-400'
+                  return 'text-blue-600 dark:text-blue-400'
+                })()}`}>
                   {(() => {
-                    const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
+                    const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
                     const upperBand = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1] || 0
                     const lowerBand = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1] || 0
                     const middleBand = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1] || 0
-                    
-                    if (currentPrice >= upperBand) {
-                      return ` Price is above upper band (${upperBand.toFixed(2)}), indicating overbought conditions and potential reversal for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    if (currentPrice <= lowerBand) {
-                      return ` Price is below lower band (${lowerBand.toFixed(2)}), indicating oversold conditions and potential reversal for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    if (currentPrice > middleBand) {
-                      return ` Price is in upper half (${currentPrice.toFixed(2)} vs ${middleBand.toFixed(2)}), showing bullish momentum for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    return ` Price is in lower half (${currentPrice.toFixed(2)} vs ${middleBand.toFixed(2)}), showing bearish momentum for ${coinInfo?.name || 'this coin'}.`
+                    if (currentPrice >= upperBand) return 'Above Upper'
+                    if (currentPrice <= lowerBand) return 'Below Lower'
+                    if (currentPrice > middleBand) return 'Upper Half'
+                    return 'Lower Half'
                   })()}
-                </p>
+                </span>
               </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">Middle Band (20 SMA):</span>
-                  <span className="font-mono text-gray-800 dark:text-white">
-                    ${analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1]?.toFixed(2) || 'N/A'}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <strong>Key support/resistance level</strong> - the 20-period SMA acts as dynamic support/resistance.
-                  {(() => {
-                    const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
-                    const middleBand = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1] || 0
-                    const distance = Math.abs((currentPrice - middleBand) / middleBand * 100)
-                    
-                    if (distance < 0.5) {
-                      return ` Price is very close to middle band (${distance.toFixed(2)}% away), creating a critical decision point for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    if (currentPrice > middleBand) {
-                      return ` Price is ${distance.toFixed(1)}% above middle band (${middleBand.toFixed(2)}), suggesting it as support for potential long entries for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    return ` Price is ${distance.toFixed(1)}% below middle band (${middleBand.toFixed(2)}), suggesting it as resistance for potential short entries for ${coinInfo?.name || 'this coin'}.`
-                  })()}
-                </p>
+              <div className="text-xs text-gray-600 dark:text-gray-400">
+                {(() => {
+                  const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
+                  const upperBand = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1] || 0
+                  const lowerBand = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1] || 0
+                  const middleBand = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1] || 0
+                  if (currentPrice >= upperBand) return 'Overbought - Potential reversal zone'
+                  if (currentPrice <= lowerBand) return 'Oversold - Potential reversal zone'
+                  if (currentPrice > middleBand) return 'Bullish momentum zone'
+                  return 'Bearish momentum zone'
+                })()}
               </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">Band Width:</span>
-                  <span className={`text-sm font-medium ${(() => {
-                    const upperBand = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1] || 0
-                    const lowerBand = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1] || 0
-                    const middleBand = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1] || 0
-                    const bandWidth = ((upperBand - lowerBand) / middleBand) * 100
-                    
-                    if (bandWidth < 2) return 'text-yellow-600 dark:text-yellow-400'
-                    if (bandWidth > 8) return 'text-red-600 dark:text-red-400'
-                    return 'text-green-600 dark:text-green-400'
-                  })()}`}>
-                    {(() => {
-                      const upperBand = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1] || 0
-                      const lowerBand = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1] || 0
-                      const middleBand = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1] || 0
-                      const bandWidth = ((upperBand - lowerBand) / middleBand) * 100
-                      
-                      if (bandWidth < 2) return '📉 Squeeze'
-                      if (bandWidth > 8) return '📈 Expansion'
-                      return '📊 Normal'
-                    })()}
-                  </span>
+            </div>
+
+            {/* Band Values */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
+                <div className="text-xs text-gray-500 dark:text-gray-400">Upper</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white tabular-nums">
+                  ${analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1]?.toFixed(2)}
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <strong>Volatility level</strong> - shows market volatility and potential breakout conditions.
+              </div>
+              <div className="p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
+                <div className="text-xs text-gray-500 dark:text-gray-400">Middle</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white tabular-nums">
+                  ${analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1]?.toFixed(2)}
+                </div>
+              </div>
+              <div className="p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
+                <div className="text-xs text-gray-500 dark:text-gray-400">Lower</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white tabular-nums">
+                  ${analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1]?.toFixed(2)}
+                </div>
+              </div>
+            </div>
+
+            {/* Volatility Status */}
+            <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Volatility</span>
+                <span className={`text-sm font-semibold ${(() => {
+                  const upperBand = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1] || 0
+                  const lowerBand = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1] || 0
+                  const middleBand = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1] || 0
+                  const bandWidth = ((upperBand - lowerBand) / middleBand) * 100
+                  if (bandWidth < 2) return 'text-yellow-600 dark:text-yellow-400'
+                  if (bandWidth > 8) return 'text-red-600 dark:text-red-400'
+                  return 'text-green-600 dark:text-green-400'
+                })()}`}>
                   {(() => {
                     const upperBand = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1] || 0
                     const lowerBand = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1] || 0
                     const middleBand = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1] || 0
                     const bandWidth = ((upperBand - lowerBand) / middleBand) * 100
-                    
-                    if (bandWidth < 2) {
-                      return ` Very tight bands (${bandWidth.toFixed(1)}% width) indicate low volatility and potential breakout for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    if (bandWidth > 8) {
-                      return ` Wide bands (${bandWidth.toFixed(1)}% width) indicate high volatility and potential reversal for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    return ` Normal band width (${bandWidth.toFixed(1)}%) suggests stable volatility for ${coinInfo?.name || 'this coin'}.`
+                    if (bandWidth < 2) return 'Squeeze'
+                    if (bandWidth > 8) return 'High'
+                    return 'Normal'
                   })()}
-                </p>
+                </span>
               </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">Squeeze Alert:</span>
-                  <span className={`text-sm font-medium ${(() => {
-                    const upperBand = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1] || 0
-                    const lowerBand = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1] || 0
-                    const middleBand = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1] || 0
-                    const bandWidth = ((upperBand - lowerBand) / middleBand) * 100
-                    
-                    return bandWidth < 2 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-600 dark:text-gray-400'
-                  })()}`}>
-                    {(() => {
-                      const upperBand = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1] || 0
-                      const lowerBand = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1] || 0
-                      const middleBand = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1] || 0
-                      const bandWidth = ((upperBand - lowerBand) / middleBand) * 100
-                      
-                      return bandWidth < 2 ? '⚠️ Squeeze Detected' : '✅ Normal Range'
-                    })()}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <strong>Breakout signal</strong> - identifies low volatility periods before major moves.
-                  {(() => {
-                    const upperBand = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1] || 0
-                    const lowerBand = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1] || 0
-                    const middleBand = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1] || 0
-                    const bandWidth = ((upperBand - lowerBand) / middleBand) * 100
-                    
-                    if (bandWidth < 2) {
-                      return ` Bollinger Bands are squeezing (${bandWidth.toFixed(1)}% width), indicating low volatility before a potential breakout for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    return ` Normal volatility range (${bandWidth.toFixed(1)}% width) suggests no immediate breakout signal for ${coinInfo?.name || 'this coin'}.`
-                  })()}
-                </p>
-              </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">Reversal Signal:</span>
-                  <span className={`text-sm font-medium ${(() => {
-                    const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
-                    const upperBand = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1] || 0
-                    const lowerBand = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1] || 0
-                    const middleBand = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1] || 0
-                    
-                    if (currentPrice >= upperBand) return 'text-red-600 dark:text-red-400'
-                    if (currentPrice <= lowerBand) return 'text-green-600 dark:text-green-400'
-                    if (currentPrice > middleBand) return 'text-yellow-600 dark:text-yellow-400'
-                    return 'text-blue-600 dark:text-blue-400'
-                  })()}`}>
-                    {(() => {
-                      const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
-                      const upperBand = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1] || 0
-                      const lowerBand = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1] || 0
-                      const middleBand = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1] || 0
-                      
-                      if (currentPrice >= upperBand) return '🔴 Strong Sell'
-                      if (currentPrice <= lowerBand) return '🟢 Strong Buy'
-                      if (currentPrice > middleBand) return '🟡 Weak Buy'
-                      return '🔵 Weak Sell'
-                    })()}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <strong>Band touch signals</strong> - identifies potential reversal points using all three bands.
-                  {(() => {
-                    const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
-                    const upperBand = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1] || 0
-                    const lowerBand = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1] || 0
-                    const middleBand = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1] || 0
-                    
-                    if (currentPrice >= upperBand) {
-                      return ` Price touching upper band (${upperBand.toFixed(2)}) suggests strong bearish reversal for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    if (currentPrice <= lowerBand) {
-                      return ` Price touching lower band (${lowerBand.toFixed(2)}) suggests strong bullish reversal for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    if (currentPrice > middleBand) {
-                      return ` Price above middle band (${middleBand.toFixed(2)}) suggests bullish momentum continuation for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    return ` Price below middle band (${middleBand.toFixed(2)}) suggests bearish momentum continuation for ${coinInfo?.name || 'this coin'}.`
-                  })()}
-                </p>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {(() => {
+                  const upperBand = analysis.bollingerBands.upper[analysis.bollingerBands.upper.length - 1] || 0
+                  const lowerBand = analysis.bollingerBands.lower[analysis.bollingerBands.lower.length - 1] || 0
+                  const middleBand = analysis.bollingerBands.middle[analysis.bollingerBands.middle.length - 1] || 0
+                  const bandWidth = ((upperBand - lowerBand) / middleBand) * 100
+                  if (bandWidth < 2) return `Tight bands (${bandWidth.toFixed(1)}%) - Potential breakout`
+                  if (bandWidth > 8) return `Wide bands (${bandWidth.toFixed(1)}%) - High volatility`
+                  return `Band width: ${bandWidth.toFixed(1)}%`
+                })()}
               </div>
             </div>
           </div>
         )}
 
-        {/* Trend Analysis - Most Practical for Crypto */}
+        {/* Trend Analysis - Market Direction Assessment */}
         {analysis?.ema9 && analysis?.ema20 && analysis?.sma20 && (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2 mb-3">
-              <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Trend Analysis</h4>
-              <div className="px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-xs font-medium rounded">
-                TREND
-              </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-3">
+              <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Market Condition</h4>
+              <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs font-medium rounded">
+                Combined
+              </span>
               <div className="group relative">
-                <FaInfoCircle className="w-4 h-4 text-gray-400 cursor-help" />
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                  Trend analysis using EMA and SMA for practical crypto trading decisions
+                <FaInfoCircle className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-help transition-colors" />
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                  Overall Market Condition
                 </div>
               </div>
             </div>
-            <div className="space-y-3">
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">Trend Direction:</span>
-                  <span className={`text-sm font-medium ${(() => {
-                    const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
-                    const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
-                    const ema50 = analysis.ema50[analysis.ema50.length - 1] || 0
-                    
-                    if (currentPrice > ema20 && ema20 > ema50) return 'text-green-600 dark:text-green-400'
-                    if (currentPrice < ema20 && ema20 < ema50) return 'text-red-600 dark:text-red-400'
-                    return 'text-gray-600 dark:text-gray-400'
-                  })()}`}>
-                    {(() => {
-                      const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
-                      const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
-                      const ema50 = analysis.ema50[analysis.ema50.length - 1] || 0
-                      
-                      if (currentPrice > ema20 && ema20 > ema50) return '↗ Bullish Trend'
-                      if (currentPrice < ema20 && ema20 < ema50) return '↘ Bearish Trend'
-                      return '→ Sideways/Consolidation'
-                    })()}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <strong>Overall trend</strong> - most important factor for entry decisions.
+
+            {/* Overall Market Condition */}
+            <div className="p-4 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-gray-700 dark:to-gray-750 rounded-lg border border-purple-200 dark:border-gray-600">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Overall Status</span>
+                <span className={`text-lg font-bold ${(() => {
+                  const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
+                  const ema9 = analysis.ema9[analysis.ema9.length - 1] || 0
+                  const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
+                  const ema50 = analysis.ema50[analysis.ema50.length - 1] || 0
+                  const rsi = analysis.rsi[analysis.rsi.length - 1] || 50
+                  
+                  if (currentPrice > ema9 && ema9 > ema20 && ema20 > ema50 && rsi < 70) return 'text-green-600 dark:text-green-400'
+                  if (currentPrice < ema9 && ema9 < ema20 && ema20 < ema50 && rsi > 30) return 'text-red-600 dark:text-red-400'
+                  if (currentPrice > ema20 && rsi < 65) return 'text-yellow-600 dark:text-yellow-400'
+                  if (currentPrice < ema20 && rsi > 35) return 'text-orange-600 dark:text-orange-400'
+                  return 'text-gray-600 dark:text-gray-400'
+                })()}`}>
                   {(() => {
-                    const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
-                    const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
-                    const ema50 = analysis.ema50[analysis.ema50.length - 1] || 0
-                    
-                    if (currentPrice > ema20 && ema20 > ema50) {
-                      return ` Strong bullish trend confirmed by price > 20EMA > 50EMA. Look for long entries on pullbacks to 20EMA for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    if (currentPrice < ema20 && ema20 < ema50) {
-                      return ` Strong bearish trend confirmed by price < 20EMA < 50EMA. Look for short entries on rallies to 20EMA for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    return ` Mixed trend signals suggest consolidation. Wait for clearer trend direction before entering ${coinInfo?.name || 'this coin'}.`
-                  })()}
-                </p>
-              </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">Support/Resistance:</span>
-                  <span className={`text-sm font-medium ${(() => {
-                    const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
-                    const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
-                    const distance = Math.abs((currentPrice - ema20) / ema20 * 100)
-                    
-                    if (distance < 1) return 'text-yellow-600 dark:text-yellow-400'
-                    if (currentPrice > ema20) return 'text-green-600 dark:text-green-400'
-                    return 'text-red-600 dark:text-red-400'
-                  })()}`}>
-                    {(() => {
-                      const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
-                      const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
-                      const distance = Math.abs((currentPrice - ema20) / ema20 * 100)
-                      
-                      if (distance < 1) return '🎯 Near 20EMA'
-                      if (currentPrice > ema20) return '📈 Above 20EMA'
-                      return '📉 Below 20EMA'
-                    })()}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <strong>20EMA as dynamic support/resistance</strong> - key level for entries.
-                  {(() => {
-                    const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
-                    const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
-                    const distance = Math.abs((currentPrice - ema20) / ema20 * 100)
-                    
-                    if (distance < 1) {
-                      return ` Price is very close to 20EMA (${distance.toFixed(1)}% away), creating a critical decision point for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    if (currentPrice > ema20) {
-                      return ` Price is ${distance.toFixed(1)}% above 20EMA, suggesting 20EMA as support for potential long entries on pullbacks for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    return ` Price is ${distance.toFixed(1)}% below 20EMA, suggesting 20EMA as resistance for potential short entries on rallies for ${coinInfo?.name || 'this coin'}.`
-                  })()}
-                </p>
-              </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">Momentum:</span>
-                  <span className={`text-sm font-medium ${(() => {
-                    const ema9 = analysis.ema9[analysis.ema9.length - 1] || 0
-                    const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
-                    const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
-                    
-                    if (currentPrice > ema9 && ema9 > ema20) return 'text-green-600 dark:text-green-400'
-                    if (currentPrice < ema9 && ema9 < ema20) return 'text-red-600 dark:text-red-400'
-                    return 'text-gray-600 dark:text-gray-400'
-                  })()}`}>
-                    {(() => {
-                      const ema9 = analysis.ema9[analysis.ema9.length - 1] || 0
-                      const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
-                      const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
-                      
-                      if (currentPrice > ema9 && ema9 > ema20) return '🚀 Strong Bullish'
-                      if (currentPrice < ema9 && ema9 < ema20) return '📉 Strong Bearish'
-                      return '⚖️ Mixed Momentum'
-                    })()}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <strong>Short-term momentum</strong> - 9EMA vs 20EMA for entry timing.
-                  {(() => {
-                    const ema9 = analysis.ema9[analysis.ema9.length - 1] || 0
-                    const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
-                    const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
-                    
-                    if (currentPrice > ema9 && ema9 > ema20) {
-                      return ` Strong bullish momentum with price > 9EMA > 20EMA, ideal for long entries for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    if (currentPrice < ema9 && ema9 < ema20) {
-                      return ` Strong bearish momentum with price < 9EMA < 20EMA, ideal for short entries for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    return ` Mixed momentum signals suggest caution, wait for clearer direction for ${coinInfo?.name || 'this coin'}.`
-                  })()}
-                </p>
-              </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">Entry Signal:</span>
-                  <span className={`text-sm font-medium ${(() => {
-                    const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
+                    const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
                     const ema9 = analysis.ema9[analysis.ema9.length - 1] || 0
                     const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
                     const ema50 = analysis.ema50[analysis.ema50.length - 1] || 0
                     const rsi = analysis.rsi[analysis.rsi.length - 1] || 50
                     
-                    // Strong buy signal
-                    if (currentPrice > ema9 && ema9 > ema20 && ema20 > ema50 && rsi < 70) return 'text-green-600 dark:text-green-400'
-                    // Strong sell signal
-                    if (currentPrice < ema9 && ema9 < ema20 && ema20 < ema50 && rsi > 30) return 'text-red-600 dark:text-red-400'
-                    // Weak buy signal
-                    if (currentPrice > ema20 && rsi < 65) return 'text-yellow-600 dark:text-yellow-400'
-                    // Weak sell signal
-                    if (currentPrice < ema20 && rsi > 35) return 'text-orange-600 dark:text-orange-400'
-                    return 'text-gray-600 dark:text-gray-400'
-                  })()}`}>
-                    {(() => {
-                      const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
-                      const ema9 = analysis.ema9[analysis.ema9.length - 1] || 0
-                      const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
-                      const ema50 = analysis.ema50[analysis.ema50.length - 1] || 0
-                      const rsi = analysis.rsi[analysis.rsi.length - 1] || 50
-                      
-                      // Strong buy signal
-                      if (currentPrice > ema9 && ema9 > ema20 && ema20 > ema50 && rsi < 70) return '🟢 Strong Buy'
-                      // Strong sell signal
-                      if (currentPrice < ema9 && ema9 < ema20 && ema20 < ema50 && rsi > 30) return '🔴 Strong Sell'
-                      // Weak buy signal
-                      if (currentPrice > ema20 && rsi < 65) return '🟡 Weak Buy'
-                      // Weak sell signal
-                      if (currentPrice < ema20 && rsi > 35) return '🟠 Weak Sell'
-                      return '⚪ Wait'
-                    })()}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <strong>Combined signal</strong> - EMA alignment + RSI for practical entry decisions.
+                    if (currentPrice > ema9 && ema9 > ema20 && ema20 > ema50 && rsi < 70) return 'Strong Bullish'
+                    if (currentPrice < ema9 && ema9 < ema20 && ema20 < ema50 && rsi > 30) return 'Strong Bearish'
+                    if (currentPrice > ema20 && rsi < 65) return 'Moderate Bullish'
+                    if (currentPrice < ema20 && rsi > 35) return 'Moderate Bearish'
+                    return 'Neutral'
+                  })()}
+                </span>
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">
+                {(() => {
+                  const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
+                  const ema9 = analysis.ema9[analysis.ema9.length - 1] || 0
+                  const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
+                  const ema50 = analysis.ema50[analysis.ema50.length - 1] || 0
+                  const rsi = analysis.rsi[analysis.rsi.length - 1] || 50
+                  
+                  if (currentPrice > ema9 && ema9 > ema20 && ema20 > ema50 && rsi < 70) {
+                    return `Perfect bullish alignment with RSI ${rsi.toFixed(0)}`
+                  }
+                  if (currentPrice < ema9 && ema9 < ema20 && ema20 < ema50 && rsi > 30) {
+                    return `Perfect bearish alignment with RSI ${rsi.toFixed(0)}`
+                  }
+                  if (currentPrice > ema20 && rsi < 65) {
+                    return `Price above 20EMA with RSI ${rsi.toFixed(0)}`
+                  }
+                  if (currentPrice < ema20 && rsi > 35) {
+                    return `Price below 20EMA with RSI ${rsi.toFixed(0)}`
+                  }
+                  return 'Mixed signals - consolidation phase'
+                })()}
+              </div>
+            </div>
+
+            {/* Key Levels Grid */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Trend Direction</div>
+                <div className={`text-sm font-semibold ${(() => {
+                  const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
+                  const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
+                  const ema50 = analysis.ema50[analysis.ema50.length - 1] || 0
+                  if (currentPrice > ema20 && ema20 > ema50) return 'text-green-600 dark:text-green-400'
+                  if (currentPrice < ema20 && ema20 < ema50) return 'text-red-600 dark:text-red-400'
+                  return 'text-gray-600 dark:text-gray-400'
+                })()}`}>
                   {(() => {
-                    const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
-                    const ema9 = analysis.ema9[analysis.ema9.length - 1] || 0
+                    const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
                     const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
                     const ema50 = analysis.ema50[analysis.ema50.length - 1] || 0
-                    const rsi = analysis.rsi[analysis.rsi.length - 1] || 50
-                    
-                    // Strong buy signal
-                    if (currentPrice > ema9 && ema9 > ema20 && ema20 > ema50 && rsi < 70) {
-                      return ` Perfect bullish setup: price > 9EMA > 20EMA > 50EMA with RSI ${rsi.toFixed(1)}. Strong long entry signal for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    // Strong sell signal
-                    if (currentPrice < ema9 && ema9 < ema20 && ema20 < ema50 && rsi > 30) {
-                      return ` Perfect bearish setup: price < 9EMA < 20EMA < 50EMA with RSI ${rsi.toFixed(1)}. Strong short entry signal for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    // Weak buy signal
-                    if (currentPrice > ema20 && rsi < 65) {
-                      return ` Moderate bullish setup: price above 20EMA with RSI ${rsi.toFixed(1)}. Consider long entries on pullbacks for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    // Weak sell signal
-                    if (currentPrice < ema20 && rsi > 35) {
-                      return ` Moderate bearish setup: price below 20EMA with RSI ${rsi.toFixed(1)}. Consider short entries on rallies for ${coinInfo?.name || 'this coin'}.`
-                    }
-                    return ` Mixed signals suggest waiting for clearer setup before entering ${coinInfo?.name || 'this coin'}.`
+                    if (currentPrice > ema20 && ema20 > ema50) return '↗ Bullish'
+                    if (currentPrice < ema20 && ema20 < ema50) return '↘ Bearish'
+                    return '→ Sideways'
                   })()}
-                </p>
+                </div>
+              </div>
+
+              <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Short-term Momentum</div>
+                <div className={`text-sm font-semibold ${(() => {
+                  const ema9 = analysis.ema9[analysis.ema9.length - 1] || 0
+                  const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
+                  const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
+                  if (currentPrice > ema9 && ema9 > ema20) return 'text-green-600 dark:text-green-400'
+                  if (currentPrice < ema9 && ema9 < ema20) return 'text-red-600 dark:text-red-400'
+                  return 'text-gray-600 dark:text-gray-400'
+                })()}`}>
+                  {(() => {
+                    const ema9 = analysis.ema9[analysis.ema9.length - 1] || 0
+                    const ema20 = analysis.ema20[analysis.ema20.length - 1] || 0
+                    const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
+                    if (currentPrice > ema9 && ema9 > ema20) return 'Bullish'
+                    if (currentPrice < ema9 && ema9 < ema20) return 'Bearish'
+                    return 'Mixed'
+                  })()}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Demand Zones Analysis */}
+        {analysis?.demandZones && analysis.demandZones.length > 0 && (
+          <div className="space-y-3 lg:col-span-2">
+            <div className="flex items-center gap-2 mb-3">
+              <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Demand Zones</h4>
+              <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-xs font-medium rounded">
+                {analysis.demandZones.length} Zones
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {analysis.demandZones.slice(0, 3).map((zone, index) => (
+                <div key={index} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                      {zone.description}
+                    </span>
+                    <span className={`px-1.5 py-0.5 text-xs font-medium rounded ${
+                      zone.strength === 'very-strong'
+                        ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
+                        : zone.strength === 'strong'
+                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                        : zone.strength === 'moderate'
+                        ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
+                        : 'bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300'
+                    }`}>
+                      {zone.strength}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                    ${zone.low.toFixed(2)} - ${zone.high.toFixed(2)}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">Touches:</span>
+                      <span className="ml-1 font-medium text-gray-800 dark:text-gray-200">{zone.touches}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">Vol:</span>
+                      <span className="ml-1 font-medium text-gray-800 dark:text-gray-200">
+                        {zone.volumeProfile.volumeRatio.toFixed(1)}x
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {analysis.demandZones.length > 3 && (
+              <div className="text-center text-xs text-gray-500 dark:text-gray-400">
+                +{analysis.demandZones.length - 3} more zones detected
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Advanced Volume Analysis */}
+        {analysis?.advancedVolumeAnalysis && (
+          <div className="space-y-3 lg:col-span-2">
+            <div className="flex items-center gap-2 mb-3">
+              <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Volume Analysis</h4>
+              <span className="px-2 py-0.5 bg-cyan-100 dark:bg-cyan-900 text-cyan-700 dark:text-cyan-300 text-xs font-medium rounded">
+                Advanced
+              </span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {/* Volume Trend */}
+              <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Trend</div>
+                <div className={`text-sm font-semibold ${
+                  analysis.advancedVolumeAnalysis.volumeTrend === 'increasing'
+                    ? 'text-green-600 dark:text-green-400'
+                    : analysis.advancedVolumeAnalysis.volumeTrend === 'decreasing'
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-gray-600 dark:text-gray-400'
+                }`}>
+                  {analysis.advancedVolumeAnalysis.volumeTrend === 'increasing' ? '↗ Rising' : 
+                   analysis.advancedVolumeAnalysis.volumeTrend === 'decreasing' ? '↘ Falling' : '→ Stable'}
+                </div>
+              </div>
+
+              {/* Volume Spikes */}
+              <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Spikes</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {analysis.advancedVolumeAnalysis.volumeSpikes.length}
+                </div>
+                {analysis.advancedVolumeAnalysis.volumeSpikes.length > 0 && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {analysis.advancedVolumeAnalysis.volumeSpikes[0].volumeRatio.toFixed(1)}x
+                  </div>
+                )}
+              </div>
+
+              {/* Volume Divergence */}
+              <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Divergences</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {analysis.advancedVolumeAnalysis.volumeDivergence.length}
+                </div>
+                {analysis.advancedVolumeAnalysis.volumeDivergence.length > 0 && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                    {analysis.advancedVolumeAnalysis.volumeDivergence[0].type}
+                  </div>
+                )}
+              </div>
+
+              {/* Value Area */}
+              <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Value Area</div>
+                <div className="text-xs font-semibold text-gray-900 dark:text-white tabular-nums">
+                  ${analysis.advancedVolumeAnalysis.volumeProfile.valueArea.low.toFixed(0)}-${analysis.advancedVolumeAnalysis.volumeProfile.valueArea.high.toFixed(0)}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  {analysis.advancedVolumeAnalysis.volumeProfile.valueArea.volumePercent.toFixed(0)}% vol
+                </div>
               </div>
             </div>
           </div>

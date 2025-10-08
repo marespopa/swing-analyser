@@ -38,13 +38,13 @@ export class HeadAndShouldersPatterns {
     const prices = data.map(d => d.price)
     const volumes = data.map(d => d.volume || 0)
     
-    // Look for head and shoulders over the last 60 periods
-    const lookbackPeriod = Math.min(60, data.length - 10)
-    const startIndex = Math.max(20, data.length - lookbackPeriod)
+    // Look for head and shoulders over the last 10 days (focused on recent patterns)
+    const lookbackPeriod = Math.min(10, data.length - 5)
+    const startIndex = Math.max(5, data.length - lookbackPeriod)
     
-    for (let i = startIndex; i < data.length - 10; i++) {
-      const window = 30
-      const recentData = data.slice(i - window, i + 10)
+    for (let i = startIndex; i < data.length - 5; i++) {
+      const window = 10
+      const recentData = data.slice(i - window, i + 5)
       const recentPrices = recentData.map(d => d.price)
       
       if (recentPrices.length < 20) continue

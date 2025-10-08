@@ -43,13 +43,13 @@ export class WedgePatterns {
     const prices = data.map(d => d.price)
     const volumes = data.map(d => d.volume || 0)
     
-    // Look for wedge patterns over the last 40 periods
-    const lookbackPeriod = Math.min(40, data.length - 10)
-    const startIndex = Math.max(15, data.length - lookbackPeriod)
+    // Look for wedge patterns over the last 10 days (focused on recent patterns)
+    const lookbackPeriod = Math.min(10, data.length - 5)
+    const startIndex = Math.max(5, data.length - lookbackPeriod)
     
-    for (let i = startIndex; i < data.length - 5; i++) {
-      const window = 25
-      const recentData = data.slice(i - window, i + 5)
+    for (let i = startIndex; i < data.length - 3; i++) {
+      const window = 10
+      const recentData = data.slice(i - window, i + 3)
       const recentPrices = recentData.map(d => d.price)
       
       if (recentPrices.length < 15) continue

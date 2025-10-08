@@ -37,17 +37,17 @@ export class TrianglePatterns {
     const prices = data.map(d => d.price)
     const volumes = data.map(d => d.volume || 0)
     
-    // Look for triangle patterns over the last 30 periods (reduced from 50)
-    const lookbackPeriod = Math.min(30, data.length - 10)
-    const startIndex = Math.max(10, data.length - lookbackPeriod)
+    // Look for triangle patterns over the last 20 days (more lenient for Bitcoin)
+    const lookbackPeriod = Math.min(20, data.length - 3)
+    const startIndex = Math.max(3, data.length - lookbackPeriod)
     
-    // Only check every 5th index to reduce overlapping detections
-    for (let i = startIndex; i < data.length - 5; i += 5) {
-      const window = Math.min(20, data.length - i)
-      const recentData = data.slice(i - window, i + 5)
+    // Check every index for better pattern detection
+    for (let i = startIndex; i < data.length - 2; i += 1) {
+      const window = Math.min(15, data.length - i)
+      const recentData = data.slice(i - window, i + 2)
       const recentPrices = recentData.map(d => d.price)
       
-      if (recentPrices.length < 10) continue
+      if (recentPrices.length < 8) continue
       
       // Find local highs and lows in the window
       const highs: { index: number; price: number }[] = []
@@ -57,20 +57,18 @@ export class TrianglePatterns {
         const currentPrice = recentPrices[j]
         const actualIndex = i - window + j
         
-        // Local high
-        if (currentPrice > recentPrices[j - 1] && currentPrice > recentPrices[j - 2] &&
-            currentPrice > recentPrices[j + 1] && currentPrice > recentPrices[j + 2]) {
+        // Local high - more sensitive detection
+        if (currentPrice > recentPrices[j - 1] && currentPrice > recentPrices[j + 1]) {
           highs.push({ index: actualIndex, price: currentPrice })
         }
         
-        // Local low
-        if (currentPrice < recentPrices[j - 1] && currentPrice < recentPrices[j - 2] &&
-            currentPrice < recentPrices[j + 1] && currentPrice < recentPrices[j + 2]) {
+        // Local low - more sensitive detection
+        if (currentPrice < recentPrices[j - 1] && currentPrice < recentPrices[j + 1]) {
           lows.push({ index: actualIndex, price: currentPrice })
         }
       }
       
-      if (highs.length < 2 || lows.length < 2) continue
+      if (highs.length < 1 || lows.length < 1) continue
       
       // Check for ascending triangle (higher lows, constant highs)
       const ascendingTriangle = this.detectAscendingTriangle(highs, lows, i, prices, volumes, rsi, sma20, sma50)

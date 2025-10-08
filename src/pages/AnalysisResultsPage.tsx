@@ -210,8 +210,8 @@ const AnalysisResultsPage: React.FC = () => {
     }
   }, [])
 
-  // Show skeleton immediately while data is loading
-  if (!analysisResults) {
+  // Show skeleton while data is loading or when manually refreshing analysis
+  if (!analysisResults || isAnalysisRefreshing) {
     return <AnalysisPageSkeleton />
   }
 

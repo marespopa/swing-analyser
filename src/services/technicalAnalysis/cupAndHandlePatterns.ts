@@ -39,13 +39,13 @@ export class CupAndHandlePatterns {
     const prices = data.map(d => d.price)
     const volumes = data.map(d => d.volume || 0)
     
-    // Look for cup and handle over the last 80 periods
-    const lookbackPeriod = Math.min(80, data.length - 10)
-    const startIndex = Math.max(30, data.length - lookbackPeriod)
+    // Look for cup and handle over the last 10 days (focused on recent patterns)
+    const lookbackPeriod = Math.min(10, data.length - 5)
+    const startIndex = Math.max(5, data.length - lookbackPeriod)
     
-    for (let i = startIndex; i < data.length - 10; i++) {
-      const window = 50
-      const recentData = data.slice(i - window, i + 10)
+    for (let i = startIndex; i < data.length - 5; i++) {
+      const window = 10
+      const recentData = data.slice(i - window, i + 5)
       const recentPrices = recentData.map(d => d.price)
       
       if (recentPrices.length < 30) continue

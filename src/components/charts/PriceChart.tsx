@@ -42,17 +42,39 @@ const PriceChart: React.FC<PriceChartProps> = ({
   // Prepare moving averages data
   const ema9Data = useMemo(() => {
     if (!toggles.showEMA9 || !data.ema9) return []
+    
+    // Find the corresponding EMA values for the filtered chart data
     return filteredChartData
-      .map((point, index) => [point.timestamp, data.ema9[index]])
-      .filter(item => !isNaN(item[1] as number) && item[1] !== null)
-  }, [filteredChartData, data.ema9, toggles.showEMA9])
+      .map((point) => {
+        // Find the index of this timestamp in the original data
+        const originalIndex = data.data.findIndex(d => d.timestamp === point.timestamp)
+        if (originalIndex === -1 || originalIndex >= data.ema9.length) return null
+        
+        const emaValue = data.ema9[originalIndex]
+        if (isNaN(emaValue) || emaValue === null) return null
+        
+        return [point.timestamp, emaValue]
+      })
+      .filter(item => item !== null)
+  }, [filteredChartData, data.ema9, data.data, toggles.showEMA9])
 
   const ema21Data = useMemo(() => {
     if (!toggles.showEMA21 || !data.ema20) return []
+    
+    // Find the corresponding EMA values for the filtered chart data (same approach as ema9Data)
     return filteredChartData
-      .map((point, index) => [point.timestamp, data.ema20[index]])
-      .filter(item => !isNaN(item[1] as number) && item[1] !== null)
-  }, [filteredChartData, data.ema20, toggles.showEMA21])
+      .map((point) => {
+        // Find the index of this timestamp in the original data
+        const originalIndex = data.data.findIndex(d => d.timestamp === point.timestamp)
+        if (originalIndex === -1 || originalIndex >= data.ema20.length) return null
+        
+        const emaValue = data.ema20[originalIndex]
+        if (isNaN(emaValue) || emaValue === null) return null
+        
+        return [point.timestamp, emaValue]
+      })
+      .filter(item => item !== null)
+  }, [filteredChartData, data.ema20, data.data, toggles.showEMA21])
 
   // Prepare Bollinger Bands data
   const bollingerBandsData = useMemo(() => {
@@ -60,16 +82,34 @@ const PriceChart: React.FC<PriceChartProps> = ({
     
     return {
       upper: filteredChartData
-        .map((point, index) => [point.timestamp, data.bollingerBands!.upper[index]])
-        .filter(item => !isNaN(item[1] as number) && item[1] !== null),
+        .map((point) => {
+          const originalIndex = data.data.findIndex(d => d.timestamp === point.timestamp)
+          if (originalIndex === -1 || originalIndex >= data.bollingerBands!.upper.length) return null
+          const value = data.bollingerBands!.upper[originalIndex]
+          if (isNaN(value) || value === null) return null
+          return [point.timestamp, value]
+        })
+        .filter(item => item !== null),
       middle: filteredChartData
-        .map((point, index) => [point.timestamp, data.bollingerBands!.middle[index]])
-        .filter(item => !isNaN(item[1] as number) && item[1] !== null),
+        .map((point) => {
+          const originalIndex = data.data.findIndex(d => d.timestamp === point.timestamp)
+          if (originalIndex === -1 || originalIndex >= data.bollingerBands!.middle.length) return null
+          const value = data.bollingerBands!.middle[originalIndex]
+          if (isNaN(value) || value === null) return null
+          return [point.timestamp, value]
+        })
+        .filter(item => item !== null),
       lower: filteredChartData
-        .map((point, index) => [point.timestamp, data.bollingerBands!.lower[index]])
-        .filter(item => !isNaN(item[1] as number) && item[1] !== null)
+        .map((point) => {
+          const originalIndex = data.data.findIndex(d => d.timestamp === point.timestamp)
+          if (originalIndex === -1 || originalIndex >= data.bollingerBands!.lower.length) return null
+          const value = data.bollingerBands!.lower[originalIndex]
+          if (isNaN(value) || value === null) return null
+          return [point.timestamp, value]
+        })
+        .filter(item => item !== null)
     }
-  }, [filteredChartData, data.bollingerBands, toggles.showBollingerBands])
+  }, [filteredChartData, data.bollingerBands, data.data, toggles.showBollingerBands])
 
   const option = useMemo(() => {
     const series: any[] = []
@@ -100,38 +140,36 @@ const PriceChart: React.FC<PriceChartProps> = ({
       }
     })
 
-    // Add moving averages - Temporarily disabled due to calculation issues
-    // TODO: Fix EMA calculations to properly follow price movement
+    // Add moving averages
+    if (toggles.showEMA9 && ema9Data.length > 0) {
+      series.push({
+        name: 'EMA 9',
+        type: 'line',
+        data: ema9Data,
+        smooth: true,
+        lineStyle: {
+          color: '#FBBF24',
+          width: 2,
+          type: 'solid'
+        },
+        symbol: 'none'
+      })
+    }
 
-    // if (toggles.showEMA9 && ema9Data.length > 0) {
-    //   series.push({
-    //     name: 'EMA 9',
-    //     type: 'line',
-    //     data: ema9Data,
-    //     smooth: true,
-    //     lineStyle: {
-    //       color: '#FBBF24',
-    //       width: 1,
-    //       type: 'dashed'
-    //     },
-    //     symbol: 'none'
-    //   })
-    // }
-
-    // if (toggles.showEMA21 && ema21Data.length > 0) {
-    //   series.push({
-    //     name: 'EMA 21',
-    //     type: 'line',
-    //     data: ema21Data,
-    //     smooth: true,
-    //     lineStyle: {
-    //       color: '#10B981',
-    //       width: 1,
-    //       type: 'dashed'
-    //     },
-    //     symbol: 'none'
-    //   })
-    // }
+    if (toggles.showEMA21 && ema21Data.length > 0) {
+      series.push({
+        name: 'EMA 20',
+        type: 'line',
+        data: ema21Data,
+        smooth: true,
+        lineStyle: {
+          color: '#10B981',
+          width: 2,
+          type: 'solid'
+        },
+        symbol: 'none'
+      })
+    }
 
     // Add Bollinger Bands - Temporarily disabled due to calculation issues
     // TODO: Fix Bollinger Bands calculations to properly follow price movement

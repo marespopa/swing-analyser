@@ -7,7 +7,7 @@ export interface BasePattern {
   pattern: string
   signal: 'bullish' | 'bearish' | 'neutral'
   confidence: number
-  strength: 'weak' | 'moderate' | 'strong'
+  strength: 'weak' | 'moderate' | 'strong' | 'very-strong'
   description: string
 }
 
@@ -42,8 +42,8 @@ export function deduplicateAndPrioritizePatterns<T extends BasePattern>(
         return b.index - a.index
       }
       // Then by strength
-      const strengthOrder = { 'strong': 3, 'moderate': 2, 'weak': 1 }
-      return strengthOrder[b.strength] - strengthOrder[a.strength]
+      const strengthOrder: { [key: string]: number } = { 'very-strong': 4, 'strong': 3, 'moderate': 2, 'weak': 1 }
+      return (strengthOrder[b.strength] || 0) - (strengthOrder[a.strength] || 0)
     })
     
     // Take only the best one of each pattern type
@@ -69,8 +69,8 @@ function calculatePriorityScore<T extends BasePattern>(pattern: T): number {
   score += pattern.index * 10
   
   // Strength score
-  const strengthScores = { 'strong': 100, 'moderate': 50, 'weak': 10 }
-  score += strengthScores[pattern.strength]
+  const strengthScores: { [key: string]: number } = { 'very-strong': 150, 'strong': 100, 'moderate': 50, 'weak': 10 }
+  score += strengthScores[pattern.strength] || 10
   
   // Confidence score
   score += pattern.confidence * 50
@@ -102,11 +102,12 @@ function calculatePriorityScore<T extends BasePattern>(pattern: T): number {
 
 /**
  * Filter patterns to only include recent ones (within specified periods)
+ * For daily data, 7-10 days means 7-10 data points
  */
 export function filterRecentPatterns<T extends BasePattern>(
   patterns: T[],
   dataLength: number,
-  maxPeriodsBack: number = 20
+  maxPeriodsBack: number = 10 // Focus on last 10 days (10 data points for daily data)
 ): T[] {
   const cutoffIndex = dataLength - maxPeriodsBack
   return patterns.filter(pattern => pattern.index >= cutoffIndex)

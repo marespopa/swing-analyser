@@ -17,6 +17,7 @@ interface AnalysisHeaderProps {
   priceChange24h?: number | null
   onBack: () => void
   isPriceLoading?: boolean
+  isLivePrice?: boolean
 }
 
 const AnalysisHeader = ({
@@ -24,7 +25,8 @@ const AnalysisHeader = ({
   currentPrice,
   priceChange24h,
   onBack,
-  isPriceLoading = false
+  isPriceLoading = false,
+  isLivePrice = false
 }: AnalysisHeaderProps) => {
   const { isAnalysisRefreshing, onAnalysisRefresh } = useAnalysisContext()
   const { exchangeInfo } = useExchangeInfo(coinInfo?.id || null)
@@ -97,9 +99,17 @@ const AnalysisHeader = ({
                           maximumFractionDigits: 6
                         })}
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {isPriceLoading ? 'Refreshing...' : 'Current Price'}
-                      </p>
+                      <div className="flex items-center justify-center sm:justify-end gap-2 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {isPriceLoading ? 'Refreshing...' : 'Current Price'}
+                        </p>
+                        {isLivePrice && !isPriceLoading && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 border border-green-200 dark:border-green-700">
+                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 animate-pulse"></span>
+                            LIVE
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </>

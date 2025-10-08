@@ -22,11 +22,19 @@ const generateStructuredSummary = ({
   tradingRecommendation,
   analysis
 }: SummaryGeneratorParams): string => {
-  const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
+  // Use live current price if available, otherwise fall back to last historical data point
+  const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
   const rsi = analysis.rsi[analysis.rsi.length - 1] || 50
   const ema9 = analysis.ema9?.[analysis.ema9.length - 1] || 0
   const ema20 = analysis.ema20?.[analysis.ema20.length - 1] || 0
   const ema50 = analysis.ema50?.[analysis.ema50.length - 1] || 0
+  
+  console.log('Summary Generator - Using Price:', {
+    liveCurrentPrice: analysis.currentPrice,
+    historicalLastPrice: analysis.data[analysis.data.length - 1]?.price,
+    effectiveCurrentPrice: currentPrice,
+    usingLivePrice: !!analysis.currentPrice
+  })
   
   // Determine signal type and emoji
   const bearishEMA = currentPrice < ema9 && ema9 < ema20 && ema20 < ema50
@@ -247,7 +255,8 @@ const generateMarketDescription = (analysis: TechnicalAnalysisData, _tradingReco
 }
 
 const generateSummaryText = (analysis: TechnicalAnalysisData, _tradingRecommendation: any, signalType: string): string => {
-  const currentPrice = analysis.data[analysis.data.length - 1]?.price || 0
+  // Use live current price if available
+  const currentPrice = analysis.currentPrice || analysis.data[analysis.data.length - 1]?.price || 0
   const atr = analysis.atr?.[analysis.atr.length - 1] || currentPrice * 0.02
   
   if (signalType.includes('Long')) {

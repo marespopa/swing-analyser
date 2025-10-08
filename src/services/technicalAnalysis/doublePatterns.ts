@@ -39,17 +39,17 @@ export class DoublePatterns {
     const prices = data.map(d => d.price)
     const volumes = data.map(d => d.volume || 0)
     
-    // Look for double patterns over the last 25 periods (reduced from 40)
-    const lookbackPeriod = Math.min(25, data.length - 10)
-    const startIndex = Math.max(15, data.length - lookbackPeriod)
+    // Look for double patterns over the last 20 days (more lenient for Bitcoin)
+    const lookbackPeriod = Math.min(20, data.length - 3)
+    const startIndex = Math.max(3, data.length - lookbackPeriod)
     
-    // Only check every 3rd index to reduce overlapping detections
-    for (let i = startIndex; i < data.length - 5; i += 3) {
-      const window = 25
-      const recentData = data.slice(i - window, i + 5)
+    // Check every index for better pattern detection
+    for (let i = startIndex; i < data.length - 2; i += 1) {
+      const window = 15
+      const recentData = data.slice(i - window, i + 2)
       const recentPrices = recentData.map(d => d.price)
       
-      if (recentPrices.length < 15) continue
+      if (recentPrices.length < 8) continue
       
       // Find local highs and lows
       const highs: { index: number; price: number }[] = []
@@ -59,15 +59,13 @@ export class DoublePatterns {
         const currentPrice = recentPrices[j]
         const actualIndex = i - window + j
         
-        // Local high
-        if (currentPrice > recentPrices[j - 1] && currentPrice > recentPrices[j - 2] &&
-            currentPrice > recentPrices[j + 1] && currentPrice > recentPrices[j + 2]) {
+        // Local high - more sensitive detection
+        if (currentPrice > recentPrices[j - 1] && currentPrice > recentPrices[j + 1]) {
           highs.push({ index: actualIndex, price: currentPrice })
         }
         
-        // Local low
-        if (currentPrice < recentPrices[j - 1] && currentPrice < recentPrices[j - 2] &&
-            currentPrice < recentPrices[j + 1] && currentPrice < recentPrices[j + 2]) {
+        // Local low - more sensitive detection
+        if (currentPrice < recentPrices[j - 1] && currentPrice < recentPrices[j + 1]) {
           lows.push({ index: actualIndex, price: currentPrice })
         }
       }

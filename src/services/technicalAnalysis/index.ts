@@ -8,6 +8,9 @@ import { FlagPatterns } from './flagPatterns'
 import { WedgePatterns } from './wedgePatterns'
 import { HighTrendlinePatterns } from './highTrendlinePatterns'
 import { deduplicateAndPrioritizePatterns, filterRecentPatterns } from './patternUtils'
+import { DemandZones } from './demandZones'
+import { EnhancedPatterns } from './enhancedPatterns'
+import { VolumeProfileAnalysis } from './volumeProfile'
 
 /**
  * Main Technical Analysis orchestrator class
@@ -16,14 +19,26 @@ import { deduplicateAndPrioritizePatterns, filterRecentPatterns } from './patter
 export class TechnicalAnalysis {
   /**
    * Perform complete technical analysis
+   * @param data Historical price data points
+   * @param currentPrice Optional live current price to use for real-time analysis
    */
-  static performAnalysis(data: PriceDataPoint[]): TechnicalAnalysisData {
+  static performAnalysis(data: PriceDataPoint[], currentPrice?: number): TechnicalAnalysisData {
     if (data.length < 5) {
       throw new Error(`Insufficient data for technical analysis. Need at least 5 data points, but only have ${data.length}. This coin may be too new or have limited trading history. Try selecting a more established cryptocurrency.`)
     }
 
     const prices = data.map(d => d.price)
     const volumes = data.map(d => d.volume || 0)
+    
+    // Use current price if provided, otherwise use last historical data point
+    const effectiveCurrentPrice = currentPrice || prices[prices.length - 1]
+    
+    console.log('Technical Analysis - Price Info:', {
+      historicalLastPrice: prices[prices.length - 1],
+      providedCurrentPrice: currentPrice,
+      effectiveCurrentPrice,
+      usingLivePrice: !!currentPrice
+    })
     
     // Calculate basic indicators - adjust periods based on data availability
     const dataLength = prices.length
@@ -101,11 +116,33 @@ export class TechnicalAnalysis {
       allPatterns.push(...HighTrendlinePatterns.detectHighTrendlinePatterns(data, rsi, sma20, sma50))
     }
 
-    // Filter to recent patterns and deduplicate - adjust based on data length
-    const maxPeriodsBack = Math.min(30, Math.max(10, Math.floor(data.length / 2)))
-    const maxPatterns = Math.min(5, Math.max(2, Math.floor(data.length / 20)))
+    // Detect enhanced patterns with advanced algorithms
+    if (dataLength >= 20) {
+      allPatterns.push(...EnhancedPatterns.detectEnhancedPatterns(data, rsi, sma20, sma50, atr))
+    }
+
+    // Filter to recent patterns and deduplicate - be more lenient for pattern detection
+    const maxPeriodsBack = Math.min(20, Math.max(10, data.length)) // Increased to 20 days for better pattern detection
+    const maxPatterns = Math.min(10, Math.max(5, Math.floor(data.length / 10))) // Increased max patterns
     const recentPatterns = filterRecentPatterns(allPatterns, data.length, maxPeriodsBack)
     const prioritizedPatterns = deduplicateAndPrioritizePatterns(recentPatterns, maxPatterns)
+    
+    // Debug logging for pattern detection
+    console.log('Pattern Detection Debug:', {
+      totalPatterns: allPatterns.length,
+      recentPatterns: recentPatterns.length,
+      prioritizedPatterns: prioritizedPatterns.length,
+      maxPeriodsBack,
+      maxPatterns,
+      dataLength: data.length
+    })
+
+    // Fallback: If no patterns detected, create basic trend patterns
+    if (prioritizedPatterns.length === 0 && dataLength >= 10) {
+      const fallbackPatterns = this.createFallbackPatterns(data, rsi, sma20, sma50)
+      prioritizedPatterns.push(...fallbackPatterns)
+      console.log('Created fallback patterns:', fallbackPatterns.length)
+    }
 
     // Group patterns by type for the response (using type assertion for flexibility)
     const triangles = prioritizedPatterns.filter(p => 
@@ -134,6 +171,12 @@ export class TechnicalAnalysis {
     const trendlines = dataLength >= 10 ? BaseTechnicalAnalysis.identifyTrendlines(data) : []
     const entryPoints = dataLength >= 8 ? BaseTechnicalAnalysis.identifyEntryPoints(data, sma20, sma50, rsi) : []
 
+    // Detect demand zones
+    const demandZones = dataLength >= 20 ? DemandZones.detectDemandZones(data, rsi, sma20, sma50, atr) : []
+    
+    // Perform advanced volume profile analysis
+    const advancedVolumeAnalysis = dataLength >= 20 ? VolumeProfileAnalysis.analyzeVolume(data, prices, volumes) : undefined
+
     // Add data quality information
     const dataQuality = {
       totalDataPoints: dataLength,
@@ -147,6 +190,7 @@ export class TechnicalAnalysis {
     return {
       interval: '1d', // This will be set by the calling function
       data,
+      currentPrice: effectiveCurrentPrice, // Include current price for real-time analysis
       sma20,
       sma50,
       ema9,
@@ -173,8 +217,119 @@ export class TechnicalAnalysis {
       trendlines,
       entryPoints,
       volumeAnalysis,
+      demandZones,
+      advancedVolumeAnalysis,
       dataQuality
     }
+  }
+
+  /**
+   * Create fallback patterns when no patterns are detected
+   */
+  private static createFallbackPatterns(
+    data: PriceDataPoint[],
+    rsi: number[],
+    sma20: number[],
+    sma50: number[]
+  ): any[] {
+    const patterns: any[] = []
+    const prices = data.map(d => d.price)
+    const currentPrice = prices[prices.length - 1]
+    const currentRSI = rsi[rsi.length - 1] || 50
+    const currentSMA20 = sma20[sma20.length - 1] || currentPrice
+    const currentSMA50 = sma50[sma50.length - 1] || currentPrice
+
+    // Create trend-based patterns
+    if (currentPrice > currentSMA20 && currentSMA20 > currentSMA50) {
+      patterns.push({
+        index: data.length - 1,
+        pattern: 'Uptrend',
+        signal: 'bullish',
+        confidence: 60,
+        strength: 'moderate',
+        description: 'Price above both moving averages indicating uptrend',
+        volumeConfirmation: false,
+        rsiConfirmation: currentRSI > 50,
+        maConfirmation: true,
+        breakoutConfirmation: false,
+        fakeBreakoutRisk: 'low',
+        marketContext: 'bullish',
+        completionTimeframe: 'medium'
+      })
+    } else if (currentPrice < currentSMA20 && currentSMA20 < currentSMA50) {
+      patterns.push({
+        index: data.length - 1,
+        pattern: 'Downtrend',
+        signal: 'bearish',
+        confidence: 60,
+        strength: 'moderate',
+        description: 'Price below both moving averages indicating downtrend',
+        volumeConfirmation: false,
+        rsiConfirmation: currentRSI < 50,
+        maConfirmation: true,
+        breakoutConfirmation: false,
+        fakeBreakoutRisk: 'low',
+        marketContext: 'bearish',
+        completionTimeframe: 'medium'
+      })
+    }
+
+    // Create RSI-based patterns
+    if (currentRSI < 30) {
+      patterns.push({
+        index: data.length - 1,
+        pattern: 'RSI Oversold',
+        signal: 'bullish',
+        confidence: 70,
+        strength: 'strong',
+        description: 'RSI indicates oversold conditions, potential bounce',
+        volumeConfirmation: false,
+        rsiConfirmation: true,
+        maConfirmation: false,
+        breakoutConfirmation: false,
+        fakeBreakoutRisk: 'low',
+        marketContext: 'sideways',
+        completionTimeframe: 'short'
+      })
+    } else if (currentRSI > 70) {
+      patterns.push({
+        index: data.length - 1,
+        pattern: 'RSI Overbought',
+        signal: 'bearish',
+        confidence: 70,
+        strength: 'strong',
+        description: 'RSI indicates overbought conditions, potential pullback',
+        volumeConfirmation: false,
+        rsiConfirmation: true,
+        maConfirmation: false,
+        breakoutConfirmation: false,
+        fakeBreakoutRisk: 'low',
+        marketContext: 'sideways',
+        completionTimeframe: 'short'
+      })
+    }
+
+    // Create consolidation pattern if price is range-bound
+    const priceRange = (Math.max(...prices.slice(-10)) - Math.min(...prices.slice(-10))) / Math.min(...prices.slice(-10))
+    if (priceRange < 0.05) { // Less than 5% range in last 10 days
+      patterns.push({
+        index: data.length - 1,
+        pattern: 'Consolidation',
+        signal: 'neutral',
+        confidence: 50,
+        strength: 'moderate',
+        description: 'Price consolidating in tight range, awaiting breakout',
+        volumeConfirmation: false,
+        rsiConfirmation: currentRSI > 40 && currentRSI < 60,
+        maConfirmation: false,
+        breakoutConfirmation: false,
+        fakeBreakoutRisk: 'medium',
+        marketContext: 'sideways',
+        completionTimeframe: 'medium'
+      })
+    }
+
+    return patterns
   }
 }
 

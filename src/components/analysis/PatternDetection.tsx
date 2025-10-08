@@ -6,13 +6,72 @@ interface PatternDetectionProps {
 }
 
 const PatternDetection: React.FC<PatternDetectionProps> = ({ analysis }) => {
-  if (!analysis?.patternDetection) return null
+  if (!analysis?.patternDetection) {
+    console.log('Pattern Detection: No patternDetection data available', { analysis })
+    return null
+  }
+
+  // Check if any patterns exist
+  const hasPatterns = analysis.patternDetection.triangles.length > 0 ||
+    analysis.patternDetection.headAndShoulders.length > 0 ||
+    analysis.patternDetection.doublePatterns.length > 0 ||
+    analysis.patternDetection.cupAndHandle.length > 0 ||
+    analysis.patternDetection.flags.length > 0 ||
+    analysis.patternDetection.wedges.length > 0 ||
+    analysis.patternDetection.highTrendlines.length > 0
+
+  if (!hasPatterns) {
+    console.log('Pattern Detection: No patterns found', { patternDetection: analysis.patternDetection })
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">
+          Pattern Detection
+        </h3>
+        <div className="text-center py-8">
+          <div className="text-gray-500 dark:text-gray-400 mb-2">
+            <svg className="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Patterns Detected</h4>
+          <p className="text-gray-600 dark:text-gray-400">
+            No significant chart patterns found in the recent price action. This could indicate:
+          </p>
+          <ul className="mt-3 text-sm text-gray-600 dark:text-gray-400 space-y-1">
+            <li>• Price is in a consolidation phase</li>
+            <li>• Market is showing random walk behavior</li>
+            <li>• Patterns may be forming but not yet complete</li>
+            <li>• Insufficient data for pattern recognition</li>
+          </ul>
+        </div>
+      </div>
+    )
+  }
+
+  // Calculate total patterns
+  const totalPatterns = analysis.patternDetection.triangles.length +
+    analysis.patternDetection.headAndShoulders.length +
+    analysis.patternDetection.doublePatterns.length +
+    analysis.patternDetection.cupAndHandle.length +
+    analysis.patternDetection.flags.length +
+    analysis.patternDetection.wedges.length +
+    analysis.patternDetection.highTrendlines.length
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-      <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">
-        Pattern Detection
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+          Pattern Detection
+        </h3>
+        <div className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm font-medium rounded">
+          {totalPatterns} PATTERNS
+        </div>
+      </div>
+      {analysis.currentPrice && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-6 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800">
+          <span className="font-medium text-blue-700 dark:text-blue-300">💡 Live Analysis:</span> Pattern evaluations are based on the current live price of ${analysis.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 6, maximumFractionDigits: 6 })}, ensuring you get the most up-to-date technical analysis.
+        </p>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Triangle Patterns */}

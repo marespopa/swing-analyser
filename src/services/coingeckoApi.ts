@@ -58,6 +58,7 @@ export interface ExchangeInfo {
 export interface TechnicalAnalysisData {
   interval: '1h' | '4h' | '1d'
   data: PriceDataPoint[]
+  currentPrice?: number // Live current price for real-time analysis
   sma20: number[]
   sma50: number[]
   ema9: number[]
@@ -265,6 +266,84 @@ export interface TechnicalAnalysisData {
     volumeSMA: number[]
     volumeRatio: number[]
     volumeTrend: 'increasing' | 'decreasing' | 'stable'
+  }
+  demandZones?: Array<{
+    index: number
+    startIndex: number
+    endIndex: number
+    high: number
+    low: number
+    strength: 'weak' | 'moderate' | 'strong' | 'very-strong'
+    confidence: number
+    volumeProfile: {
+      totalVolume: number
+      averageVolume: number
+      volumeRatio: number
+    }
+    touches: number
+    lastTouch: number
+    age: number
+    isActive: boolean
+    description: string
+    entryPrice?: number
+    stopLoss?: number
+    takeProfit?: number
+    riskRewardRatio?: number
+  }>
+  advancedVolumeAnalysis?: {
+    volumeTrend: 'increasing' | 'decreasing' | 'stable'
+    volumeSpikes: Array<{
+      index: number
+      volume: number
+      volumeRatio: number
+      priceChange: number
+      significance: 'low' | 'medium' | 'high'
+    }>
+    volumeDivergence: Array<{
+      index: number
+      type: 'bullish' | 'bearish'
+      strength: number
+      description: string
+    }>
+    accumulationDistribution: number[]
+    onBalanceVolume: number[]
+    volumeProfile: {
+      priceLevels: Array<{
+        price: number
+        volume: number
+        volumePercent: number
+        isHighVolume: boolean
+        isSupport: boolean
+        isResistance: boolean
+      }>
+      valueArea: {
+        high: number
+        low: number
+        volume: number
+        volumePercent: number
+      }
+      pointOfControl: {
+        price: number
+        volume: number
+      }
+      volumeAtPrice: Array<{
+        price: number
+        volume: number
+        strength: 'weak' | 'moderate' | 'strong' | 'very-strong'
+      }>
+      supportLevels: Array<{
+        price: number
+        volume: number
+        strength: number
+        touches: number
+      }>
+      resistanceLevels: Array<{
+        price: number
+        volume: number
+        strength: number
+        touches: number
+      }>
+    }
   }
   dataQuality?: {
     totalDataPoints: number
