@@ -86,7 +86,6 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         {/* Detailed Technical Indicators */}
         <AnalysisTechnicalDetails
           analysis={analysis || null}
-          coinInfo={coinInfo}
         />
 
         {/* Technical Analysis Chart */}

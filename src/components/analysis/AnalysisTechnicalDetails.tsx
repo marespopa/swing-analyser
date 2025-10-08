@@ -4,22 +4,13 @@ import { FaInfoCircle } from 'react-icons/fa'
 import BullishnessIndicator from './BullishnessIndicator'
 import type { ChartDataPoint } from '../../types'
 
-interface CoinInfo {
-  id: string
-  name: string
-  symbol: string
-  currentPrice?: number
-}
-
 interface AnalysisTechnicalDetailsProps {
   analysis: TechnicalAnalysisData | null
-  coinInfo: CoinInfo | null
   chartData?: ChartDataPoint[]
 }
 
 const AnalysisTechnicalDetails: React.FC<AnalysisTechnicalDetailsProps> = ({
   analysis,
-  coinInfo,
   chartData = [],
 }) => {
   if (!analysis) return null
